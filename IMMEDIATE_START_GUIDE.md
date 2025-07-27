@@ -18,9 +18,13 @@
 
 ### **Step 2: Set Up Your Next.js Project (10 minutes)**
 
+> 🎯 **Using Next.js App Router**: This guide uses the modern App Router architecture with `app/` directory structure.
+
 #### **Install Dependencies**
 ```bash
 npm install axios
+# Optional: Add TypeScript types if not already included
+npm install -D @types/node
 ```
 
 #### **Create Environment Variables**
@@ -69,21 +73,89 @@ export const sportmonks = {
 };
 ```
 
-### **Step 3: Create Your First API Route (5 minutes)**
+### **Step 3: Create Your First API Routes (5 minutes)**
 
-Create `app/api/predictions/route.ts`:
+Create `app/api/sportmonks/predictions/route.ts`:
 ```typescript
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { sportmonks } from '@/lib/sportmonks';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const predictions = await sportmonks.getPredictions();
-    return NextResponse.json(predictions);
+    
+    return NextResponse.json({
+      success: true,
+      data: predictions,
+      timestamp: new Date().toISOString(),
+      count: predictions?.data?.length || 0,
+    });
   } catch (error) {
     console.error('Predictions API Error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch predictions' },
+      { 
+        success: false,
+        error: 'Failed to fetch predictions',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
+  }
+}
+```
+
+Create `app/api/sportmonks/value-bets/route.ts`:
+```typescript
+import { NextRequest, NextResponse } from 'next/server';
+import { sportmonks } from '@/lib/sportmonks';
+
+export async function GET(request: NextRequest) {
+  try {
+    const valueBets = await sportmonks.getValueBets();
+    
+    return NextResponse.json({
+      success: true,
+      data: valueBets,
+      timestamp: new Date().toISOString(),
+      count: valueBets?.data?.length || 0,
+    });
+  } catch (error) {
+    console.error('Value Bets API Error:', error);
+    return NextResponse.json(
+      { 
+        success: false,
+        error: 'Failed to fetch value bets',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
+  }
+}
+```
+
+Create `app/api/sportmonks/fixtures/live/route.ts`:
+```typescript
+import { NextRequest, NextResponse } from 'next/server';
+import { sportmonks } from '@/lib/sportmonks';
+
+export async function GET(request: NextRequest) {
+  try {
+    const liveFixtures = await sportmonks.getLiveFixtures();
+    
+    return NextResponse.json({
+      success: true,
+      data: liveFixtures,
+      timestamp: new Date().toISOString(),
+      count: liveFixtures?.data?.length || 0,
+    });
+  } catch (error) {
+    console.error('Live Fixtures API Error:', error);
+    return NextResponse.json(
+      { 
+        success: false,
+        error: 'Failed to fetch live fixtures',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
@@ -92,47 +164,116 @@ export async function GET() {
 
 ### **Step 4: Test Your Active Plan (5 minutes)**
 
-Create `app/test/page.tsx`:
+Create `app/test/page.tsx` (App Router):
 ```typescript
 'use client';
 import { useEffect, useState } from 'react';
 
+interface APIResponse {
+  success: boolean;
+  data?: any;
+  error?: string;
+  timestamp?: string;
+}
+
 export default function TestPage() {
-  const [predictions, setPredictions] = useState(null);
+  const [response, setResponse] = useState<APIResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/predictions')
-      .then(res => res.json())
-      .then(data => {
-        setPredictions(data);
+    // Test multiple endpoints with your active plan
+    Promise.all([
+      fetch('/api/sportmonks/predictions').then(res => res.json()),
+      fetch('/api/sportmonks/value-bets').then(res => res.json()),
+      fetch('/api/sportmonks/fixtures/live').then(res => res.json()),
+    ])
+      .then(([predictions, valueBets, liveFixtures]) => {
+        setResponse({
+          success: true,
+          data: {
+            predictions: predictions.data?.slice(0, 3), // Show first 3
+            valueBets: valueBets.data?.slice(0, 3),
+            liveFixtures: liveFixtures.data?.slice(0, 3),
+          },
+          timestamp: new Date().toISOString(),
+        });
         setLoading(false);
       })
       .catch(err => {
         console.error('Error:', err);
+        setResponse({
+          success: false,
+          error: err.message || 'Failed to connect to API',
+        });
         setLoading(false);
       });
   }, []);
 
-  if (loading) return <div>Testing your active plan...</div>;
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+        <p>Testing your active SportMonks plan...</p>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold mb-4">
-        🎉 Active Plan Test - Predictions API
+    <div className="container mx-auto p-8">
+      <h1 className="text-3xl font-bold mb-6">
+        🎉 Active Plan Test - SportMonks API
       </h1>
       
-      {predictions ? (
-        <div>
-          <p className="text-green-600 font-semibold">
-            ✅ SUCCESS! Your Predictions API is working!
-          </p>
-          <pre className="bg-gray-100 p-4 mt-4 rounded overflow-auto">
-            {JSON.stringify(predictions, null, 2)}
-          </pre>
+      {response?.success ? (
+        <div className="space-y-6">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <p className="text-green-700 font-semibold flex items-center">
+              ✅ SUCCESS! Your SportMonks API is working!
+            </p>
+            <p className="text-green-600 text-sm mt-1">
+              Active Plan: Custom Worldwide + Predictions
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="bg-white border rounded-lg p-4">
+              <h3 className="font-semibold text-blue-600 mb-2">🎯 Predictions</h3>
+              <p className="text-sm text-gray-600">
+                {response.data?.predictions?.length || 0} predictions loaded
+              </p>
+            </div>
+            
+            <div className="bg-white border rounded-lg p-4">
+              <h3 className="font-semibold text-green-600 mb-2">💰 Value Bets</h3>
+              <p className="text-sm text-gray-600">
+                {response.data?.valueBets?.length || 0} value bets loaded
+              </p>
+            </div>
+            
+            <div className="bg-white border rounded-lg p-4">
+              <h3 className="font-semibold text-red-600 mb-2">⚽ Live Matches</h3>
+              <p className="text-sm text-gray-600">
+                {response.data?.liveFixtures?.length || 0} live matches
+              </p>
+            </div>
+          </div>
+
+          <details className="bg-gray-50 border rounded-lg p-4">
+            <summary className="cursor-pointer font-medium">
+              📊 View Raw API Response
+            </summary>
+            <pre className="bg-gray-100 p-4 mt-4 rounded overflow-auto text-xs">
+              {JSON.stringify(response.data, null, 2)}
+            </pre>
+          </details>
         </div>
       ) : (
-        <p className="text-red-600">❌ Error connecting to API</p>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-700 font-semibold">❌ Error connecting to API</p>
+          <p className="text-red-600 text-sm mt-1">
+            {response?.error || 'Unknown error occurred'}
+          </p>
+        </div>
       )}
     </div>
   );
@@ -198,34 +339,115 @@ GET /statistics/advanced/{seasonId}
 
 ### **Quick UI Components to Build**
 
-#### **Prediction Card Component**
+#### **Prediction Card Component** (App Router)
+Create `app/components/predictions/PredictionCard.tsx`:
 ```typescript
 interface Prediction {
   fixture_id: number;
+  name?: string;
+  starting_at?: string;
   probabilities: {
     home: number;
     draw: number;
     away: number;
   };
+  participants?: Array<{
+    name: string;
+    meta: {
+      location: 'home' | 'away';
+    };
+  }>;
 }
 
 export function PredictionCard({ prediction }: { prediction: Prediction }) {
+  const homeTeam = prediction.participants?.find(p => p.meta.location === 'home')?.name || 'Home';
+  const awayTeam = prediction.participants?.find(p => p.meta.location === 'away')?.name || 'Away';
+  
+  const getConfidenceColor = (probability: number) => {
+    if (probability > 0.6) return 'text-green-600 bg-green-50';
+    if (probability > 0.4) return 'text-yellow-600 bg-yellow-50';
+    return 'text-gray-600 bg-gray-50';
+  };
+
+  const highestProb = Math.max(
+    prediction.probabilities.home,
+    prediction.probabilities.draw,
+    prediction.probabilities.away
+  );
+
   return (
-    <div className="border rounded-lg p-4 bg-white shadow">
-      <h3 className="font-semibold mb-2">Match Prediction</h3>
-      <div className="grid grid-cols-3 gap-2">
-        <div className="text-center">
-          <div className="text-sm text-gray-600">Home</div>
-          <div className="font-bold">{(prediction.probabilities.home * 100).toFixed(1)}%</div>
+    <div className="border rounded-lg p-4 bg-white shadow hover:shadow-md transition-shadow">
+      <div className="flex justify-between items-start mb-3">
+        <h3 className="font-semibold text-lg">
+          {prediction.name || `${homeTeam} vs ${awayTeam}`}
+        </h3>
+        {prediction.starting_at && (
+          <span className="text-xs text-gray-500">
+            {new Date(prediction.starting_at).toLocaleDateString()}
+          </span>
+        )}
+      </div>
+      
+      <div className="grid grid-cols-3 gap-3">
+        <div className={`text-center p-2 rounded ${
+          prediction.probabilities.home === highestProb ? getConfidenceColor(highestProb) : 'bg-gray-50'
+        }`}>
+          <div className="text-xs text-gray-600 mb-1">{homeTeam}</div>
+          <div className="font-bold text-lg">
+            {(prediction.probabilities.home * 100).toFixed(1)}%
+          </div>
         </div>
-        <div className="text-center">
-          <div className="text-sm text-gray-600">Draw</div>
-          <div className="font-bold">{(prediction.probabilities.draw * 100).toFixed(1)}%</div>
+        
+        <div className={`text-center p-2 rounded ${
+          prediction.probabilities.draw === highestProb ? getConfidenceColor(highestProb) : 'bg-gray-50'
+        }`}>
+          <div className="text-xs text-gray-600 mb-1">Draw</div>
+          <div className="font-bold text-lg">
+            {(prediction.probabilities.draw * 100).toFixed(1)}%
+          </div>
         </div>
-        <div className="text-center">
-          <div className="text-sm text-gray-600">Away</div>
-          <div className="font-bold">{(prediction.probabilities.away * 100).toFixed(1)}%</div>
+        
+        <div className={`text-center p-2 rounded ${
+          prediction.probabilities.away === highestProb ? getConfidenceColor(highestProb) : 'bg-gray-50'
+        }`}>
+          <div className="text-xs text-gray-600 mb-1">{awayTeam}</div>
+          <div className="font-bold text-lg">
+            {(prediction.probabilities.away * 100).toFixed(1)}%
+          </div>
         </div>
+      </div>
+      
+      <div className="mt-3 text-center">
+        <span className="text-xs text-gray-500">
+          Confidence: {(highestProb * 100).toFixed(1)}%
+        </span>
+      </div>
+    </div>
+  );
+}
+```
+
+#### **Predictions Page** (App Router)
+Create `app/predictions/page.tsx`:
+```typescript
+import { sportmonks } from '@/lib/sportmonks';
+import { PredictionCard } from '@/components/predictions/PredictionCard';
+
+export default async function PredictionsPage() {
+  // Server-side data fetching with App Router
+  const predictions = await sportmonks.getPredictions();
+
+  return (
+    <div className="container mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-6">Match Predictions</h1>
+      
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {predictions?.data?.map((prediction: any) => (
+          <PredictionCard 
+            key={prediction.fixture_id} 
+            prediction={prediction} 
+          />
+        ))}
       </div>
     </div>
   );
@@ -260,6 +482,55 @@ Planned enhancements for competitive differentiation:
 2. **Best Practice**: Cache frequently accessed data
 3. **Security**: Never expose your API token in frontend code
 4. **Performance**: Use includes to get related data in single requests
+5. **App Router**: Server Components by default - better performance
+6. **TypeScript**: Strongly typed interfaces for better development experience
+
+## 🎯 **App Router Benefits for SportMonks Integration**
+
+### **Server-Side Data Fetching**
+```typescript
+// app/predictions/page.tsx
+export default async function PredictionsPage() {
+  // This runs on the server - API token is secure
+  const predictions = await sportmonks.getPredictions();
+  
+  return <PredictionsView data={predictions} />;
+}
+```
+
+### **Automatic Loading States**
+```typescript
+// app/predictions/loading.tsx
+export default function Loading() {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+    </div>
+  );
+}
+```
+
+### **Error Boundaries**
+```typescript
+// app/predictions/error.tsx
+'use client';
+
+export default function Error({ error, reset }: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  return (
+    <div className="text-center p-8">
+      <h2 className="text-xl font-bold text-red-600 mb-4">
+        Failed to load predictions
+      </h2>
+      <button onClick={reset} className="bg-blue-500 text-white px-4 py-2 rounded">
+        Try again
+      </button>
+    </div>
+  );
+}
+```
 
 ---
 

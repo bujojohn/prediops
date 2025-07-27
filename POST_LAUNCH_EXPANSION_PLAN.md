@@ -73,22 +73,63 @@ GET /expected/standings/{seasonId}
 
 ### **Advanced Components to Build**
 
-#### **1. xG Match Progression Chart**
+#### **1. xG Match Progression Chart** (App Router)
+Create `app/components/analytics/XGProgressionChart.tsx`:
 ```typescript
+'use client';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+
 interface XGProgression {
   minute: number;
   homeXG: number;
   awayXG: number;
 }
 
-export function XGProgressionChart({ data }: { data: XGProgression[] }) {
+interface Props {
+  data: XGProgression[];
+  homeTeam?: string;
+  awayTeam?: string;
+}
+
+export function XGProgressionChart({ data, homeTeam = 'Home', awayTeam = 'Away' }: Props) {
   return (
-    <div className="w-full h-64">
-      {/* Interactive line chart showing xG buildup during match */}
-      <LineChart data={data}>
-        <Line dataKey="homeXG" stroke="#3b82f6" />
-        <Line dataKey="awayXG" stroke="#ef4444" />
-      </LineChart>
+    <div className="w-full h-64 bg-white p-4 rounded-lg border">
+      <h3 className="text-lg font-semibold mb-4 text-center">
+        Expected Goals Progression
+      </h3>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis 
+            dataKey="minute" 
+            label={{ value: 'Minute', position: 'insideBottom', offset: -10 }}
+          />
+          <YAxis 
+            label={{ value: 'xG', angle: -90, position: 'insideLeft' }}
+          />
+          <Tooltip 
+            labelFormatter={(label) => `${label}'`}
+            formatter={(value: number, name: string) => [
+              value.toFixed(2), 
+              name === 'homeXG' ? homeTeam : awayTeam
+            ]}
+          />
+          <Line 
+            dataKey="homeXG" 
+            stroke="#3b82f6" 
+            strokeWidth={3}
+            name={homeTeam}
+            dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+          />
+          <Line 
+            dataKey="awayXG" 
+            stroke="#ef4444" 
+            strokeWidth={3}
+            name={awayTeam}
+            dot={{ fill: '#ef4444', strokeWidth: 2, r: 4 }}
+          />
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   );
 }

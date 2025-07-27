@@ -97,68 +97,169 @@ SPORTMONKS_BASE_URL=https://api.sportmonks.com/v3/football
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-#### **Core API Integration Structure**
+#### **Core API Integration Structure** (App Router)
 ```typescript
 // lib/sportmonks.ts
-export class SportMonksAPI {
-  private baseUrl = process.env.SPORTMONKS_BASE_URL;
-  private apiToken = process.env.SPORTMONKS_API_TOKEN;
+import axios from 'axios';
 
-  async getPredictions(fixtureId?: string) {
-    // Fetch match predictions
-  }
+const api = axios.create({
+  baseURL: process.env.SPORTMONKS_BASE_URL,
+  params: {
+    api_token: process.env.SPORTMONKS_API_TOKEN,
+  },
+});
 
-  async getLiveScores() {
-    // Get real-time match data
-  }
+export const sportmonks = {
+  // Predictions API (Active)
+  async getPredictions() {
+    const response = await api.get('/predictions/probabilities');
+    return response.data;
+  },
 
-  async getFixtures(dateRange: string) {
-    // Retrieve upcoming/past matches
-  }
+  async getFixturePredictions(fixtureId: string) {
+    const response = await api.get(`/predictions/probabilities/fixtures/${fixtureId}`);
+    return response.data;
+  },
 
+  // Value Bets API (Active)
+  async getValueBets() {
+    const response = await api.get('/predictions/value-bets');
+    return response.data;
+  },
+
+  // Live Data API (Active)
+  async getLiveFixtures() {
+    const response = await api.get('/livescores/inplay');
+    return response.data;
+  },
+
+  // Fixtures API (Active)
+  async getFixtures(params?: { date?: string; league?: string }) {
+    const response = await api.get('/fixtures', { params });
+    return response.data;
+  },
+
+  // Teams API (Active)
+  async getTeam(teamId: string, includes?: string[]) {
+    const includeParam = includes ? includes.join(',') : '';
+    const response = await api.get(`/teams/${teamId}`, {
+      params: includeParam ? { include: includeParam } : {},
+    });
+    return response.data;
+  },
+
+  // Future: xG API (Post-launch add-on)
   async getXGData(teamId: string) {
-    // Expected goals analytics
-  }
+    // Will be available after xG add-on purchase
+    const response = await api.get(`/expected/teams/${teamId}`);
+    return response.data;
+  },
+};
+
+// TypeScript interfaces
+export interface Prediction {
+  fixture_id: number;
+  probabilities: {
+    home: number;
+    draw: number;
+    away: number;
+  };
+  bookmaker_comparison?: {
+    best_odds: {
+      home: number;
+      draw: number;
+      away: number;
+    };
+  };
+}
+
+export interface ValueBet {
+  fixture_id: number;
+  market: string;
+  selection: string;
+  odds: number;
+  probability: number;
+  value: number;
+  bookmaker: string;
+}
+
+export interface LiveFixture {
+  id: number;
+  name: string;
+  starting_at: string;
+  state: {
+    name: string;
+  };
+  scores?: {
+    home: number;
+    away: number;
+  };
 }
 ```
 
-### 🏗 **Recommended Architecture**
+### 🏗 **Recommended Architecture** (Next.js App Router)
 
-#### **Backend API Routes** (`app/api/`)
+#### **App Router Structure**
 ```
-/api/sportmonks/
-├── predictions/
-│   ├── route.ts         # GET all predictions
-│   └── [id]/route.ts    # GET specific match prediction
-├── fixtures/
-│   ├── route.ts         # GET fixtures by date range
-│   └── live/route.ts    # GET live matches
-├── analytics/
-│   ├── xg/route.ts      # Expected goals data
-│   └── trends/route.ts  # Historical trends
-└── teams/
-    └── [id]/route.ts    # Team statistics
+app/
+├── api/                 # API Routes (App Router)
+│   └── sportmonks/
+│       ├── predictions/
+│       │   ├── route.ts         # GET /api/sportmonks/predictions
+│       │   └── [id]/route.ts    # GET /api/sportmonks/predictions/[id]
+│       ├── fixtures/
+│       │   ├── route.ts         # GET /api/sportmonks/fixtures
+│       │   └── live/route.ts    # GET /api/sportmonks/fixtures/live
+│       ├── value-bets/
+│       │   └── route.ts         # GET /api/sportmonks/value-bets
+│       └── teams/
+│           └── [id]/route.ts    # GET /api/sportmonks/teams/[id]
+├── predictions/         # Predictions Pages
+│   ├── page.tsx         # /predictions - Main predictions page
+│   ├── [id]/page.tsx    # /predictions/[id] - Specific match
+│   └── loading.tsx      # Loading UI
+├── live/               # Live Matches Pages
+│   ├── page.tsx        # /live - Live matches dashboard
+│   └── loading.tsx     # Loading UI
+├── analytics/          # Analytics Pages (Future xG)
+│   ├── page.tsx        # /analytics - Analytics dashboard
+│   └── teams/
+│       └── [id]/page.tsx # /analytics/teams/[id]
+├── components/         # Reusable Components
+│   ├── predictions/
+│   │   ├── PredictionCard.tsx
+│   │   ├── PredictionsList.tsx
+│   │   └── PredictionDetails.tsx
+│   ├── matches/
+│   │   ├── LiveScore.tsx
+│   │   ├── FixtureList.tsx
+│   │   └── MatchAnalytics.tsx
+│   ├── analytics/      # Future xG components
+│   │   ├── XGChart.tsx
+│   │   ├── TrendsGraph.tsx
+│   │   └── TeamComparison.tsx
+│   └── ui/
+│       ├── LoadingSpinner.tsx
+│       ├── ErrorBoundary.tsx
+│       └── Navigation.tsx
+├── lib/                # Utilities & API Client
+│   ├── sportmonks.ts   # API client
+│   ├── utils.ts        # Helper functions
+│   └── types.ts        # TypeScript interfaces
+├── globals.css         # Global styles
+├── layout.tsx          # Root layout
+├── page.tsx           # Home page
+├── loading.tsx        # Global loading UI
+└── error.tsx          # Global error UI
 ```
 
-#### **Frontend Components** (`app/components/`)
-```
-components/
-├── predictions/
-│   ├── PredictionCard.tsx
-│   ├── PredictionsList.tsx
-│   └── PredictionDetails.tsx
-├── matches/
-│   ├── LiveScore.tsx
-│   ├── FixtureList.tsx
-│   └── MatchAnalytics.tsx
-├── analytics/
-│   ├── XGChart.tsx
-│   ├── TrendsGraph.tsx
-│   └── TeamComparison.tsx
-└── ui/
-    ├── LoadingSpinner.tsx
-    └── ErrorBoundary.tsx
-```
+#### **Key App Router Features Used**
+- ✅ **Route Handlers**: `route.ts` files for API endpoints
+- ✅ **Server Components**: Default for optimal performance
+- ✅ **Client Components**: `'use client'` for interactive features
+- ✅ **Layouts**: Nested layouts for consistent UI
+- ✅ **Loading UI**: Built-in loading states
+- ✅ **Error Boundaries**: Automatic error handling
 
 ### 📊 **Key Features to Implement**
 
@@ -182,42 +283,120 @@ components/
 
 ### 🔒 **Security & Best Practices**
 
-#### **API Key Protection**
+#### **API Key Protection** (App Router)
 ```typescript
 // middleware.ts
+import { NextRequest, NextResponse } from 'next/server';
+
 export function middleware(request: NextRequest) {
-  // Validate API routes
+  // Validate SportMonks API routes
   if (request.nextUrl.pathname.startsWith('/api/sportmonks')) {
-    // Add rate limiting and validation
+    // Add rate limiting and validation for internal API routes
+    const apiKey = request.headers.get('x-api-key');
+    
+    // Optional: Add internal API key validation
+    // if (!apiKey || apiKey !== process.env.INTERNAL_API_KEY) {
+    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // }
+    
+    // Add CORS headers for API routes
+    const response = NextResponse.next();
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
+    return response;
   }
+  
+  return NextResponse.next();
 }
+
+export const config = {
+  matcher: [
+    '/api/sportmonks/:path*',
+    '/((?!_next/static|_next/image|favicon.ico).*)',
+  ],
+};
 ```
 
-#### **Error Handling**
+#### **Error Handling** (App Router)
 ```typescript
-// lib/api-client.ts
-export class APIClient {
-  async request(endpoint: string, options?: RequestInit) {
-    try {
-      const response = await fetch(endpoint, {
-        ...options,
-        headers: {
-          'Authorization': `Bearer ${this.apiToken}`,
-          'Content-Type': 'application/json',
-          ...options?.headers,
-        },
-      });
-
-      if (!response.ok) {
-        throw new APIError(response.status, response.statusText);
-      }
-
-      return response.json();
-    } catch (error) {
-      // Handle network errors, timeouts, etc.
-      throw new APIError(500, 'Network error');
-    }
+// lib/errors.ts
+export class SportMonksError extends Error {
+  constructor(
+    public status: number,
+    public message: string,
+    public details?: any
+  ) {
+    super(message);
+    this.name = 'SportMonksError';
   }
+}
+
+// app/api/sportmonks/predictions/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { sportmonks } from '@/lib/sportmonks';
+import { SportMonksError } from '@/lib/errors';
+
+export async function GET(request: NextRequest) {
+  try {
+    const predictions = await sportmonks.getPredictions();
+    
+    return NextResponse.json({
+      success: true,
+      data: predictions,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Predictions API Error:', error);
+    
+    if (error instanceof SportMonksError) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: error.message,
+          status: error.status 
+        },
+        { status: error.status }
+      );
+    }
+    
+    // Handle unexpected errors
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: 'Internal server error',
+        message: 'Failed to fetch predictions' 
+      },
+      { status: 500 }
+    );
+  }
+}
+
+// app/error.tsx (Global Error Boundary)
+'use client';
+
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center">
+      <h2 className="text-2xl font-bold mb-4">Something went wrong!</h2>
+      <p className="text-gray-600 mb-4">
+        {error.message || 'An unexpected error occurred'}
+      </p>
+      <button
+        onClick={reset}
+        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+      >
+        Try again
+      </button>
+    </div>
+  );
 }
 ```
 
