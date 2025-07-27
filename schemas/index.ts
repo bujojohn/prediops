@@ -1,0 +1,62 @@
+//export { AggregateSchema, type Aggregate } from './aggregate.schema';
+export { BallCoordinatesSchema, type BallCoordinates } from './ball-coordinates.schema';
+export { CitySchema, type City } from './city.schema';
+export { CoachSchema, type Coach } from './coach.schema';
+export { CoachStatisticSchema, type CoachStatistic } from './coach-statistic.schema';
+export { CoachStatisticDetailSchema, type CoachStatisticDetail } from './coach-statistic-detail.schema';
+export { CommentSchema, type Comment } from './comment.schema';
+export { ContinentSchema, type Continent } from './continent.schema'; // Added Continent export
+export { CountrySchema, type Country } from './country.schema';
+export { DetailedPositionSchema, type DetailedPosition } from './detailed-position.schema';
+export { FixtureSchema, type Fixture } from './fixture.schema';
+export { FixtureAggregateSchema, type FixtureAggregate } from './fixture-aggregate.schema';
+export { FixtureMetadataSchema, type FixtureMetadata } from './fixture-metadata.schema';
+export { FixtureStatisticsSchema, type FixtureStatistics } from './fixture-statistics.schema';
+export { FormSchema, type Form } from './form.schema';
+export { FormationSchema, type Formation } from './formation.schema';
+export { GroupSchema, type Group } from './group.schema';
+export { LeagueSchema, type League } from './league.schema';
+export { LineupSchema, type Lineup } from './lineup.schema';
+export { LineupDetailsSchema, type LineupDetails } from './lineup-details.schema';
+export { OddsSchema, type Odd } from './odds.schema';
+export { ParticipantSchema, type Participant } from './participant.schema';
+export { ParticipantTrophySchema, type ParticipantTrophy } from './participant-trophy.schema';
+export { PeriodSchema, type Period } from './period.schema';
+export { PlayerSchema, type Player } from './player.schema';
+export { PlayerEventsSchema, type PlayerEvent } from './player-events.schema';
+export { PlayerStatisticSchema, type PlayerStatistic } from './player-statistic.schema';
+export { PlayerStatisticDetailSchema, type PlayerStatisticDetail } from './player-statistic-detail.schema';
+//export { PlayoffGroupSchema, type PlayoffGroup } from './playoff-group.schema';
+//export { PlayoffStructureSchema, type PlayoffStructure } from './playoff-structure.schema';
+export { PositionSchema, type Position } from './position.schema';
+//export { PredictFixturesSchema, type PredictFixtures } from './predict-fixtures.schema';
+export { RefereeSchema, type Referee } from './referee.schema';
+export { RefereeStatisticSchema, type RefereeStatistic } from './referee-statistic.schema'; // Added RefereeStatistic export
+export { RefereeStatisticDetailSchema, type RefereeStatisticDetail } from './referee-statistic-detail.schema'; // Added RefereeStatisticDetail export
+export { RegionSchema, type Region } from './region.schema';
+export { RivalSchema, type Rival } from './rival.schema';
+export { RoundSchema, type Round } from './round.schema';
+export { RoundStatisticsSchema, type RoundStatistics } from './round-statistics.schema';
+export { ScoresSchema, type Scores } from './scores.schema';
+export { ScoresAnimationSchema, type ScoresAnimation } from './scores-animation.schema';
+export { SeasonSchema, type Season } from './season.schema';
+export { SeasonStatisticsSchema, type SeasonStatistics } from './season-statistics.schema';
+export { SidelinedSchema, type Sidelined } from './sidelined.schema';
+export { SportSchema, type Sport } from './sport.schema'; // Corrected from sports.schema.ts
+export { StageSchema, type Stage } from './stage.schema';
+export { StageStatisticsSchema, type StageStatistics } from './stage-statistics.schema'; // Added StageStatistics export
+export { StandingSchema, type Standing } from './standing.schema';
+export { StandingDetailSchema, type StandingDetail } from './standing-detail.schema';
+export { StandingFormSchema, type StandingForm } from './standing-form.schema';
+export { StandingRuleSchema, type StandingRule } from './standing-rule.schema';
+export { StateSchema, type State } from './state.schema';
+export { TeamSquadSchema, type TeamSquad } from './team-squad.schema';
+export { TeamStatisticDetailSchema, type TeamStatisticDetail } from './team-statistic-detail.schema';
+export { TeamStatisticsSchema, type TeamStatistics } from './team-statistics.schema';
+export { TopscorerSchema, type Topscorer } from './topscorer.schema';
+export { TransferSchema, type Transfer } from './transfer.schema';
+export { TrophySchema, type Trophy } from './trophy.schema';
+export { TrophiesSchema, type Trophies } from './trophies.schema';
+export { TVStationSchema, type TVStation } from './tvstation.schema';
+export { TypeSchema, type Type } from './type.schema';
+export { VenueSchema, type Venue } from './venue.schema';
