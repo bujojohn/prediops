@@ -27,7 +27,7 @@ npm install axios
 npm install -D @types/node
 ```
 
-#### **Create Environment Variables**
+#### **Create Environment Variables if not alreay available**
 Create `.env.local`:
 ```env
 SPORTMONKS_API_TOKEN=your_token_here
