@@ -159,27 +159,41 @@ Visit: `http://localhost:3000/test`
 3. **Add value bets** - Show profitable opportunities  
 4. **Live updates** - Real-time prediction changes
 
-### **Key Endpoints to Explore**
+### **Key Endpoints Currently Available**
 ```typescript
 // All available with your active plan:
 
-// 1. Match Predictions
+// 1. Match Predictions (ACTIVE)
 GET /predictions/probabilities
 
 // 2. Value Bets (Premium feature - ACTIVE)
 GET /predictions/value-bets  
 
-// 3. Live Matches
+// 3. Live Matches (ACTIVE)
 GET /livescores/inplay
 
-// 4. Upcoming Fixtures
+// 4. Upcoming Fixtures (ACTIVE)
 GET /fixtures?filters=fixtureTypes:1
 
-// 5. League Standings
+// 5. League Standings (ACTIVE)
 GET /standings/seasons/{seasonId}
 
-// 6. Team Statistics
+// 6. Team Statistics (ACTIVE)
 GET /teams/{teamId}?include=statistics
+```
+
+### **🔮 Future Endpoints (Post-Launch Add-ons)**
+```typescript
+// Will be available after xG add-on is purchased:
+
+// 1. Expected Goals Data
+GET /expected/teams/{teamId}
+
+// 2. Player xG Statistics  
+GET /expected/players/{playerId}
+
+// 3. Advanced Analytics
+GET /statistics/advanced/{seasonId}
 ```
 
 ### **Quick UI Components to Build**
@@ -220,15 +234,23 @@ export function PredictionCard({ prediction }: { prediction: Prediction }) {
 
 ---
 
-## 🔥 **Your Competitive Advantages**
+## 🔥 **Your Current Competitive Advantages**
 
 With your active plan, you have immediate access to:
 
-- ✅ **111+ Leagues Worldwide** - More data than competitors
-- ✅ **AI-Powered Predictions** - Professional-grade algorithms  
-- ✅ **Value Bets** - Profitable opportunities identification
-- ✅ **Real-time Updates** - Sub-minute data refresh
-- ✅ **Global Coverage** - Serve users worldwide
+- ✅ **111+ Leagues Worldwide** - More data than competitors - **ACTIVE**
+- ✅ **AI-Powered Predictions** - Professional-grade algorithms - **ACTIVE**  
+- ✅ **Value Bets** - Profitable opportunities identification - **ACTIVE**
+- ✅ **Real-time Updates** - Sub-minute data refresh - **ACTIVE**
+- ✅ **Global Coverage** - Serve users worldwide - **ACTIVE**
+
+## 🔮 **Future Competitive Advantages (Post-Launch)**
+
+Planned enhancements for competitive differentiation:
+
+- 🚀 **xG Analytics** - Advanced expected goals metrics
+- 🚀 **Premium Visualizations** - Enhanced data presentation
+- 🚀 **Advanced Statistics** - Deeper analytical insights
 
 ---
 

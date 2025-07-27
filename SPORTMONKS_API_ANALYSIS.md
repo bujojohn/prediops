@@ -65,13 +65,17 @@ Based on the project name "prediops" (predictions + operations), this appears to
 ✅ **Predictions Add-on**: ACTIVE
 ✅ **Global Coverage**: Access to major leagues worldwide including European, American, Asian, and African competitions
 
-### 🎯 **Available Capabilities (Current Plan)**
+### 🎯 **Currently Active Capabilities**
 1. ✅ **Predictions API**: Pre-built AI models for match outcomes - **ACTIVE**
-2. ✅ **xG Metrics**: Advanced expected goals analytics
-3. ✅ **Value Bets**: Bookmaker odds comparison - **ACTIVE**
-4. ✅ **Historical Data**: Essential for prediction model training
-5. ✅ **Real-time Data**: Live updates for active predictions
-6. ✅ **Worldwide Coverage**: 111+ leagues across all continents
+2. ✅ **Value Bets**: Bookmaker odds comparison - **ACTIVE**
+3. ✅ **Historical Data**: Essential for prediction model training - **ACTIVE**
+4. ✅ **Real-time Data**: Live updates for active predictions - **ACTIVE**
+5. ✅ **Worldwide Coverage**: 111+ leagues across all continents - **ACTIVE**
+
+### 🔮 **Future Add-ons (Post-Launch)**
+🚀 **xG (Expected Goals) Metrics**: Advanced analytics - **PLANNED POST-LAUNCH**
+🚀 **Additional Premium Analytics**: Enhanced statistics - **PLANNED POST-LAUNCH**
+🚀 **Advanced Visualizations**: Enhanced data presentation - **PLANNED POST-LAUNCH**
 
 ### 📋 **Integration Requirements**
 
@@ -219,7 +223,7 @@ export class APIClient {
 
 ### 🚀 **Implementation Roadmap** (Updated for Active Plan)
 
-#### **Phase 1: Immediate Setup** (Week 1)
+#### **Phase 1: MVP Launch Preparation** (Week 1)
 - [x] ✅ SportMonks API account setup - **COMPLETED**
 - [x] ✅ Predictions add-on activated - **COMPLETED**
 - [x] ✅ Worldwide plan access - **COMPLETED**
@@ -227,30 +231,39 @@ export class APIClient {
 - [ ] Test predictions endpoints with active token
 - [ ] Set up basic project structure
 
-#### **Phase 2: Core Predictions Implementation** (Week 2-3)
+#### **Phase 2: Core Predictions Platform** (Week 2-3)
 - [ ] **Priority**: Integrate active Predictions API
 - [ ] Build prediction display components
 - [ ] Implement value bet detection (available in plan)
 - [ ] Create real-time prediction updates
 - [ ] Add worldwide leagues support
 
-#### **Phase 3: Advanced Analytics** (Week 4-5)
-- [ ] xG data integration and visualization
+#### **Phase 3: Platform Enhancement** (Week 4-5)
 - [ ] Multi-league prediction dashboard
-- [ ] Historical trend analysis
+- [ ] Historical trend analysis (basic level)
 - [ ] Performance tracking across 111+ leagues
+- [ ] User interface optimization
 
-#### **Phase 4: Scale & Optimize** (Week 6-7)
+#### **Phase 4: Launch & Scale** (Week 6-7)
 - [ ] Implement caching for worldwide data
 - [ ] Performance optimization for large datasets
 - [ ] User experience enhancements
 - [ ] Production deployment and monitoring
+- [ ] **🚀 MVP LAUNCH**
 
-#### **🎯 Accelerated Timeline Benefits**
+#### **Phase 5: Post-Launch Enhancements** (Week 8+)
+- [ ] 🔮 **Add xG (Expected Goals) add-on**
+- [ ] 🔮 **Advanced analytics integration**
+- [ ] 🔮 **Enhanced visualization features**
+- [ ] 🔮 **Premium statistics dashboard**
+- [ ] 🔮 **Advanced prediction models**
+
+#### **🎯 Current Timeline Benefits**
 - **No setup delays**: API access already active
 - **Immediate predictions**: Start building with live data
 - **Global scope**: Test with worldwide leagues from day 1
 - **Value bet features**: Premium functionality available immediately
+- **Scalable roadmap**: Plan for post-launch feature expansion
 
 ### 📈 **Expected Outcomes**
 - **Real-time prediction accuracy**: 65-75% for major leagues
@@ -266,10 +279,46 @@ export class APIClient {
 - **Global performance**: CDN strategy for worldwide league data delivery
 - **Rate limit management**: 3,000 calls/hour across multiple leagues - monitor usage
 
+### 🔮 **Post-Launch Expansion Strategy**
+
+#### **xG Add-on Integration Plan**
+Once the MVP is launched and generating user engagement:
+
+1. **Purchase xG Add-on** from SportMonks
+2. **Enhanced Analytics Dashboard**:
+   ```typescript
+   // New xG endpoints to integrate
+   GET /expected/teams/{teamId}      # Team xG metrics
+   GET /expected/players/{playerId}  # Player xG stats
+   GET /expected/fixtures/{fixtureId} # Match xG data
+   ```
+
+3. **Advanced Visualization Components**:
+   - xG progression charts during live matches
+   - Player performance vs. expected performance
+   - Team attacking/defensive efficiency metrics
+   - Historical xG trends and patterns
+
+4. **Competitive Differentiation**:
+   - Advanced prediction models using xG data
+   - Premium analytics for professional users
+   - Enhanced value bet detection using xG metrics
+
+#### **ROI Optimization**
+- **Phase 1**: Launch with core predictions → Validate user demand
+- **Phase 2**: Add xG analytics → Premium feature differentiation
+- **Phase 3**: Advanced ML models → Professional market entry
+
 ### 🎯 **Immediate Action Items**
 1. **Today**: Get API token from my.sportmonks.com dashboard
 2. **Today**: Test predictions endpoint with active plan
 3. **This week**: Set up Next.js API routes for predictions
 4. **Next week**: Deploy MVP with worldwide predictions
 
-This analysis provides a comprehensive foundation for integrating SportMonks API into your PrediOps project. **Your plan is now active - you can start building immediately with full predictions and worldwide coverage!**
+### 🎯 **Post-Launch Action Items**
+1. **Monitor user engagement** with prediction features
+2. **Analyze demand** for advanced analytics
+3. **Purchase xG add-on** when ready to expand
+4. **Implement advanced features** for premium users
+
+This analysis provides a comprehensive foundation for integrating SportMonks API into your PrediOps project. **Your plan is now active - you can start building immediately with full predictions and worldwide coverage, with a clear roadmap for future expansion!**

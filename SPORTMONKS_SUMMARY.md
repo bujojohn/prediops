@@ -10,10 +10,14 @@
 ## 🎯 **Ready-to-Use Capabilities**
 SportMonks API is now fully active for your sports prediction platform with:
 - ✅ **Built-in Predictions API** with AI-powered match predictions - **LIVE**
-- ✅ **xG (Expected Goals)** advanced analytics
-- ✅ **Real-time live data** updates
+- ✅ **Real-time live data** updates - **LIVE**
 - ✅ **Value bet detection** capabilities - **LIVE**
 - ✅ **Worldwide league coverage** - **111+ leagues active**
+
+## 🔮 **Future Add-ons (Post-Launch)**
+- 🚀 **xG (Expected Goals)** advanced analytics - **PLANNED**
+- 🚀 **Premium analytics dashboard** - **PLANNED**
+- 🚀 **Advanced visualizations** - **PLANNED**
 
 ## 🚀 **Quick Start Checklist** (Active Plan)
 1. ✅ **Plan activated** - Custom Worldwide + Predictions - **COMPLETED**
@@ -42,8 +46,9 @@ GET /fixtures                # Upcoming/past matches
 ## ⚡ **Implementation Priority** (Accelerated - Plan Active)
 1. **Week 1**: API client setup + test predictions endpoint (immediate access)
 2. **Week 2-3**: Core predictions dashboard + value bets integration
-3. **Week 4-5**: Multi-league analytics + xG visualization (worldwide data)
-4. **Week 6-7**: Scale optimization + production deployment
+3. **Week 4-5**: Multi-league analytics + worldwide data optimization
+4. **Week 6-7**: Scale optimization + production deployment + **🚀 MVP LAUNCH**
+5. **Week 8+**: Post-launch enhancements (xG add-on, advanced analytics)
 
 ## 🎉 **Why SportMonks is Perfect for PrediOps**
 - ✅ **All-in-one solution**: Predictions, live data, analytics in one API - **ACTIVE**
