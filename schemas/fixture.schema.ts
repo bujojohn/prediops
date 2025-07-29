@@ -26,6 +26,7 @@ import { CommentSchema, type Comment } from "./comment.schema";
 import { SidelinedSchema, type Sidelined } from "./sidelined.schema";
 import { BallCoordinatesSchema, type BallCoordinates } from "./ball-coordinates.schema";
 import { FixtureMetadataSchema, type FixtureMetadata } from "./fixture-metadata.schema"; // Import actual FixtureMetadataSchema and its type
+import { PredictionSchema, type Prediction } from "./predictions.schema";
 
 // --- Forward declare the Fixture type for explicit annotation ---
 // This helps TypeScript with circular dependencies when z.lazy is used.
@@ -61,6 +62,7 @@ export type Fixture = {
   referee?: Referee | null; // Assuming Referee type will be imported
   coaches?: Coach[] | null; 
   participants?: Participant[] | null; // Use actual Participant type
+  predictions?: Prediction[] | null; // Use actual Prediction type
   scores?: Scores[] | null; // Use actual Scores type      
   events?: PlayerEvent[] | null; // Use actual PlayerEvent type
   lineups?: Lineup[] | null; // Use actual Lineup type     
@@ -110,7 +112,7 @@ export const FixtureSchema: z.ZodType<Fixture> = z.lazy(() =>
     state: StateSchema.nullable().optional(),
     coaches: z.array(CoachSchema).nullable().optional(),
     referee: RefereeSchema.nullable().optional(), 
-    
+    predictions: z.array(PredictionSchema).nullable().optional(), // Use actual PredictionSchema
     participants: z.array(ParticipantSchema).nullable().optional(), // Use actual ParticipantSchema
     scores: z.array(ScoresSchema).nullable().optional(), // Use actual ScoresSchema
     events: z.array(PlayerEventsSchema).nullable().optional(), // Use actual PlayerEventsSchema

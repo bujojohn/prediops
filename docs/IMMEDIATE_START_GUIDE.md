@@ -27,12 +27,14 @@ npm install axios
 npm install -D @types/node
 ```
 
-#### **Create Environment Variables if not alreay available**
+#### **Create Environment Variables**
 Create `.env.local`:
 ```env
 SPORTMONKS_API_TOKEN=your_token_here
 SPORTMONKS_BASE_URL=https://api.sportmonks.com/v3/football
 ```
+
+**Note**: The application includes mock data fallbacks, so it will work even without the API token configured.
 
 #### **Create API Client**
 Create `lib/sportmonks.ts`:
@@ -40,28 +42,29 @@ Create `lib/sportmonks.ts`:
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: process.env.SPORTMONKS_BASE_URL,
-  params: {
-    api_token: process.env.SPORTMONKS_API_TOKEN,
+  baseURL: process.env.SPORTMONKS_BASE_URL || 'https://api.sportmonks.com/v3/football',
+  headers: {
+    Authorization: `${process.env.SPORTMONKS_API_TOKEN}`,
+    Accept: 'application/json',
   },
 });
 
 export const sportmonks = {
   // Test your active predictions access
   async getPredictions() {
-    const response = await api.get('/predictions');
+    const response = await api.get('/predictions/probabilities');
     return response.data;
   },
 
   // Get value bets (active in your plan)
   async getValueBets() {
-    const response = await api.get('/predictions/value-bets');
+    const response = await api.get('/predictions/value-bets?include=fixture:name');
     return response.data;
   },
 
   // Get live fixtures
   async getLiveFixtures() {
-    const response = await api.get('/livescores/inplay');
+    const response = await api.get('/livescores/inplay?include=participants:name');
     return response.data;
   },
 
@@ -79,6 +82,7 @@ Create `app/api/sportmonks/predictions/route.ts`:
 ```typescript
 import { NextRequest, NextResponse } from 'next/server';
 import { sportmonks } from '@/lib/sportmonks';
+import { mockPredictions } from '@/lib/mock-data';
 
 export async function GET(request: NextRequest) {
   try {
@@ -92,6 +96,18 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Predictions API Error:', error);
+    
+    // Return mock data if API is not configured
+    if (error instanceof Error && error.message.includes('401')) {
+      return NextResponse.json({
+        success: true,
+        data: mockPredictions,
+        timestamp: new Date().toISOString(),
+        count: mockPredictions.data.length,
+        note: 'Using mock data - API token not configured'
+      });
+    }
+    
     return NextResponse.json(
       { 
         success: false,
@@ -108,6 +124,7 @@ Create `app/api/sportmonks/value-bets/route.ts`:
 ```typescript
 import { NextRequest, NextResponse } from 'next/server';
 import { sportmonks } from '@/lib/sportmonks';
+import { mockValueBets } from '@/lib/mock-data';
 
 export async function GET(request: NextRequest) {
   try {
@@ -121,6 +138,18 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Value Bets API Error:', error);
+    
+    // Return mock data if API is not configured
+    if (error instanceof Error && error.message.includes('401')) {
+      return NextResponse.json({
+        success: true,
+        data: mockValueBets,
+        timestamp: new Date().toISOString(),
+        count: mockValueBets.data.length,
+        note: 'Using mock data - API token not configured'
+      });
+    }
+    
     return NextResponse.json(
       { 
         success: false,
@@ -137,6 +166,7 @@ Create `app/api/sportmonks/fixtures/live/route.ts`:
 ```typescript
 import { NextRequest, NextResponse } from 'next/server';
 import { sportmonks } from '@/lib/sportmonks';
+import { mockLiveFixtures } from '@/lib/mock-data';
 
 export async function GET(request: NextRequest) {
   try {
@@ -150,6 +180,18 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Live Fixtures API Error:', error);
+    
+    // Return mock data if API is not configured
+    if (error instanceof Error && error.message.includes('401')) {
+      return NextResponse.json({
+        success: true,
+        data: mockLiveFixtures,
+        timestamp: new Date().toISOString(),
+        count: mockLiveFixtures.data.length,
+        note: 'Using mock data - API token not configured'
+      });
+    }
+    
     return NextResponse.json(
       { 
         success: false,
@@ -427,6 +469,8 @@ export function PredictionCard({ prediction }: { prediction: Prediction }) {
 }
 ```
 
+**Note**: For production use, consider using the Zod schemas from `/schemas` for type safety and validation.
+
 #### **Predictions Page** (App Router)
 Create `app/predictions/page.tsx`:
 ```typescript
@@ -482,19 +526,48 @@ Planned enhancements for competitive differentiation:
 2. **Best Practice**: Cache frequently accessed data
 3. **Security**: Never expose your API token in frontend code
 4. **Performance**: Use includes to get related data in single requests
-5. **App Router**: Server Components by default - better performance
+5. **App Router**: Use server components for data fetching, client components for interactivity
 6. **TypeScript**: Strongly typed interfaces for better development experience
+7. **Mock Data**: Application includes fallback mock data for development
+8. **Zod Schemas**: Use `/schemas` directory for type safety and validation
 
 ## 🎯 **App Router Benefits for SportMonks Integration**
 
-### **Server-Side Data Fetching**
+### **Server Components for Data Fetching**
 ```typescript
 // app/predictions/page.tsx
 export default async function PredictionsPage() {
-  // This runs on the server - API token is secure
+  // Server component - API token is secure, data fetched at build/request time
   const predictions = await sportmonks.getPredictions();
   
   return <PredictionsView data={predictions} />;
+}
+```
+
+### **Client Components for Interactivity**
+```typescript
+// app/components/predictions/PredictionCard.tsx
+'use client';
+
+export function PredictionCard({ prediction }: { prediction: Prediction }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  return (
+    <div 
+      className="border rounded-lg p-4 bg-white shadow hover:shadow-md transition-shadow cursor-pointer"
+      onClick={() => setIsExpanded(!isExpanded)}
+    >
+      {/* Card content */}
+      {isExpanded && (
+        <div className="mt-4 p-3 bg-gray-50 rounded">
+          <h4 className="font-semibold">Detailed Analysis</h4>
+          <p className="text-sm text-gray-600">
+            Recent form, head-to-head stats, and more...
+          </p>
+        </div>
+      )}
+    </div>
+  );
 }
 ```
 
@@ -510,7 +583,7 @@ export default function Loading() {
 }
 ```
 
-### **Error Boundaries**
+### **Error Boundaries with Client Components**
 ```typescript
 // app/predictions/error.tsx
 'use client';
@@ -537,6 +610,23 @@ export default function Error({ error, reset }: {
 ## 🎉 **You're Ready!**
 
 Your SportMonks plan is active and ready. You now have everything needed to build a world-class sports prediction platform. Start with the test above, then build your MVP!
+
+### **✅ What's Been Implemented:**
+
+- **🏗️ Core Infrastructure**: SportMonks API client with proper authentication
+- **🔧 API Routes**: Predictions, value bets, and live fixtures with mock data fallbacks
+- **📱 Pages & Components**: Home, predictions, value bets, live matches, and test pages
+- **⚡ Performance Features**: Server-side data fetching, loading states, error boundaries, client components for interactivity
+- **🔒 Type Safety**: Zod schemas for validation and TypeScript types
+- **🎨 Modern UI**: Responsive design with Tailwind CSS
+
+### **🚀 Key Features:**
+
+- **Mock Data Fallbacks**: App works without API token for development
+- **Type-Safe Components**: Using Zod schemas from `/schemas` directory
+- **Error Handling**: Graceful fallbacks and user-friendly error messages
+- **Navigation**: Clean navigation between all sections
+- **Real-time Ready**: Live match updates and predictions
 
 **Questions?** Check the [SportMonks Documentation](https://docs.sportmonks.com/football) or contact their support team.
 

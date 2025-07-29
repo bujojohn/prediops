@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { type Type, TypeSchema } from "./type.schema"; // Import actual Type schema and type
+import {  TypeSchema } from "./type.schema"; // Import actual Type schema and type
 
 // --- Main State Schema ---
 export const StateSchema = z.lazy(() =>

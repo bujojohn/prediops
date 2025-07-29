@@ -1,36 +1,206 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ⚽ Prediops - Sports Predictions & Analytics
 
-## Getting Started
+AI-powered sports predictions and value betting opportunities across 111+ leagues worldwide.
 
-First, run the development server:
+## 🚀 Features
+
+- **🎯 AI Predictions**: Professional-grade algorithms analyze match data
+- **💰 Value Bets**: Identify profitable betting opportunities
+- **⚽ Live Matches**: Real-time scores and match updates
+- **🌍 Global Coverage**: 111+ leagues worldwide
+- **📊 Advanced Analytics**: Comprehensive statistics and insights
+
+## 🛠️ Tech Stack
+
+- **Next.js 15** - React framework with App Router
+- **TypeScript** - Type-safe development
+- **Tailwind CSS** - Utility-first CSS framework
+- **Axios** - HTTP client for API requests
+- **SportMonks API** - Sports data provider
+
+## 📋 Prerequisites
+
+- Node.js 18+ 
+- npm or yarn
+- SportMonks API token (Custom Worldwide + Predictions plan)
+
+## 🚀 Quick Start
+
+### 1. Clone and Install
+
+```bash
+git clone <repository-url>
+cd prediops
+npm install
+```
+
+### 2. Environment Setup
+
+Create a `.env.local` file in the project root:
+
+```env
+SPORTMONKS_API_TOKEN=your_token_here
+SPORTMONKS_BASE_URL=https://api.sportmonks.com/v3/football
+```
+
+### 3. Get Your API Token
+
+1. Go to [my.sportmonks.com](https://my.sportmonks.com)
+2. Login to your account
+3. Navigate to **Settings** → **API Tokens**
+4. Copy your active token (should show Worldwide + Predictions access)
+
+### 4. Run Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Visit [http://localhost:3000](http://localhost:3000) to see the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🧪 Testing Your Setup
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Visit `/test` to verify your API connection:
 
-## Learn More
+- **✅ Success**: Your SportMonks API is working
+- **❌ Error**: Check your API token and environment variables
 
-To learn more about Next.js, take a look at the following resources:
+## 📱 Available Pages
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Home** (`/`) - Landing page with feature overview
+- **Predictions** (`/predictions`) - Match predictions with AI analysis
+- **Value Bets** (`/value-bets`) - Profitable betting opportunities
+- **Live Matches** (`/live`) - Real-time match updates
+- **API Test** (`/test`) - Verify API connection
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🔧 API Endpoints
 
-## Deploy on Vercel
+### Available with Active Plan
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```typescript
+// Match Predictions
+GET /api/sportmonks/predictions
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+// Value Bets
+GET /api/sportmonks/value-bets
+
+// Live Fixtures
+GET /api/sportmonks/fixtures/live
+```
+
+### Future Endpoints (Post-Launch)
+
+```typescript
+// Expected Goals Data (requires xG add-on)
+GET /api/sportmonks/expected/teams/{teamId}
+
+// Player xG Statistics
+GET /api/sportmonks/expected/players/{playerId}
+
+// Advanced Analytics
+GET /api/sportmonks/statistics/advanced/{seasonId}
+```
+
+## 🏗️ Project Structure
+
+```
+prediops/
+├── app/
+│   ├── api/sportmonks/          # API routes
+│   ├── components/              # Reusable components
+│   │   ├── predictions/         # Prediction components
+│   │   ├── value-bets/         # Value bet components
+│   │   ├── live-matches/       # Live match components
+│   │   └── navigation/         # Navigation components
+│   ├── predictions/            # Predictions page
+│   ├── value-bets/            # Value bets page
+│   ├── live/                  # Live matches page
+│   └── test/                  # API test page
+├── lib/
+│   └── sportmonks.ts          # API client
+├── schemas/                   # TypeScript schemas
+└── docs/                     # Documentation
+```
+
+## 🎯 Key Components
+
+### PredictionCard
+Displays match predictions with confidence levels and team information.
+
+### ValueBetCard
+Shows profitable betting opportunities with odds, probability, and value analysis.
+
+### LiveMatchCard
+Real-time match information including scores, time, and match status.
+
+## 🔒 Security Notes
+
+- **Never expose API tokens** in frontend code
+- **Use environment variables** for sensitive data
+- **Server-side data fetching** keeps tokens secure
+- **Rate limiting** is handled automatically (3,000 calls/hour)
+
+## 📊 Performance
+
+- **Server Components** by default for better performance
+- **Automatic loading states** for better UX
+- **Error boundaries** for graceful error handling
+- **TypeScript** for type safety
+
+## 🚀 Deployment
+
+### Vercel (Recommended)
+
+```bash
+npm run build
+```
+
+The application is optimized for Vercel deployment with:
+- Automatic environment variable management
+- Edge runtime support
+- Built-in analytics
+
+### Environment Variables for Production
+
+```env
+SPORTMONKS_API_TOKEN=your_production_token
+SPORTMONKS_BASE_URL=https://api.sportmonks.com/v3/football
+```
+
+## 📈 Competitive Advantages
+
+### Current (Active Plan)
+- ✅ **111+ Leagues Worldwide** - More data than competitors
+- ✅ **AI-Powered Predictions** - Professional-grade algorithms
+- ✅ **Value Bets** - Profitable opportunities identification
+- ✅ **Real-time Updates** - Sub-minute data refresh
+- ✅ **Global Coverage** - Serve users worldwide
+
+### Future (Post-Launch)
+- 🚀 **xG Analytics** - Advanced expected goals metrics
+- 🚀 **Premium Visualizations** - Enhanced data presentation
+- 🚀 **Advanced Statistics** - Deeper analytical insights
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+## 🆘 Support
+
+- **API Issues**: Contact [SportMonks Support](https://docs.sportmonks.com)
+- **Application Issues**: Open an issue in this repository
+- **Documentation**: Check the `/docs` folder for detailed guides
+
+---
+
+**Status**: 🚀 **READY TO BUILD - NO WAITING REQUIRED!**
+
+Your SportMonks plan is active and ready. Start building your world-class sports prediction platform today!
