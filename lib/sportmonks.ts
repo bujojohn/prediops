@@ -50,12 +50,7 @@ function buildQueryParams(config?: ApiConfig): string {
 export const sportmonks = {
   // Get predictions with configurable options
   async getPredictions(config?: ApiConfig) {
-    const defaultConfig: ApiConfig = {
-      includes: ['fixture', 'type'],
-      filters: { predictionTypes: 237 }
-    };
-    
-    const finalConfig = { ...defaultConfig, ...config };
+    const finalConfig = { ...config };
     const queryParams = buildQueryParams(finalConfig);
     const url = `/predictions/probabilities${queryParams ? `?${queryParams}` : ''}`;
     
@@ -65,11 +60,7 @@ export const sportmonks = {
 
   // Get value bets with configurable options
   async getValueBets(config?: ApiConfig) {
-    const defaultConfig: ApiConfig = {
-      includes: ['fixture:name']
-    };
-    
-    const finalConfig = { ...defaultConfig, ...config };
+    const finalConfig = { ...config };
     const queryParams = buildQueryParams(finalConfig);
     const url = `/predictions/value-bets${queryParams ? `?${queryParams}` : ''}`;
     
@@ -79,11 +70,7 @@ export const sportmonks = {
 
   // Get live fixtures with configurable options
   async getLiveFixtures(config?: ApiConfig) {
-    const defaultConfig: ApiConfig = {
-      includes: ['participants:name', 'scores', 'state']
-    };
-    
-    const finalConfig = { ...defaultConfig, ...config };
+    const finalConfig = { ...config };
     const queryParams = buildQueryParams(finalConfig);
     const url = `/livescores/inplay${queryParams ? `?${queryParams}` : ''}`;
     
@@ -93,11 +80,7 @@ export const sportmonks = {
 
   // Get latest live scores with configurable options
   async getLatestLiveScores(config?: ApiConfig) {
-    const defaultConfig: ApiConfig = {
-      includes: ['participants:name', 'scores', 'state']
-    };
-    
-    const finalConfig = { ...defaultConfig, ...config };
+    const finalConfig = { ...config };
     const queryParams = buildQueryParams(finalConfig);
     const url = `/livescores/latest${queryParams ? `?${queryParams}` : ''}`;
     
@@ -116,12 +99,7 @@ export const sportmonks = {
 
   // Get upcoming fixtures with configurable options
   async getUpcomingFixtures(config?: ApiConfig) {
-    const defaultConfig: ApiConfig = {
-      includes: ['participants', 'scores', 'state'],
-      filters: { fixtureTypes: 1 }
-    };
-    
-    const finalConfig = { ...defaultConfig, ...config };
+    const finalConfig = { ...config };
     const queryParams = buildQueryParams(finalConfig);
     const url = `/fixtures${queryParams ? `?${queryParams}` : ''}`;
     
@@ -140,11 +118,7 @@ export const sportmonks = {
 
   // Get team statistics with configurable options
   async getTeamStatistics(teamId: string, config?: ApiConfig) {
-    const defaultConfig: ApiConfig = {
-      includes: ['statistics']
-    };
-    
-    const finalConfig = { ...defaultConfig, ...config };
+    const finalConfig = { ...config };
     const queryParams = buildQueryParams(finalConfig);
     const url = `/teams/${teamId}${queryParams ? `?${queryParams}` : ''}`;
     
@@ -154,11 +128,7 @@ export const sportmonks = {
 
   // Get specific fixture with configurable options
   async getFixture(fixtureId: string, config?: ApiConfig) {
-    const defaultConfig: ApiConfig = {
-      includes: ['participants', 'scores', 'state', 'league', 'season']
-    };
-    
-    const finalConfig = { ...defaultConfig, ...config };
+    const finalConfig = { ...config };
     const queryParams = buildQueryParams(finalConfig);
     const url = `/fixtures/${fixtureId}${queryParams ? `?${queryParams}` : ''}`;
     
@@ -168,11 +138,7 @@ export const sportmonks = {
 
   // Get seasons with configurable options
   async getSeasons(config?: ApiConfig) {
-    const defaultConfig: ApiConfig = {
-      includes: ['league', 'country']
-    };
-    
-    const finalConfig = { ...defaultConfig, ...config };
+    const finalConfig = { ...config };
     const queryParams = buildQueryParams(finalConfig);
     const url = `/seasons${queryParams ? `?${queryParams}` : ''}`;
     
@@ -182,11 +148,7 @@ export const sportmonks = {
 
   // Get leagues with configurable options
   async getLeagues(config?: ApiConfig) {
-    const defaultConfig: ApiConfig = {
-      includes: ['country']
-    };
-    
-    const finalConfig = { ...defaultConfig, ...config };
+    const finalConfig = { ...config };
     const queryParams = buildQueryParams(finalConfig);
     const url = `/leagues${queryParams ? `?${queryParams}` : ''}`;
     
@@ -196,11 +158,7 @@ export const sportmonks = {
 
   // Get teams with configurable options
   async getTeams(config?: ApiConfig) {
-    const defaultConfig: ApiConfig = {
-      includes: ['country', 'league']
-    };
-    
-    const finalConfig = { ...defaultConfig, ...config };
+    const finalConfig = { ...config };
     const queryParams = buildQueryParams(finalConfig);
     const url = `/teams${queryParams ? `?${queryParams}` : ''}`;
     
@@ -210,11 +168,7 @@ export const sportmonks = {
 
   // Get specific team with configurable options
   async getTeam(teamId: string, config?: ApiConfig) {
-    const defaultConfig: ApiConfig = {
-      includes: ['country', 'league', 'statistics']
-    };
-    
-    const finalConfig = { ...defaultConfig, ...config };
+    const finalConfig = { ...config };
     const queryParams = buildQueryParams(finalConfig);
     const url = `/teams/${teamId}${queryParams ? `?${queryParams}` : ''}`;
     
@@ -224,11 +178,7 @@ export const sportmonks = {
 
   // Get players with configurable options
   async getPlayers(config?: ApiConfig) {
-    const defaultConfig: ApiConfig = {
-      includes: ['country', 'team']
-    };
-    
-    const finalConfig = { ...defaultConfig, ...config };
+    const finalConfig = { ...config };
     const queryParams = buildQueryParams(finalConfig);
     const url = `/players${queryParams ? `?${queryParams}` : ''}`;
     
@@ -238,11 +188,7 @@ export const sportmonks = {
 
   // Get specific player with configurable options
   async getPlayer(playerId: string, config?: ApiConfig) {
-    const defaultConfig: ApiConfig = {
-      includes: ['country', 'team', 'statistics']
-    };
-    
-    const finalConfig = { ...defaultConfig, ...config };
+    const finalConfig = { ...config };
     const queryParams = buildQueryParams(finalConfig);
     const url = `/players/${playerId}${queryParams ? `?${queryParams}` : ''}`;
     
@@ -261,11 +207,7 @@ export const sportmonks = {
 
   // Get venues with configurable options
   async getVenues(config?: ApiConfig) {
-    const defaultConfig: ApiConfig = {
-      includes: ['country', 'city']
-    };
-    
-    const finalConfig = { ...defaultConfig, ...config };
+    const finalConfig = { ...config };
     const queryParams = buildQueryParams(finalConfig);
     const url = `/venues${queryParams ? `?${queryParams}` : ''}`;
     
@@ -275,13 +217,149 @@ export const sportmonks = {
 
   // Get specific venue with configurable options
   async getVenue(venueId: string, config?: ApiConfig) {
-    const defaultConfig: ApiConfig = {
-      includes: ['country', 'city']
-    };
-    
-    const finalConfig = { ...defaultConfig, ...config };
+    const finalConfig = { ...config };
     const queryParams = buildQueryParams(finalConfig);
     const url = `/venues/${venueId}${queryParams ? `?${queryParams}` : ''}`;
+    
+    const response = await api.get(url);
+    return response.data;
+  },
+
+  // Get general standings with configurable options
+  async getStandings(config?: ApiConfig) {
+    const finalConfig = { ...config };
+    const queryParams = buildQueryParams(finalConfig);
+    const url = `/standings${queryParams ? `?${queryParams}` : ''}`;
+    
+    const response = await api.get(url);
+    return response.data;
+  },
+
+  // Get league standings by league ID with configurable options
+  async getLeagueStandingsByLeague(leagueId: string, config?: ApiConfig) {
+    const finalConfig = { ...config };
+    const queryParams = buildQueryParams(finalConfig);
+    const url = `/standings/leagues/${leagueId}${queryParams ? `?${queryParams}` : ''}`;
+    
+    const response = await api.get(url);
+    return response.data;
+  },
+
+  // Get matches with configurable options
+  async getMatches(config?: ApiConfig) {
+    const finalConfig = { ...config };
+    const queryParams = buildQueryParams(finalConfig);
+    const url = `/matches${queryParams ? `?${queryParams}` : ''}`;
+    
+    const response = await api.get(url);
+    return response.data;
+  },
+
+  // Get specific match with configurable options
+  async getMatch(matchId: string, config?: ApiConfig) {
+    const finalConfig = { ...config };
+    const queryParams = buildQueryParams(finalConfig);
+    const url = `/matches/${matchId}${queryParams ? `?${queryParams}` : ''}`;
+    
+    const response = await api.get(url);
+    return response.data;
+  },
+
+  // Get general statistics with configurable options
+  async getStatistics(config?: ApiConfig) {
+    const finalConfig = { ...config };
+    const queryParams = buildQueryParams(finalConfig);
+    const url = `/statistics${queryParams ? `?${queryParams}` : ''}`;
+    
+    const response = await api.get(url);
+    return response.data;
+  },
+
+  // Get fixture statistics with configurable options
+  async getFixtureStatistics(fixtureId: string, config?: ApiConfig) {
+    const finalConfig = { ...config };
+    const queryParams = buildQueryParams(finalConfig);
+    const url = `/statistics/fixtures/${fixtureId}${queryParams ? `?${queryParams}` : ''}`;
+    
+    const response = await api.get(url);
+    return response.data;
+  },
+
+  // Get odds with configurable options
+  async getOdds(config?: ApiConfig) {
+    const finalConfig = { ...config };
+    const queryParams = buildQueryParams(finalConfig);
+    const url = `/odds${queryParams ? `?${queryParams}` : ''}`;
+    
+    const response = await api.get(url);
+    return response.data;
+  },
+
+  // Get fixture odds with configurable options
+  async getFixtureOdds(fixtureId: string, config?: ApiConfig) {
+    const finalConfig = { ...config };
+    const queryParams = buildQueryParams(finalConfig);
+    const url = `/odds/fixtures/${fixtureId}${queryParams ? `?${queryParams}` : ''}`;
+    
+    const response = await api.get(url);
+    return response.data;
+  },
+
+  // Get referees with configurable options
+  async getReferees(config?: ApiConfig) {
+    const finalConfig = { ...config };
+    const queryParams = buildQueryParams(finalConfig);
+    const url = `/referees${queryParams ? `?${queryParams}` : ''}`;
+    
+    const response = await api.get(url);
+    return response.data;
+  },
+
+  // Get specific referee with configurable options
+  async getReferee(refereeId: string, config?: ApiConfig) {
+    const finalConfig = { ...config };
+    const queryParams = buildQueryParams(finalConfig);
+    const url = `/referees/${refereeId}${queryParams ? `?${queryParams}` : ''}`;
+    
+    const response = await api.get(url);
+    return response.data;
+  },
+
+  // Get coaches with configurable options
+  async getCoaches(config?: ApiConfig) {
+    const finalConfig = { ...config };
+    const queryParams = buildQueryParams(finalConfig);
+    const url = `/coaches${queryParams ? `?${queryParams}` : ''}`;
+    
+    const response = await api.get(url);
+    return response.data;
+  },
+
+  // Get specific coach with configurable options
+  async getCoach(coachId: string, config?: ApiConfig) {
+    const finalConfig = { ...config };
+    const queryParams = buildQueryParams(finalConfig);
+    const url = `/coaches/${coachId}${queryParams ? `?${queryParams}` : ''}`;
+    
+    const response = await api.get(url);
+    return response.data;
+  },
+
+  // Get lineups with configurable options
+  async getLineups(config?: ApiConfig) {
+    const finalConfig = { ...config };
+    const queryParams = buildQueryParams(finalConfig);
+    const url = `/lineups${queryParams ? `?${queryParams}` : ''}`;
+    
+    const response = await api.get(url);
+    return response.data;
+  },
+
+  // Get fixture lineups with configurable options
+  async getFixtureLineups(fixtureId: string, config?: ApiConfig) {
+    const finalConfig = { ...config };
+    const queryParams = buildQueryParams(finalConfig);
+    const url = `/lineups/fixtures/${fixtureId}${queryParams ? `?${queryParams}` : ''}`;
     
     const response = await api.get(url);
     return response.data;
