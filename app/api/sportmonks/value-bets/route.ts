@@ -4,6 +4,7 @@ import { mockValueBets } from '@/lib/mock-data';
 
 export async function GET(request: NextRequest) {
   try {
+    // Use default configuration (includes fixture:name)
     const valueBets = await sportmonks.getValueBets();
     
     return NextResponse.json({

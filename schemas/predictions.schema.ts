@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { TypeSchema } from './type.schema'
 
 // Common schemas for prediction objects
 const HomeAwayDrawPredictions = z.object({
@@ -82,6 +83,7 @@ export const PredictionSchema = z.object({
     }),
   ]),
   type_id: z.number(),
+  type: z.array(TypeSchema).nullable().optional(), 
 });
 
 // Array schema for the complete data structure

@@ -4,6 +4,7 @@ import { mockPredictions } from '@/lib/mock-data';
 
 export async function GET(request: NextRequest) {
   try {
+    // Use default configuration (includes fixture and type, filters by predictionTypes:237)
     const predictions = await sportmonks.getPredictions();
     
     return NextResponse.json({

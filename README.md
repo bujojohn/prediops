@@ -1,206 +1,185 @@
-# ⚽ Prediops - Sports Predictions & Analytics
+# 🚀 Prediops - Football Predictions & Analytics Platform
 
-AI-powered sports predictions and value betting opportunities across 111+ leagues worldwide.
+A modern Next.js application for football predictions, live match tracking, and value betting analysis powered by Sportmonks API.
 
-## 🚀 Features
+## 📋 Quick Start
 
-- **🎯 AI Predictions**: Professional-grade algorithms analyze match data
-- **💰 Value Bets**: Identify profitable betting opportunities
-- **⚽ Live Matches**: Real-time scores and match updates
-- **🌍 Global Coverage**: 111+ leagues worldwide
-- **📊 Advanced Analytics**: Comprehensive statistics and insights
-
-## 🛠️ Tech Stack
-
-- **Next.js 15** - React framework with App Router
-- **TypeScript** - Type-safe development
-- **Tailwind CSS** - Utility-first CSS framework
-- **Axios** - HTTP client for API requests
-- **SportMonks API** - Sports data provider
-
-## 📋 Prerequisites
-
+### Prerequisites
 - Node.js 18+ 
 - npm or yarn
-- SportMonks API token (Custom Worldwide + Predictions plan)
+- Sportmonks API token (Worldwide + Predictions plan)
 
-## 🚀 Quick Start
-
-### 1. Clone and Install
-
+### Installation
 ```bash
+# Clone the repository
 git clone <repository-url>
 cd prediops
+
+# Install dependencies
 npm install
-```
 
-### 2. Environment Setup
+# Set up environment variables
+cp .env.example .env.local
+# Edit .env.local with your Sportmonks API token
 
-Create a `.env.local` file in the project root:
-
-```env
-SPORTMONKS_API_TOKEN=your_token_here
-SPORTMONKS_BASE_URL=https://api.sportmonks.com/v3/football
-```
-
-### 3. Get Your API Token
-
-1. Go to [my.sportmonks.com](https://my.sportmonks.com)
-2. Login to your account
-3. Navigate to **Settings** → **API Tokens**
-4. Copy your active token (should show Worldwide + Predictions access)
-
-### 4. Run Development Server
-
-```bash
+# Start development server
 npm run dev
 ```
 
 Visit [http://localhost:3000](http://localhost:3000) to see the application.
 
-## 🧪 Testing Your Setup
+## 🏗️ Architecture
 
-Visit `/test` to verify your API connection:
-
-- **✅ Success**: Your SportMonks API is working
-- **❌ Error**: Check your API token and environment variables
-
-## 📱 Available Pages
-
-- **Home** (`/`) - Landing page with feature overview
-- **Predictions** (`/predictions`) - Match predictions with AI analysis
-- **Value Bets** (`/value-bets`) - Profitable betting opportunities
-- **Live Matches** (`/live`) - Real-time match updates
-- **API Test** (`/test`) - Verify API connection
-
-## 🔧 API Endpoints
-
-### Available with Active Plan
-
-```typescript
-// Match Predictions
-GET /api/sportmonks/predictions
-
-// Value Bets
-GET /api/sportmonks/value-bets
-
-// Live Fixtures
-GET /api/sportmonks/fixtures/live
-```
-
-### Future Endpoints (Post-Launch)
-
-```typescript
-// Expected Goals Data (requires xG add-on)
-GET /api/sportmonks/expected/teams/{teamId}
-
-// Player xG Statistics
-GET /api/sportmonks/expected/players/{playerId}
-
-// Advanced Analytics
-GET /api/sportmonks/statistics/advanced/{seasonId}
-```
-
-## 🏗️ Project Structure
-
-```
-prediops/
-├── app/
-│   ├── api/sportmonks/          # API routes
-│   ├── components/              # Reusable components
-│   │   ├── predictions/         # Prediction components
-│   │   ├── value-bets/         # Value bet components
-│   │   ├── live-matches/       # Live match components
-│   │   └── navigation/         # Navigation components
-│   ├── predictions/            # Predictions page
-│   ├── value-bets/            # Value bets page
-│   ├── live/                  # Live matches page
-│   └── test/                  # API test page
-├── lib/
-│   └── sportmonks.ts          # API client
-├── schemas/                   # TypeScript schemas
-└── docs/                     # Documentation
-```
-
-## 🎯 Key Components
-
-### PredictionCard
-Displays match predictions with confidence levels and team information.
-
-### ValueBetCard
-Shows profitable betting opportunities with odds, probability, and value analysis.
-
-### LiveMatchCard
-Real-time match information including scores, time, and match status.
-
-## 🔒 Security Notes
-
-- **Never expose API tokens** in frontend code
-- **Use environment variables** for sensitive data
-- **Server-side data fetching** keeps tokens secure
-- **Rate limiting** is handled automatically (3,000 calls/hour)
-
-## 📊 Performance
+This project uses **Next.js 15.1.0** with the **App Router** for optimal performance and developer experience:
 
 - **Server Components** by default for better performance
-- **Automatic loading states** for better UX
-- **Error boundaries** for graceful error handling
+- **API Routes** for secure server-side API calls
 - **TypeScript** for type safety
+- **Tailwind CSS** for styling
+- **Zod** for data validation
+
+## 📁 Project Structure
+
+```
+app/                    # Next.js App Router
+├── api/               # API routes (server-side)
+├── components/        # Reusable UI components
+├── dashboard/         # Dashboard pages
+├── live/             # Live matches
+├── predictions/       # Predictions pages
+└── value-bets/       # Value betting pages
+lib/                   # Utilities and services
+├── api/              # API helpers
+├── sportmonks.ts     # Sportmonks API client
+└── mock-data.ts      # Development mock data
+schemas/               # Zod validation schemas
+docs/                  # Project documentation
+```
+
+## 🎯 Features
+
+### ✅ Active Features
+- **Live Match Tracking** - Real-time scores and statistics
+- **Predictions Analysis** - AI-powered match predictions
+- **Value Betting** - Identify high-value betting opportunities
+- **Responsive Design** - Works on all devices
+- **Type Safety** - Full TypeScript coverage
+
+### 🚧 Planned Features
+- Advanced analytics with xG (expected goals)
+- Real-time notifications
+- User authentication
+- Historical data analysis
+- Mobile app version
+
+## 📚 Documentation
+
+### 🚀 Getting Started
+- **[Immediate Start Guide](docs/IMMEDIATE_START_GUIDE.md)** - Get up and running in 30 minutes
+- **[Technical Guidelines](docs/TECHNICAL_GUIDELINES.md)** - Development standards and best practices
+
+### 🏗️ Architecture & Design
+- **[App Router Architecture](docs/APP_ROUTER_ARCHITECTURE.md)** - Next.js App Router patterns
+- **[Sportmonks API Analysis](docs/SPORTMONKS_API_ANALYSIS.md)** - API integration details
+- **[Sportmonks Summary](docs/SPORTMONKS_SUMMARY.md)** - Quick API reference
+
+### 📈 Growth & Expansion
+- **[Post-Launch Expansion Plan](docs/POST_LAUNCH_EXPANSION_PLAN.md)** - Future roadmap and features
+
+## 🔧 Development
+
+### Available Scripts
+```bash
+npm run dev          # Start development server with Turbopack
+npm run build        # Build for production
+npm run start        # Start production server
+npm run lint         # Run ESLint
+```
+
+### Environment Variables
+```env
+# Required
+SPORTMONKS_API_TOKEN=your_token_here
+SPORTMONKS_BASE_URL=https://api.sportmonks.com/v3/football
+
+# Optional (for development)
+NODE_ENV=development
+```
+
+### API Integration
+The application uses a centralized API client (`lib/sportmonks.ts`) that provides:
+- Type-safe API calls
+- Consistent error handling
+- Mock data fallbacks for development
+- Environment-based configuration
+
+## Tech Stack
+- Next.js 15.1.0 (App Router)
+- TypeScript 5.x
+- Tailwind CSS 3.4.1
+- ShadCN UI (React components)
+- TanStack Query (server state management)
+- Zustand (client state management)
+- Zod (validation)
+- Axios (HTTP client)
+
+## UI Components: ShadCN UI
+All UI components are built using [ShadCN UI](https://ui.shadcn.com/). Components are accessible, customizable, and use Tailwind CSS for styling. You own the code, so you can modify as needed.
+
+## Server State: TanStack Query
+Data fetching, caching, and synchronization with the server is handled by [TanStack Query](https://tanstack.com/query/latest). Use it for all API data and server state.
+
+## Client State: Zustand
+Local UI and client-side state is managed with [Zustand](https://zustand-demo.pmnd.rs/). Use it for non-server state (e.g., UI toggles, local forms).
+
+## 🔒 Security
+
+- API tokens are kept secure on the server side
+- All API calls go through server-side routes
+- Environment variables are properly managed
+- No sensitive data is exposed to the client
+
+## 🧪 Testing
+
+The project includes:
+- **Mock data** for development and testing
+- **Zod schemas** for data validation
+- **TypeScript** for compile-time error checking
+- **ESLint** for code quality
 
 ## 🚀 Deployment
 
 ### Vercel (Recommended)
-
 ```bash
 npm run build
+# Deploy to Vercel with environment variables configured
 ```
 
-The application is optimized for Vercel deployment with:
-- Automatic environment variable management
-- Edge runtime support
-- Built-in analytics
-
-### Environment Variables for Production
-
-```env
-SPORTMONKS_API_TOKEN=your_production_token
-SPORTMONKS_BASE_URL=https://api.sportmonks.com/v3/football
-```
-
-## 📈 Competitive Advantages
-
-### Current (Active Plan)
-- ✅ **111+ Leagues Worldwide** - More data than competitors
-- ✅ **AI-Powered Predictions** - Professional-grade algorithms
-- ✅ **Value Bets** - Profitable opportunities identification
-- ✅ **Real-time Updates** - Sub-minute data refresh
-- ✅ **Global Coverage** - Serve users worldwide
-
-### Future (Post-Launch)
-- 🚀 **xG Analytics** - Advanced expected goals metrics
-- 🚀 **Premium Visualizations** - Enhanced data presentation
-- 🚀 **Advanced Statistics** - Deeper analytical insights
+### Other Platforms
+- Set environment variables in your hosting platform
+- Ensure Node.js 18+ is supported
+- Configure build command: `npm run build`
+- Configure start command: `npm run start`
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+1. Follow the [Technical Guidelines](docs/TECHNICAL_GUIDELINES.md)
+2. Use the established project structure
+3. Add proper TypeScript types
+4. Include Zod validation for new APIs
+5. Test with mock data during development
 
 ## 📄 License
 
-This project is licensed under the MIT License.
+This project is proprietary software. All rights reserved.
 
 ## 🆘 Support
 
-- **API Issues**: Contact [SportMonks Support](https://docs.sportmonks.com)
-- **Application Issues**: Open an issue in this repository
-- **Documentation**: Check the `/docs` folder for detailed guides
+For technical issues or questions:
+1. Check the [documentation](docs/)
+2. Review the [Technical Guidelines](docs/TECHNICAL_GUIDELINES.md)
+3. Examine the [App Router Architecture](docs/APP_ROUTER_ARCHITECTURE.md)
 
 ---
 
-**Status**: 🚀 **READY TO BUILD - NO WAITING REQUIRED!**
-
-Your SportMonks plan is active and ready. Start building your world-class sports prediction platform today!
+**Built with ❤️ using Next.js, TypeScript, and Tailwind CSS**
