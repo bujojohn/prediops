@@ -12,8 +12,13 @@ const api = axios.create({
 // Types for API configuration
 export interface ApiConfig {
   includes?: string[];
-  select?: string[];
-  filters?: Record<string, string | number>;
+  select?: string[];  // Select specific fields on the base entity
+  filters?: Record<string, string | number> | string | (Record<string, string | number> | string)[];
+  order?: 'asc' | 'desc';  // Basic ordering (ascending or descending)
+  sortBy?: string;  // Custom sorting field (e.g., 'starting_at', 'name')
+  page?: number;  // Page number for pagination (default: 1)
+  per_page?: number;  // Results per page (range 1-50, default: 25)
+  populate?: boolean;  // Use _filters=populate_ for higher pagination limit (max 1000)
 }
 
 // Helper function to build query parameters
@@ -35,13 +40,73 @@ function buildQueryParams(config?: ApiConfig): string {
   }
   
   if (config?.select && config.select.length > 0) {
-    params.append('select', config.select.join(';'));
+    params.append('select', config.select.join(','));
   }
   
   if (config?.filters) {
-    Object.entries(config.filters).forEach(([key, value]) => {
-      params.append(`filters[${key}]`, value.toString());
-    });
+    if (typeof config.filters === 'string') {
+      // Handle simple string filters like 'todayDate'
+      params.append('filters', config.filters);
+    } else if (Array.isArray(config.filters)) {
+      // Handle combined filters (string and record) - join with semicolons
+      const filterStrings: string[] = [];
+      
+      config.filters.forEach(filter => {
+        if (typeof filter === 'string') {
+          filterStrings.push(filter);
+        } else if (typeof filter === 'object' && filter !== null) {
+          // Convert record filters to string format (e.g., {eventTypes: [23,34]} -> "eventTypes:23,34")
+          Object.entries(filter).forEach(([key, value]) => {
+            if (Array.isArray(value)) {
+              filterStrings.push(`${key}:${value.join(',')}`);
+            } else {
+              filterStrings.push(`${key}:${value}`);
+            }
+          });
+        }
+      });
+      
+      if (filterStrings.length > 0) {
+        params.append('filters', filterStrings.join(';'));
+      }
+    } else {
+      // Handle key-value filters - combine into single filters parameter
+      const filterStrings: string[] = [];
+      Object.entries(config.filters).forEach(([key, value]) => {
+        if (Array.isArray(value)) {
+          filterStrings.push(`${key}:${value.join(',')}`);
+        } else {
+          filterStrings.push(`${key}:${value}`);
+        }
+      });
+      
+      if (filterStrings.length > 0) {
+        params.append('filters', filterStrings.join(';'));
+      }
+    }
+  }
+  
+  // Handle ordering and sorting parameters
+  if (config?.order) {
+    params.append('order', config.order);
+  }
+  
+  if (config?.sortBy) {
+    params.append('sortBy', config.sortBy);
+  }
+  
+  // Handle pagination parameters
+  if (config?.page && config.page > 1) {
+    params.append('page', config.page.toString());
+  }
+  
+  if (config?.per_page && config.per_page !== 25) {
+    params.append('per_page', config.per_page.toString());
+  }
+  
+  // Handle populate filter for higher pagination limit
+  if (config?.populate) {
+    params.append('_filters', 'populate_');
   }
   
   return params.toString();

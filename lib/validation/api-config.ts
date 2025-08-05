@@ -3,8 +3,17 @@ import { z } from 'zod';
 // Validation schemas for API configuration
 export const apiConfigSchema = z.object({
   includes: z.array(z.string()).optional(),
-  select: z.array(z.string()).optional(),
-  filters: z.record(z.string(), z.union([z.string(), z.number()])).optional(),
+  select: z.array(z.string()).optional(), // Select specific fields on the base entity
+  filters: z.union([
+    z.string(), // For simple filters like 'todayDate'
+    z.record(z.string(), z.union([z.string(), z.number()])), // For key-value filters
+    z.array(z.union([z.string(), z.record(z.string(), z.union([z.string(), z.number()]))])) // For combined filters
+  ]).optional(),
+  order: z.enum(['asc', 'desc']).optional(), // Basic ordering
+  sortBy: z.string().optional(), // Custom sorting field
+  page: z.number().min(1).optional(), // Page number for pagination
+  per_page: z.number().min(1).max(50).optional(), // Results per page (range 1-50)
+  populate: z.boolean().optional(), // Use _filters=populate_ for higher pagination limit
 });
 
 // Specific validation schemas for different endpoint types
