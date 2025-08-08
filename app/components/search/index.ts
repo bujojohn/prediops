@@ -1,0 +1,1 @@
+export { GlobalSearchClient } from './GlobalSearchClient';
