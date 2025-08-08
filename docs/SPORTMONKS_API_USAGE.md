@@ -79,6 +79,23 @@ const populateFixtures = await sportmonks.getUpcomingFixtures({
   populate: true, // Higher pagination limit (max 1000)
   per_page: 1000
 });
+
+// Countries examples
+const allCountries = await sportmonks.getCountries({
+  includes: ['continent', 'leagues', 'regions']
+});
+
+const specificCountry = await sportmonks.getCountry('1', {
+  includes: ['continent', 'leagues']
+});
+
+const searchCountries = await sportmonks.getCountriesBySearch('England', {
+  includes: ['continent']
+});
+
+const allContinents = await sportmonks.getContinents({
+  includes: ['countries']
+});
 ```
 
 ## 3. Endpoints Used
@@ -92,6 +109,11 @@ const populateFixtures = await sportmonks.getUpcomingFixtures({
 | `/fixtures`                                   | Get upcoming fixtures                       | `includes: ['participants', 'scores', 'state']`, `filters: { fixtureTypes: 1 }` | [`Fixture`](../schemas/fixture.schema.ts), [`fixtureSchema`](../schemas/fixture.schema.ts) |
 | `/standings/seasons/{seasonId}`               | Get league standings                        | None                                 | [`Standing`](../schemas/standing.schema.ts), [`standingSchema`](../schemas/standing.schema.ts) |
 | `/teams/{teamId}`                             | Get team statistics                         | `includes: ['statistics']`           | [`TeamStatistics`](../schemas/team-statistics.schema.ts), [`teamStatisticsSchema`](../schemas/team-statistics.schema.ts) |
+| `/countries`                                   | Get all countries                          | None                                 | [`Country`](../schemas/country.schema.ts), [`countrySchema`](../schemas/country.schema.ts) |
+| `/countries/{id}`                              | Get specific country                       | None                                 | [`Country`](../schemas/country.schema.ts), [`countrySchema`](../schemas/country.schema.ts) |
+| `/countries/search/{query}`                    | Get countries by search                     | None                                 | [`Country`](../schemas/country.schema.ts), [`countrySchema`](../schemas/country.schema.ts) |
+| `/continents`                                  | Get all continents                         | None                                 | [`Continent`](../schemas/continent.schema.ts), [`continentSchema`](../schemas/continent.schema.ts) |
+| `/continents/{id}`                             | Get specific continent                      | None                                 | [`Continent`](../schemas/continent.schema.ts), [`continentSchema`](../schemas/continent.schema.ts) |
 
 ## 4. Includes & Filters
 - **Includes**: Used to fetch related/nested data in a single request (e.g., fixture details, participant names, scores, statistics). Use colon syntax for field selection (e.g., `participants:name,image_path`).
@@ -103,9 +125,13 @@ const populateFixtures = await sportmonks.getUpcomingFixtures({
 
 ### Commonly Used Includes
 - `fixture`, `type`, `fixture:name`, `participants:name`, `scores`, `state`, `statistics`, `league`, `season`
+- `continent`, `leagues`, `regions` (for countries)
+- `countries` (for continents)
 
 ### Commonly Used Select Fields
 - `name`, `id`, `starting_at`, `result_info`, `length`, `has_odds`
+- `name`, `official_name`, `fifa_name`, `iso2`, `iso3`, `latitude`, `longitude`, `image_path` (for countries)
+- `name`, `code` (for continents)
 
 ### Commonly Used Filters
 - **String filters**: `'todayDate'`, `'upcoming'`, `'finished'`
@@ -173,3 +199,36 @@ const populateFixtures = await sportmonks.getUpcomingFixtures({
 **Resulting URL:** `/fixtures?_filters=populate_&per_page=1000&filters=leagues:1,2`
 
 **Note:** When using `populate: true`, includes are disabled to prevent service overload.
+
+### Example: Get Countries with Includes
+**Usage:**
+```typescript
+const countriesWithIncludes = await sportmonks.getCountries({
+  includes: ['continent', 'leagues', 'regions'],
+  select: ['name', 'iso2', 'iso3', 'image_path']
+});
+```
+
+**Resulting URL:** `/countries?include=continent;leagues;regions&select=name,iso2,iso3,image_path`
+
+### Example: Get Specific Country
+**Usage:**
+```typescript
+const england = await sportmonks.getCountry('1', {
+  includes: ['continent', 'leagues'],
+  select: ['name', 'official_name', 'fifa_name', 'iso2', 'iso3']
+});
+```
+
+**Resulting URL:** `/countries/1?include=continent;leagues&select=name,official_name,fifa_name,iso2,iso3`
+
+### Example: Search Countries
+**Usage:**
+```typescript
+const searchResults = await sportmonks.getCountriesBySearch('United', {
+  includes: ['continent'],
+  select: ['name', 'iso2', 'iso3']
+});
+```
+
+**Resulting URL:** `/countries/search/United?include=continent&select=name,iso2,iso3`

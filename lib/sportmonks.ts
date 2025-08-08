@@ -270,6 +270,46 @@ export const sportmonks = {
     return response.data;
   },
 
+  // Get specific country with configurable options
+  async getCountry(countryId: string, config?: ApiConfig) {
+    const finalConfig = { ...config };
+    const queryParams = buildQueryParams(finalConfig);
+    const url = `/countries/${countryId}${queryParams ? `?${queryParams}` : ''}`;
+    
+    const response = await api.get(url);
+    return response.data;
+  },
+
+  // Get countries by search with configurable options
+  async getCountriesBySearch(searchQuery: string, config?: ApiConfig) {
+    const finalConfig = { ...config };
+    const queryParams = buildQueryParams(finalConfig);
+    const url = `/countries/search/${encodeURIComponent(searchQuery)}${queryParams ? `?${queryParams}` : ''}`;
+    
+    const response = await api.get(url);
+    return response.data;
+  },
+
+  // Get continents with configurable options
+  async getContinents(config?: ApiConfig) {
+    const finalConfig = { ...config };
+    const queryParams = buildQueryParams(finalConfig);
+    const url = `/continents${queryParams ? `?${queryParams}` : ''}`;
+    
+    const response = await api.get(url);
+    return response.data;
+  },
+
+  // Get specific continent with configurable options
+  async getContinent(continentId: string, config?: ApiConfig) {
+    const finalConfig = { ...config };
+    const queryParams = buildQueryParams(finalConfig);
+    const url = `/continents/${continentId}${queryParams ? `?${queryParams}` : ''}`;
+    
+    const response = await api.get(url);
+    return response.data;
+  },
+
   // Get venues with configurable options
   async getVenues(config?: ApiConfig) {
     const finalConfig = { ...config };

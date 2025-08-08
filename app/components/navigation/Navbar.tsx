@@ -2,23 +2,33 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
+import { GlobalSearchClient } from '@/app/components/search/GlobalSearchClient';
+import { Button } from '@/components/ui/button';
+import { Moon, Sun, User, Bell, Menu, X } from 'lucide-react';
 
 export function Navbar() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   const navItems = [
     { href: '/', label: 'Home', icon: '🏠' },
     { href: '/predictions', label: 'Predictions', icon: '🎯' },
     { href: '/value-bets', label: 'Value Bets', icon: '💰' },
     { href: '/live', label: 'Live Matches', icon: '⚽' },
-    { href: '/test', label: 'API Test', icon: '🧪' },
   ];
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+    // In a real app, you would implement actual dark mode
+    console.log('Dark mode toggled');
+  };
 
   return (
     <nav className="bg-white shadow-sm border-b">
       <div className="container mx-auto px-6">
         <div className="flex justify-between items-center h-16">
+          {/* Logo and Brand */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
               <span className="text-2xl">⚽</span>
@@ -26,7 +36,13 @@ export function Navbar() {
             </Link>
           </div>
           
-          <div className="hidden md:flex space-x-8">
+          {/* Search Bar - Desktop */}
+          <div className="hidden md:flex flex-1 max-w-md mx-8">
+            <GlobalSearchClient className="w-full" />
+          </div>
+          
+          {/* Navigation Links - Desktop */}
+          <div className="hidden md:flex space-x-4">
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -43,20 +59,64 @@ export function Navbar() {
             ))}
           </div>
           
+          {/* Right Side Actions - Desktop */}
+          <div className="hidden md:flex items-center space-x-2">
+            {/* Dark Mode Toggle */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleDarkMode}
+              className="p-2"
+              title="Toggle dark mode"
+            >
+              {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
+            
+            {/* Notifications */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="p-2 relative"
+              title="Notifications"
+            >
+              <Bell className="h-4 w-4" />
+              <span className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full"></span>
+            </Button>
+            
+            {/* User Profile */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="p-2"
+              title="User profile"
+            >
+              <User className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          {/* Mobile Menu Button */}
           <div className="md:hidden">
-            <button 
-              className="text-gray-600 hover:text-gray-900 p-2"
+            <Button 
+              variant="ghost"
+              size="sm"
+              className="p-2"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
-              <span className="text-xl">{isMobileMenuOpen ? '✕' : '☰'}</span>
-            </button>
+              {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
           </div>
         </div>
 
-        {/* Mobile menu */}
+        {/* Mobile Menu */}
         {isMobileMenuOpen && (
           <div className="md:hidden border-t border-gray-200">
             <div className="px-2 pt-2 pb-3 space-y-1">
+              {/* Search Bar - Mobile */}
+              <div className="px-2 pb-2">
+                <GlobalSearchClient className="w-full" />
+              </div>
+              
+              {/* Navigation Links - Mobile */}
               {navItems.map((item) => (
                 <Link
                   key={item.href}
@@ -72,6 +132,38 @@ export function Navbar() {
                   <span>{item.label}</span>
                 </Link>
               ))}
+              
+              {/* Mobile Actions */}
+              <div className="flex items-center justify-between px-3 py-2 border-t border-gray-200 mt-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={toggleDarkMode}
+                  className="flex items-center space-x-2"
+                >
+                  {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                  <span className="text-sm">Dark Mode</span>
+                </Button>
+                
+                <div className="flex space-x-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="p-2 relative"
+                  >
+                    <Bell className="h-4 w-4" />
+                    <span className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full"></span>
+                  </Button>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="p-2"
+                  >
+                    <User className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         )}
