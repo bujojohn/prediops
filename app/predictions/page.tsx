@@ -1,10 +1,17 @@
 import { sportmonks } from '@/lib/sportmonks';
-import { PredictionCard } from '../components/predictions/PredictionCard';
+import type { Fixture } from '@/schemas/fixture.schema';
+import { LatestFixturesClient } from './LatestFixturesClient';
 
 export default async function PredictionsPage() {
-  // Server-side data fetching with App Router
-  const predictions = await sportmonks.getPredictions();
-
+  // Server-side data fetching per spec 3.1.1 (livescores/latest with predictions)
+  const latest = await sportmonks.getLatestLiveScores({
+    include: 'participants;scores;state;predictions;league',
+    sortBy: 'starting_at',
+    order: 'desc',
+    per_page: 50,
+  });
+  //console.log(latest);
+  const fixtures: Fixture[] = latest?.data || [];
   return (
     <div className="container mx-auto p-6">
       <div className="mb-8">
@@ -14,26 +21,7 @@ export default async function PredictionsPage() {
         </p>
       </div>
       
-      {predictions?.data?.length > 0 ? (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {predictions.data.map((prediction: any) => (
-            <PredictionCard 
-              key={prediction.fixture_id} 
-              prediction={prediction} 
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-12">
-          <div className="text-gray-400 text-6xl mb-4">⚽</div>
-          <h3 className="text-xl font-semibold text-gray-600 mb-2">
-            No predictions available
-          </h3>
-          <p className="text-gray-500">
-            Check back later for updated predictions
-          </p>
-        </div>
-      )}
+      <LatestFixturesClient initialFixtures={fixtures} />
     </div>
   );
 } 
