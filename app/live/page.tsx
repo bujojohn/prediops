@@ -5,12 +5,14 @@ import { LiveFixturesClient } from './components/LiveFixturesClient';
 export default async function LiveMatchesPage() {
   try {
     // Fetch data on the server with required includes per spec
-    const liveFixturesResponse = await sportmonks.getLiveFixtures({
-      include: 'participants;scores;state;predictions;venue',
-      sortBy: 'starting_at',
-      order: 'desc',
-      per_page: 50,
-    });
+    const liveFixturesResponse = await sportmonks.getLiveFixtures(
+      {
+        include: 'participants;scores;state;predictions;league',
+        sortBy: 'starting_at',
+        order: 'desc',
+        per_page: 50,
+      }
+    );
     const liveFixtures: Fixture[] = liveFixturesResponse?.data || [];
    // console.log(liveFixtures);
 
