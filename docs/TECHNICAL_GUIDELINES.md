@@ -90,6 +90,7 @@ schemas/                         # Zod validation schemas
 - Implement proper loading and error states for all pages.
 - Follow the established pattern of co-locating components with their routes.
 - Customize ShadCN UI components as needed (since you own the code).
+ - Fixture UI should follow `docs/FIXTURES_LIST_DESIGN.md` (mobile-first stacked cards, group headers, market selection, scrollable market buttons).
 
 ### 3.3. Styling
 - Use Tailwind CSS utility classes for all styling.

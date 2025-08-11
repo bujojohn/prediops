@@ -1,7 +1,12 @@
 # Sportmonks API Usage Guide
 
 ## 1. Overview
-The Sportmonks API provides football data for fixtures, predictions, value bets, live scores, and more. This project uses a centralized API client (`/lib/sportmonks.ts`) to interact with Sportmonks, and all external API calls are routed through Next.js API endpoints in `/app/api/sportmonks/`.
+The Sportmonks API provides football data for fixtures, predictions, value bets, live scores, and more. We use a centralized API client (`/lib/sportmonks.ts`) and a hybrid data fetching strategy:
+
+- Server Components may call the `sportmonks` client directly on the server for initial data (server-first).
+- Client Components should access data via Next.js API routes under `/app/api/sportmonks/` and use React Query for caching and revalidation.
+
+This approach keeps secrets safe, enables streaming/SSR for initial loads, and leverages client caching and background refresh where needed.
 
 ## 2. Configurable API Options
 All API methods now support configurable options for includes, select, and filters:
@@ -101,14 +106,14 @@ const allContinents = await sportmonks.getContinents({
 ## 3. Endpoints Used
 | Endpoint                                      | Description                                 | Default Includes/Filters             | TypeScript Type(s) / Zod Schema(s)                |
 |-----------------------------------------------|---------------------------------------------|--------------------------------------|---------------------------------------------------|
-| `/predictions/probabilities`                  | Get predictions probabilities               | `includes: ['fixture', 'type']`, `filters: { predictionTypes: 237 }` | [`PredictionProbability`](../schemas/predictions.schema.ts), [`predictionsSchema`](../schemas/predictions.schema.ts) |
-| `/predictions/value-bets`                     | Get value bets                              | `includes: ['fixture:name']`        | [`ValueBet`](../schemas/valuebet.schema.ts), [`valueBetSchema`](../schemas/valuebet.schema.ts) |
-| `/livescores/inplay`                          | Get live fixtures                           | `includes: ['participants:name', 'scores', 'state']` | [`Fixture`](../schemas/fixture.schema.ts), [`fixtureSchema`](../schemas/fixture.schema.ts) |
-| `/livescores/latest`                          | Get latest live scores                      | `includes: ['participants:name', 'scores', 'state']` | [`Fixture`](../schemas/fixture.schema.ts), [`fixtureSchema`](../schemas/fixture.schema.ts) |
+| `/predictions/probabilities`                  | Get predictions probabilities               | None | [`PredictionProbability`](../schemas/predictions.schema.ts), [`PredictionSchema`](../schemas/predictions.schema.ts) |
+| `/predictions/value-bets`                     | Get value bets                              | None | [`ValueBet`](../schemas/valuebet.schema.ts), [`ValueBetSchema`](../schemas/valuebet.schema.ts) |
+| `/livescores/inplay`                          | Get live fixtures                           | None | [`Fixture`](../schemas/fixture.schema.ts), [`FixtureSchema`](../schemas/fixture.schema.ts) |
+| `/livescores/latest`                          | Get latest live scores                      | None | [`Fixture`](../schemas/fixture.schema.ts), [`FixtureSchema`](../schemas/fixture.schema.ts) |
 | `/predictions/probabilities/fixtures/{id}`    | Get predictions for a specific fixture      | None                                 | [`PredictionProbability`](../schemas/predictions.schema.ts), [`predictionsSchema`](../schemas/predictions.schema.ts) |
-| `/fixtures`                                   | Get upcoming fixtures                       | `includes: ['participants', 'scores', 'state']`, `filters: { fixtureTypes: 1 }` | [`Fixture`](../schemas/fixture.schema.ts), [`fixtureSchema`](../schemas/fixture.schema.ts) |
+| `/fixtures`                                   | Get upcoming fixtures                       | None | [`Fixture`](../schemas/fixture.schema.ts), [`FixtureSchema`](../schemas/fixture.schema.ts) |
 | `/standings/seasons/{seasonId}`               | Get league standings                        | None                                 | [`Standing`](../schemas/standing.schema.ts), [`standingSchema`](../schemas/standing.schema.ts) |
-| `/teams/{teamId}`                             | Get team statistics                         | `includes: ['statistics']`           | [`TeamStatistics`](../schemas/team-statistics.schema.ts), [`teamStatisticsSchema`](../schemas/team-statistics.schema.ts) |
+| `/teams/{teamId}`                             | Get team statistics                         | None | [`TeamStatistics`](../schemas/team-statistics.schema.ts), [`teamStatisticsSchema`](../schemas/team-statistics.schema.ts) |
 | `/countries`                                   | Get all countries                          | None                                 | [`Country`](../schemas/country.schema.ts), [`countrySchema`](../schemas/country.schema.ts) |
 | `/countries/{id}`                              | Get specific country                       | None                                 | [`Country`](../schemas/country.schema.ts), [`countrySchema`](../schemas/country.schema.ts) |
 | `/countries/search/{query}`                    | Get countries by search                     | None                                 | [`Country`](../schemas/country.schema.ts), [`countrySchema`](../schemas/country.schema.ts) |
