@@ -8,7 +8,22 @@ const api = axios.create({
   },
   // Ensure Sportmonks query syntax remains readable: keep ; , : unencoded in values
   paramsSerializer: {
+    serialize: (queryParameters: Record<string, unknown>) => {
+      const serializedParts: string[] = [];
+      for (const [parameterName, parameterValue] of Object.entries(queryParameters || {})) {
+        if (parameterValue === undefined || parameterValue === null || parameterValue === "") continue;
 
+        const encodedParameterName = encodeURIComponent(parameterName);
+        const rawValueString = String(parameterValue);
+        const encodedButSafeValue = encodeURIComponent(rawValueString)
+          .replace(/%3B/g, ";")
+          .replace(/%2C/g, ",")
+          .replace(/%3A/g, ":");
+
+        serializedParts.push(`${encodedParameterName}=${encodedButSafeValue}`);
+      }
+      return serializedParts.join("&");
+    },
   },
 });
 
@@ -61,8 +76,13 @@ export const sportmonks = {
   // Get live fixtures with configurable options
   async getLiveFixtures(config?: ApiConfig) {
     const url = `/livescores/inplay`;
-    const response = await api.get(url, { params: makeParams(config) });
-    return response.data;
+    // const response = await api.get(url, { params: makeParams(config) });
+    // return response.data;
+    const uri1 = api.getUri({
+      url,
+      params: config,
+    });
+    console.log(uri1);
   },
 
   // Get latest live scores with configurable options
