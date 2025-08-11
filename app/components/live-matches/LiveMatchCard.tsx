@@ -83,9 +83,9 @@ export function LiveMatchCard({ liveMatch }: { liveMatch: Fixture }) {
           </div>
           
           <div className="text-center mx-4">
-            <div className="text-xs text-gray-500 mb-1">VS</div>
+            <div className="text-xs text-gray-600 mb-1">VS</div>
             {matchStatus === 'Live' && (
-              <div className="flex items-center justify-center text-sm font-medium text-red-600">
+              <div className="flex items-center justify-center text-sm font-semibold text-red-600">
                 <Clock className="w-4 h-4 mr-1" />
                 {formatTime(timeElapsed)}
               </div>
@@ -93,7 +93,7 @@ export function LiveMatchCard({ liveMatch }: { liveMatch: Fixture }) {
           </div>
           
           <div className="text-center flex-1">
-            <div className="font-semibold text-lg mb-1">{awayTeam}</div>
+            <div className="font-semibold text-lg mb-1 text-gray-900">{awayTeam}</div>
             <div className="text-3xl font-bold text-blue-600">{awayScore}</div>
           </div>
         </div>
@@ -121,11 +121,11 @@ export function LiveMatchCard({ liveMatch }: { liveMatch: Fixture }) {
         {/* Expanded Details */}
         {isExpanded && (
           <div className="space-y-3 pt-3 border-t">
-            <h4 className="font-semibold text-gray-800">Match Details</h4>
+            <h4 className="font-semibold text-gray-900">Match Details</h4>
             <div className="space-y-2 text-sm">
               {liveMatch.venue && (
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center text-gray-600">
+                  <div className="flex items-center text-gray-700">
                     <MapPin className="w-4 h-4 mr-2" />
                     Venue:
                   </div>
@@ -134,7 +134,7 @@ export function LiveMatchCard({ liveMatch }: { liveMatch: Fixture }) {
               )}
               {liveMatch.league && (
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center text-gray-600">
+                  <div className="flex items-center text-gray-700">
                     <Trophy className="w-4 h-4 mr-2" />
                     League:
                   </div>
@@ -143,7 +143,7 @@ export function LiveMatchCard({ liveMatch }: { liveMatch: Fixture }) {
               )}
               {liveMatch.starting_at && (
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center text-gray-600">
+                  <div className="flex items-center text-gray-700">
                     <Clock className="w-4 h-4 mr-2" />
                     Started:
                   </div>
@@ -165,7 +165,7 @@ export function LiveMatchCard({ liveMatch }: { liveMatch: Fixture }) {
         {/* Match Start Time */}
         {liveMatch.starting_at && (
           <div className="text-center pt-2 border-t">
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-gray-700">
               Started: {new Date(liveMatch.starting_at).toLocaleTimeString()}
             </span>
           </div>

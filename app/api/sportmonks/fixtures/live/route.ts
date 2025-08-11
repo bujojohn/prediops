@@ -4,8 +4,12 @@ import { mockLiveFixtures } from '@/lib/mock-data';
 
 export async function GET(request: NextRequest) {
   try {
-    // Use default configuration (includes participants:name, scores, state)
-    const liveFixtures = await sportmonks.getLiveFixtures();
+    const liveFixtures = await sportmonks.getLiveFixtures({
+      include: 'participants;scores;state;predictions;league;venue',
+      sortBy: 'starting_at',
+      order: 'desc',
+      per_page: 50,
+    });
     
     return NextResponse.json({
       success: true,

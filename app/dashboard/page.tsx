@@ -7,8 +7,8 @@ export default async function DashboardPage() {
   
   try {
     const response = await sportmonks.getCountries({
-      includes: ['continent', 'leagues'],
-      select: ['name', 'official_name', 'fifa_name', 'iso2', 'iso3', 'image_path'],
+      include: 'continent;leagues',
+      select: 'name,official_name,fifa_name,iso2,iso3,image_path',
       order: 'asc',
       sortBy: 'name'
     });

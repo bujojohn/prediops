@@ -9,6 +9,7 @@ type ValueBets = {
 export default async function ValueBetsPage() {
   // Server-side data fetching with App Router
   const valueBets: ValueBets = await sportmonks.getValueBets();
+  console.log(valueBets);
 
   return (
     <div className="container mx-auto p-6">
