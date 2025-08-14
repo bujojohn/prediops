@@ -166,19 +166,19 @@ export function FixtureCard({ fixture, compact = false }: { fixture: Fixture; co
 
   // Desktop layout (≥640px) - matches the image design
   if (!compact) {
-  return (
-    <Card className="w-full">
-        <CardContent className="p-3">
+           return (
+           <Card className="w-full dark:bg-gray-800 dark:border-gray-700">
+             <CardContent className="p-3">
           <div className="grid grid-cols-4 gap-4 items-center" style={{ minHeight: '60px' }}>
             {/* Column 1: Status/Time */}
             <div className="flex flex-col justify-center">
               {isLive ? (
           <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                  <span className="text-xs font-medium text-red-600">Live</span>
+                                         <span className="text-xs font-medium text-red-600 dark:text-red-400">Live</span>
           </div>
               ) : (
-                <div className="text-xs text-gray-600">
+                                       <div className="text-xs text-gray-600 dark:text-gray-300">
           {fixture.starting_at && (
                     <div className="flex items-center gap-1">
                       <span>{formatTimeUTC(fixture.starting_at)}</span>
@@ -197,13 +197,13 @@ export function FixtureCard({ fixture, compact = false }: { fixture: Fixture; co
                 {settings.showTeamImages && (
                   <TeamLogo src={home?.image_path ?? undefined} alt={home?.name || 'Home'} className="rounded h-4 w-4" />
                 )}
-                <span className="text-[12px] font-medium text-gray-800 truncate">{home?.name || 'Home'}</span>
+                                         <span className="text-[12px] font-medium text-gray-800 dark:text-gray-200 truncate">{home?.name || 'Home'}</span>
               </div>
               <div className="flex items-center gap-2">
                 {settings.showTeamImages && (
                   <TeamLogo src={away?.image_path ?? undefined} alt={away?.name || 'Away'} className="rounded h-4 w-4" />
                 )}
-                <span className="text-[12px] font-medium text-gray-800 truncate">{away?.name || 'Away'}</span>
+                                       <span className="text-[12px] font-medium text-gray-800 dark:text-gray-200 truncate">{away?.name || 'Away'}</span>
               </div>
             </div>
 
@@ -213,12 +213,12 @@ export function FixtureCard({ fixture, compact = false }: { fixture: Fixture; co
                 <LoadingIndicator size="sm" text="Updating..." />
               ) : (
                 <>
-                  <div className="text-[12px] font-bold text-blue-600 tabular-nums">
-                    {scoreHome !== null ? scoreHome : '-'}
-                  </div>
-                  <div className="text-[12px] font-bold text-blue-600 tabular-nums">
-                    {scoreAway !== null ? scoreAway : '-'}
-                  </div>
+                                           <div className="text-[12px] font-bold text-blue-600 dark:text-blue-400 tabular-nums">
+                           {scoreHome !== null ? scoreHome : '-'}
+                         </div>
+                         <div className="text-[12px] font-bold text-blue-600 dark:text-blue-400 tabular-nums">
+                           {scoreAway !== null ? scoreAway : '-'}
+                         </div>
                 </>
           )}
         </div>
@@ -227,10 +227,10 @@ export function FixtureCard({ fixture, compact = false }: { fixture: Fixture; co
             <div className="flex flex-col justify-center">
               {primaryMarket && (
                 <div className="space-y-1">
-                  {/* Market description */}
-                  <div className="text-[12px] text-gray-600 truncate">
-                    {primaryMarket.label}
-            </div>
+                                           {/* Market description */}
+                         <div className="text-[12px] text-gray-700 dark:text-gray-300 truncate">
+                           {primaryMarket.label}
+                         </div>
                   
                   {/* Prediction buttons with market selector */}
                   <div className="flex items-center gap-1">
@@ -254,8 +254,8 @@ export function FixtureCard({ fixture, compact = false }: { fixture: Fixture; co
                       })()}
           </div>
 
-                    {/* Market selector dropdown */}
-                    {marketsMap && Object.keys(marketsMap).length > 1 && (
+                                               {/* Market selector dropdown */}
+                           {marketsMap && Object.keys(marketsMap).length > 0 && (
                       <div className="relative">
                         <Button
                           variant="ghost"
@@ -265,15 +265,15 @@ export function FixtureCard({ fixture, compact = false }: { fixture: Fixture; co
                           aria-label="Select prediction market"
                           aria-expanded={marketOpen}
                         >
-                          <ChevronDown className={cn('h-3 w-3 transition-transform', marketOpen && 'rotate-180')} />
+                                                           <ChevronDown className={cn('h-3 w-3 text-gray-700 dark:text-gray-300 transition-transform', marketOpen && 'rotate-180')} />
                         </Button>
                         {marketOpen && (
-                          <div className="absolute right-0 mt-1 w-48 rounded-md border bg-white shadow-md z-10">
-                            {Object.values(marketsMap).map((m) => (
-                              <button
-                                type="button"
-                                key={m.key}
-                                className={cn('w-full text-left px-3 py-2 text-xs hover:bg-gray-50', selectedMarketKey === m.key && 'bg-gray-50')}
+                                                             <div className="absolute right-0 mt-1 w-48 rounded-md border bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 shadow-md z-10">
+                                     {Object.values(marketsMap).map((m) => (
+                                       <button
+                                         type="button"
+                                         key={m.key}
+                                         className={cn('w-full text-left px-3 py-2 text-xs hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100', selectedMarketKey === m.key && 'bg-gray-50 dark:bg-gray-700')}
                                 onClick={() => { setSelectedMarketKey(m.key); setMarketOpen(false); }}
                               >
                                 {m.label}

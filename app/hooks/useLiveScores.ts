@@ -52,7 +52,13 @@ export function useLiveScores(fixtures: Fixture[], enabled: boolean = true) {
         });
       });
       
-      setLiveScores(newScores);
+      setLiveScores(prevScores => {
+        const mergedScores = new Map(prevScores);
+        newScores.forEach((score, fixtureId) => {
+          mergedScores.set(fixtureId, score);
+        });
+        return mergedScores;
+      });
     } catch (error) {
       console.error('Failed to update live scores:', error);
     } finally {

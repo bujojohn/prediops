@@ -7,11 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Moon, Sun, User, Bell, Menu, X } from 'lucide-react';
 import { DisplaySettingsToggle } from '@/app/components/settings/DisplaySettingsToggle';
 import { MobileSidebarToggle } from './MobileSidebarToggle';
+import { useTheme } from '@/app/contexts/ThemeContext';
 
 export function Navbar() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   const navItems = [
     { href: '/', label: 'Home', icon: '🏠' },
@@ -20,21 +21,17 @@ export function Navbar() {
     { href: '/live', label: 'Live Matches', icon: '⚽' },
   ];
 
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-    // In a real app, you would implement actual dark mode
-    console.log('Dark mode toggled');
-  };
+
 
   return (
-    <nav className="bg-white shadow-sm border-b">
+         <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
       <div className="container mx-auto px-6">
         <div className="flex justify-between items-center h-16">
           {/* Logo and Brand */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
               <span className="text-2xl">⚽</span>
-              <span className="font-bold text-xl text-gray-900">Prediops</span>
+                             <span className="font-bold text-xl text-gray-900 dark:text-white">Prediops</span>
             </Link>
           </div>
           
@@ -46,11 +43,11 @@ export function Navbar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  pathname === item.href
-                    ? 'text-blue-600 bg-blue-50'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}
+                                 className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                   pathname === item.href
+                     ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20'
+                     : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                 }`}
               >
                 <span>{item.icon}</span>
                 <span>{item.label}</span>
@@ -64,15 +61,15 @@ export function Navbar() {
             <DisplaySettingsToggle />
             
             {/* Dark Mode Toggle */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleDarkMode}
-              className="p-2"
-              title="Toggle dark mode"
-            >
-              {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </Button>
+                         <Button
+               variant="ghost"
+               size="sm"
+               onClick={toggleTheme}
+               className="p-2"
+               title="Toggle dark mode"
+             >
+               {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+             </Button>
             
             {/* Notifications */}
             <Button
@@ -137,15 +134,15 @@ export function Navbar() {
               <div className="flex items-center justify-between px-3 py-2 border-t border-gray-200 mt-2">
                 <div className="flex items-center space-x-2">
                   <DisplaySettingsToggle />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={toggleDarkMode}
-                    className="flex items-center space-x-2"
-                  >
-                    {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                    <span className="text-sm">Dark Mode</span>
-                  </Button>
+                                     <Button
+                     variant="ghost"
+                     size="sm"
+                     onClick={toggleTheme}
+                     className="flex items-center space-x-2"
+                   >
+                     {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                     <span className="text-sm">Dark Mode</span>
+                   </Button>
                 </div>
                 
                 <div className="flex space-x-2">
