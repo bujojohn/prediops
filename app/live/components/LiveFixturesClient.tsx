@@ -7,7 +7,9 @@ import { FixtureList, type FixtureGroup } from '@/app/components/fixtures/Fixtur
 function groupByLeague(fixtures: Fixture[]): FixtureGroup[] {
   const map = new Map<string, Fixture[]>();
   for (const f of fixtures) {
-    const key = f.league?.name || 'Other';
+    const country = f.league?.country?.name || 'Other';
+    const league = f.league?.name || 'League';
+    const key = `${country} - ${league}`;
     const arr = map.get(key) || [];
     arr.push(f);
     map.set(key, arr);
@@ -32,7 +34,7 @@ export function LiveFixturesClient({ initialFixtures }: { initialFixtures: Fixtu
     return () => clearInterval(id);
   }, []);
 
-  return <FixtureList groups={groups} onRefresh={onRefresh} />;
+  return <FixtureList groups={groups} onRefresh={onRefresh} compact={false} />;
 }
 
 

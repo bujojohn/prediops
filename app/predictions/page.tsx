@@ -3,21 +3,22 @@ import type { Fixture } from '@/schemas/fixture.schema';
 import { LatestFixturesClient } from './LatestFixturesClient';
 
 export default async function PredictionsPage() {
-  // Server-side data fetching per spec 3.1.1 (livescores/latest with predictions)
-  const latest = await sportmonks.getLatestLiveScores({
-    include: 'participants;scores;state;predictions;league',
+  // Server-side data fetching: upcoming fixtures for today with predictions
+  const upcoming = await sportmonks.getUpcomingFixtures({
+    include: 'participants;scores;state;predictions;league.country',
     sortBy: 'starting_at',
+    filters: 'todayDate',
     order: 'desc',
     per_page: 50,
+    page: 1,
   });
-  //console.log(latest);
-  const fixtures: Fixture[] = latest?.data || [];
+  const fixtures: Fixture[] = upcoming?.data || [];
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Match Predictions</h1>
-        <p className="text-gray-600">
-          AI-powered predictions for upcoming matches across 111+ leagues worldwide
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold mb-1">All Football Events</h1>
+        <p className="text-sm text-gray-600">
+          AI-powered predictions for upcoming matches
         </p>
       </div>
       

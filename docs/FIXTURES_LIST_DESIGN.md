@@ -3,14 +3,26 @@
 ## 1. Fixture Card Layout (Responsive)
 
 Use a responsive layout that adapts gracefully across breakpoints:
-- Small screens: stacked card layout for clarity.
-- Medium screens and up: two/three-column grid; scores centered; optional table-like alignment.
+- **Mobile (compact=true)**: Stacked card layout for clarity with larger touch targets.
+- **Desktop (compact=false)**: Four-column grid layout matching the reference image design.
+
+### Desktop Layout (≥640px) - Four Column Design
+- **Column 1**: Status/Time (Live indicator or date/time)
+- **Column 2**: Teams (Team A on row 1, Team B on row 2)
+- **Column 3**: Scores (Home score on row 1, Away score on row 2)
+- **Column 4**: Prediction Probabilities (Market description + probability buttons)
+
+### Mobile Layout (<640px) - Stacked Design
+- Header with state/time and date
+- Teams with scores in center
+- League information
+- Prediction markets in grid layout
 
 ---
 
 - **State & Date**
-  - Left: match state (`14:30`, `57'`, `HT`, `FT`, etc.).
-  - Right: fixture date (group headers show date once).
+  - **Desktop**: Column 1 shows live indicator (red dot + "Live") for live matches, or date/time for scheduled matches
+  - **Mobile**: Left shows match state (`14:30`, `57'`, `HT`, `FT`, etc.), right shows fixture date
 - **States** (from Sportmonks data):  
   - **Scheduled** → Start time (`HH:mm`)  
   - **In-play** → Current minute (`45+2'`)  
@@ -21,21 +33,24 @@ Use a responsive layout that adapts gracefully across breakpoints:
 ---
 
 - **Teams**
-  - Home and away team name & logo; stacked on small screens, aligned horizontally on larger screens.
+  - **Desktop**: Column 2 shows Team A (row 1) and Team B (row 2) with small team logos
+  - **Mobile**: Home and away team name & logo; stacked on small screens, aligned horizontally on larger screens.
   - Interactions: click opens Head‑to‑Head popup; hover highlights both teams.
 
 ---
 
 - **Scores / Results**
-  - Inline with teams on small screens; centered row on larger screens.
+  - **Desktop**: Column 3 shows Home score (row 1) and Away score (row 2) in blue
+  - **Mobile**: Inline with teams on small screens; centered row on larger screens.
   - Live updates without page reload.
 
 ---
 
 - **Prediction Probability Market**
-  - Market title above button group.
-  - Buttons horizontally scrollable when overflowing.
+  - **Desktop**: Column 4 shows market description (row 1) and probability buttons (row 2)
+  - **Mobile**: Market title above button group in grid layout.
   - Button format: left = market symbol (`1`, `x`, `2`), right = probability percentage.
+  - ChevronDown icon for market selection when multiple markets available.
 - **Example – Full Time Result ("1 X 2")**:  
   - `1   10.4%`  
   - `x   44%`  
@@ -46,6 +61,9 @@ Use a responsive layout that adapts gracefully across breakpoints:
 ## 2. Grouping & Collapsing Fixtures
 - Group fixtures under headers (e.g., competition, date).
 - Header is a full-width interactive row with collapse/expand affordance.
+- **Fixture Count Button**: Shows the number of fixtures in each group (e.g., "England - Premier League [14]")
+- **Date Demarcation**: Semantic dates (Today, Tomorrow, 14th Aug) appear above groups as demarcation points
+- **League Grouping**: All fixtures in a card must belong to the same league/tournament
 
 ---
 
@@ -57,18 +75,22 @@ Use a responsive layout that adapts gracefully across breakpoints:
 ## 3. Data Fetching (Examples)
 
 ### 3.1.1 Prediction Page
-- **Endpoint**:   
-    /livescores/latest
+- **Endpoint**:  
+    /fixtures (with `filters=todayDate`)
 
 - **API Configuration**:  
 ```javascript
 ApiConfig = {
-  include: 'participants;scores;state;predictions',
+  include: 'participants;scores;state;predictions;league',
   sortBy: 'starting_at',
   order: 'desc',
   filters: 'todayDate',
   per_page: 50,
 };
+
+- **Pagination / UX**:
+  - Initial page is server-rendered.
+  - Additional pages are loaded via infinite scroll as the user reaches the end of the list.
 ```
 
 ### 3.1.2 Live Matches Page
@@ -564,3 +586,23 @@ for endpoints 3.1.1 and 3.1.2
 - Minimum touch target height: 44px.
 - Keyboard and screen‑reader friendly controls and labels.
 - Smooth expand/collapse animations; no layout shift.
+
+## 5. Display Settings
+- **Team Image Toggle**: Users can show/hide team logos via the settings toggle in the navbar
+- **Font Size**: Consistent 12px font size across all fixture elements
+- **Live Score Updates**: Real-time score updates for live matches every 30 seconds
+
+## 6. Performance & Real-time Features
+- **Live Score Polling**: Automatic updates for live matches every 30 seconds
+- **Optimized Rendering**: Efficient re-rendering only when scores change
+- **Error Handling**: Graceful fallback when live score updates fail
+- **Virtual Scrolling**: Efficient handling of large fixture lists
+- **Error Boundaries**: Graceful error handling for individual fixture cards
+- **Loading States**: Visual feedback during live score updates
+
+## 7. Accessibility & UX
+- **ARIA Labels**: Proper accessibility labels for prediction buttons and market selection
+- **Keyboard Navigation**: Full keyboard support for all interactive elements
+- **Screen Reader Support**: Semantic HTML structure for screen readers
+- **Loading Indicators**: Clear visual feedback during data updates
+- **Error Recovery**: Graceful error handling with user-friendly messages

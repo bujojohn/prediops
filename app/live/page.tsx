@@ -25,7 +25,6 @@ export default async function LiveMatchesPage() {
             Real-time scores and match updates from around the world
           </p>
         </div>
-        
         <LiveFixturesClient initialFixtures={liveFixtures} />
       </div>
     );

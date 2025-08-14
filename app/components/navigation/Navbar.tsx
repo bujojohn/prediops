@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { GlobalSearchClient } from '@/app/components/search/GlobalSearchClient';
 import { Button } from '@/components/ui/button';
 import { Moon, Sun, User, Bell, Menu, X } from 'lucide-react';
+import { DisplaySettingsToggle } from '@/app/components/settings/DisplaySettingsToggle';
 
 export function Navbar() {
   const pathname = usePathname();
@@ -61,6 +62,9 @@ export function Navbar() {
           
           {/* Right Side Actions - Desktop */}
           <div className="hidden md:flex items-center space-x-2">
+            {/* Display Settings Toggle */}
+            <DisplaySettingsToggle />
+            
             {/* Dark Mode Toggle */}
             <Button
               variant="ghost"
@@ -135,15 +139,18 @@ export function Navbar() {
               
               {/* Mobile Actions */}
               <div className="flex items-center justify-between px-3 py-2 border-t border-gray-200 mt-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={toggleDarkMode}
-                  className="flex items-center space-x-2"
-                >
-                  {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                  <span className="text-sm">Dark Mode</span>
-                </Button>
+                <div className="flex items-center space-x-2">
+                  <DisplaySettingsToggle />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={toggleDarkMode}
+                    className="flex items-center space-x-2"
+                  >
+                    {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                    <span className="text-sm">Dark Mode</span>
+                  </Button>
+                </div>
                 
                 <div className="flex space-x-2">
                   <Button

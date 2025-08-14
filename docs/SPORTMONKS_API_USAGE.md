@@ -110,6 +110,7 @@ const allContinents = await sportmonks.getContinents({
 | `/predictions/value-bets`                     | Get value bets                              | None | [`ValueBet`](../schemas/valuebet.schema.ts), [`ValueBetSchema`](../schemas/valuebet.schema.ts) |
 | `/livescores/inplay`                          | Get live fixtures                           | None | [`Fixture`](../schemas/fixture.schema.ts), [`FixtureSchema`](../schemas/fixture.schema.ts) |
 | `/livescores/latest`                          | Get latest live scores                      | None | [`Fixture`](../schemas/fixture.schema.ts), [`FixtureSchema`](../schemas/fixture.schema.ts) |
+| `/fixtures` (with `filters=todayDate`)        | Upcoming fixtures for today (Predictions)   | None | [`Fixture`](../schemas/fixture.schema.ts), [`FixtureSchema`](../schemas/fixture.schema.ts) |
 | `/predictions/probabilities/fixtures/{id}`    | Get predictions for a specific fixture      | None                                 | [`PredictionProbability`](../schemas/predictions.schema.ts), [`predictionsSchema`](../schemas/predictions.schema.ts) |
 | `/fixtures`                                   | Get upcoming fixtures                       | None | [`Fixture`](../schemas/fixture.schema.ts), [`FixtureSchema`](../schemas/fixture.schema.ts) |
 | `/standings/seasons/{seasonId}`               | Get league standings                        | None                                 | [`Standing`](../schemas/standing.schema.ts), [`standingSchema`](../schemas/standing.schema.ts) |

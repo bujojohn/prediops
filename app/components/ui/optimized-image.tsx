@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { ImageIcon } from 'lucide-react';
 
 interface OptimizedImageProps {
-  src: string;
+  src?: string | null;
   alt: string;
   width?: number;
   height?: number;
@@ -30,6 +30,8 @@ export function OptimizedImage({
   const [imageError, setImageError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  const effectiveSrc = typeof src === 'string' && src.trim().length > 0 ? src : null;
+
   const handleError = () => {
     setImageError(true);
     setIsLoading(false);
@@ -39,8 +41,8 @@ export function OptimizedImage({
     setIsLoading(false);
   };
 
-  // If image failed to load and we have a fallback, use it
-  if (imageError && fallback) {
+  // If no valid src or image failed to load and we have a fallback, use it
+  if ((imageError || !effectiveSrc) && fallback) {
     return (
       <div className={`relative ${className}`}>
         <Image
@@ -59,8 +61,8 @@ export function OptimizedImage({
     );
   }
 
-  // If image failed to load and no fallback, show placeholder
-  if (imageError) {
+  // If image failed to load or src is missing and no fallback, show placeholder
+  if (imageError || !effectiveSrc) {
     return (
       <div 
         className={`flex items-center justify-center bg-gray-200 ${className}`}
@@ -80,7 +82,7 @@ export function OptimizedImage({
         />
       )}
       <Image
-        src={src}
+        src={effectiveSrc}
         alt={alt}
         width={width}
         height={height}
@@ -103,7 +105,7 @@ export function FlagImage({
   alt, 
   className = '' 
 }: { 
-  src: string; 
+  src?: string | null; 
   alt: string; 
   className?: string; 
 }) {
@@ -124,7 +126,7 @@ export function TeamLogo({
   alt, 
   className = '' 
 }: { 
-  src: string; 
+  src?: string | null; 
   alt: string; 
   className?: string; 
 }) {
@@ -145,7 +147,7 @@ export function LeagueLogo({
   alt, 
   className = '' 
 }: { 
-  src: string; 
+  src?: string | null; 
   alt: string; 
   className?: string; 
 }) {

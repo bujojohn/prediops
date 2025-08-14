@@ -227,7 +227,7 @@ export default function TestPage() {
     Promise.all([
       fetch('/api/sportmonks/predictions').then(res => res.json()),
       fetch('/api/sportmonks/value-bets').then(res => res.json()),
-      fetch('/api/sportmonks/fixtures/live').then(res => res.json()),
+      fetch('/api/sportmonks/fixtures').then(res => res.json()),
     ])
       .then(([predictions, valueBets, liveFixtures]) => {
         setResponse({
@@ -356,7 +356,7 @@ GET /predictions/value-bets
 GET /livescores/inplay
 
 // 4. Upcoming Fixtures (ACTIVE)
-GET /fixtures?filters=fixtureTypes:1
+GET /fixtures?filters=todayDate
 
 // 5. League Standings (ACTIVE)
 GET /standings/seasons/{seasonId}

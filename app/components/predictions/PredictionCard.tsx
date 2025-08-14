@@ -39,7 +39,7 @@ export function PredictionCard({ prediction }: { prediction: Prediction }) {
         </h3>
         {prediction.starting_at && (
           <span className="text-xs text-gray-500">
-            {new Date(prediction.starting_at).toLocaleDateString()}
+            {new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', year: 'numeric', month: 'short', day: '2-digit' }).format(new Date(prediction.starting_at))}
           </span>
         )}
       </div>

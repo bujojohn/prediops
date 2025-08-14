@@ -40,7 +40,7 @@ export function ValueBetCard({ valueBet, name, starting_at, participants }: Valu
         </h3>
         {starting_at && (
           <span className="text-xs text-gray-500">
-            {new Date(starting_at).toLocaleDateString()}
+            {new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', year: 'numeric', month: 'short', day: '2-digit' }).format(new Date(starting_at))}
           </span>
         )}
       </div>

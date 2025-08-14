@@ -78,12 +78,6 @@ export const sportmonks = {
     const url = '/livescores/inplay';
     const response = await api.get(url, { params: makeParams(config) });
     return response.data;
- 
-/*     const uri1 = api.getUri({
-      url,
-      params: config,
-   });
-    console.log(uri1); */
   },
 
   // Get latest live scores with configurable options
