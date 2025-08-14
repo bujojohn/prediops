@@ -2,10 +2,11 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { GlobalSearchClient } from '@/app/components/search/GlobalSearchClient';
+
 import { Button } from '@/components/ui/button';
 import { Moon, Sun, User, Bell, Menu, X } from 'lucide-react';
 import { DisplaySettingsToggle } from '@/app/components/settings/DisplaySettingsToggle';
+import { MobileSidebarToggle } from './MobileSidebarToggle';
 
 export function Navbar() {
   const pathname = usePathname();
@@ -37,10 +38,7 @@ export function Navbar() {
             </Link>
           </div>
           
-          {/* Search Bar - Desktop */}
-          <div className="hidden md:flex flex-1 max-w-md mx-8">
-            <GlobalSearchClient className="w-full" />
-          </div>
+
           
           {/* Navigation Links - Desktop */}
           <div className="hidden md:flex space-x-4">
@@ -99,7 +97,8 @@ export function Navbar() {
           </div>
           
           {/* Mobile Menu Button */}
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center gap-2">
+            <MobileSidebarToggle />
             <Button 
               variant="ghost"
               size="sm"
@@ -115,10 +114,7 @@ export function Navbar() {
         {isMobileMenuOpen && (
           <div className="md:hidden border-t border-gray-200">
             <div className="px-2 pt-2 pb-3 space-y-1">
-              {/* Search Bar - Mobile */}
-              <div className="px-2 pb-2">
-                <GlobalSearchClient className="w-full" />
-              </div>
+              
               
               {/* Navigation Links - Mobile */}
               {navItems.map((item) => (

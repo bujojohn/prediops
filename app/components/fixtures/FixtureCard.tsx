@@ -166,20 +166,20 @@ export function FixtureCard({ fixture, compact = false }: { fixture: Fixture; co
 
   // Desktop layout (≥640px) - matches the image design
   if (!compact) {
-    return (
-      <Card className="w-full">
+  return (
+    <Card className="w-full">
         <CardContent className="p-3">
           <div className="grid grid-cols-4 gap-4 items-center" style={{ minHeight: '60px' }}>
             {/* Column 1: Status/Time */}
             <div className="flex flex-col justify-center">
               {isLive ? (
-                <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-red-500 rounded-full"></div>
                   <span className="text-xs font-medium text-red-600">Live</span>
-                </div>
+          </div>
               ) : (
                 <div className="text-xs text-gray-600">
-                  {fixture.starting_at && (
+          {fixture.starting_at && (
                     <div className="flex items-center gap-1">
                       <span>{formatTimeUTC(fixture.starting_at)}</span>
                     </div>
@@ -220,8 +220,8 @@ export function FixtureCard({ fixture, compact = false }: { fixture: Fixture; co
                     {scoreAway !== null ? scoreAway : '-'}
                   </div>
                 </>
-              )}
-            </div>
+          )}
+        </div>
 
             {/* Column 4: Prediction Probabilities */}
             <div className="flex flex-col justify-center">
@@ -230,7 +230,7 @@ export function FixtureCard({ fixture, compact = false }: { fixture: Fixture; co
                   {/* Market description */}
                   <div className="text-[12px] text-gray-600 truncate">
                     {primaryMarket.label}
-                  </div>
+            </div>
                   
                   {/* Prediction buttons with market selector */}
                   <div className="flex items-center gap-1">
@@ -252,8 +252,8 @@ export function FixtureCard({ fixture, compact = false }: { fixture: Fixture; co
                           </Button>
                         ));
                       })()}
-                    </div>
-                    
+          </div>
+
                     {/* Market selector dropdown */}
                     {marketsMap && Object.keys(marketsMap).length > 1 && (
                       <div className="relative">
@@ -306,7 +306,7 @@ export function FixtureCard({ fixture, compact = false }: { fixture: Fixture; co
           {fixture.starting_at && (
             <span className="hidden sm:inline">{formatDateUTC(fixture.starting_at)}</span>
           )}
-        </div>
+          </div>
 
         {/* Teams (mobile stacked, desktop row) */}
         <div className="mt-2 grid grid-cols-3 items-center gap-2" style={{ minHeight: compact ? 0 : undefined }}>
@@ -326,7 +326,7 @@ export function FixtureCard({ fixture, compact = false }: { fixture: Fixture; co
             ) : (
               <div className="text-sm font-medium text-gray-700 tabular-nums">{formatTimeOrState(fixture)}</div>
             )}
-          </div>
+            </div>
           <div className="flex items-center gap-2 min-w-0 justify-end" onClick={() => setShowH2H(true)}>
             <span className="font-medium truncate text-[12px] sm:text-[13px] text-right text-gray-800">{away?.name || 'Away'}</span>
             {settings.showTeamImages && (
@@ -348,49 +348,49 @@ export function FixtureCard({ fixture, compact = false }: { fixture: Fixture; co
         {/* Prediction markets - always show for predictions page */}
         {primaryMarket && (
           <div className="mt-3 space-y-2">
-            <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between">
               <div className="text-sm font-medium text-gray-700">
                 {primaryMarket.label}
-              </div>
+            </div>
               {marketsMap && Object.keys(marketsMap).length > 1 && (
-                <div className="relative">
+              <div className="relative">
                   <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setMarketOpen((v) => !v)}>
                     More
                     <ChevronDown className={cn('ml-1 h-3 w-3 transition-transform', marketOpen && 'rotate-180')} />
-                  </Button>
-                  {marketOpen && (
+                </Button>
+                {marketOpen && (
                     <div className="absolute right-0 mt-1 w-48 rounded-md border bg-white shadow-md z-10">
-                      {Object.values(marketsMap).map((m) => (
-                        <button
-                          type="button"
-                          key={m.key}
-                          className={cn('w-full text-left px-3 py-2 text-sm hover:bg-gray-50', selectedMarketKey === m.key && 'bg-gray-50')}
-                          onClick={() => { setSelectedMarketKey(m.key); setMarketOpen(false); }}
-                        >
-                          {m.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+                    {Object.values(marketsMap).map((m) => (
+                      <button
+                        type="button"
+                        key={m.key}
+                        className={cn('w-full text-left px-3 py-2 text-sm hover:bg-gray-50', selectedMarketKey === m.key && 'bg-gray-50')}
+                        onClick={() => { setSelectedMarketKey(m.key); setMarketOpen(false); }}
+                      >
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
             {/* Prediction options in a compact grid layout */}
             <div className="grid grid-cols-3 gap-2">
-              {(() => {
-                const market = (selectedMarketKey && marketsMap) ? marketsMap[selectedMarketKey] : primaryMarket;
-                return market?.options?.map((opt) => (
+            {(() => {
+              const market = (selectedMarketKey && marketsMap) ? marketsMap[selectedMarketKey] : primaryMarket;
+              return market?.options?.map((opt) => (
                   <div key={opt.code} className="bg-gray-50 rounded-md p-2 text-center border">
                     <div className="text-xs text-gray-600 mb-1">{opt.code}</div>
                     <div className="text-sm font-semibold text-blue-600">
                       {opt.value != null ? `${Number(opt.value).toFixed(1)}%` : '-'}
                     </div>
                   </div>
-                ));
-              })()}
-            </div>
+              ));
+            })()}
           </div>
+        </div>
         )}
 
         {/* Expand details (placeholder for H2H etc.) */}
