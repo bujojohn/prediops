@@ -70,17 +70,20 @@ export function FixtureList({ groups, onRefresh, compact = false, renderHeader }
               className="flex items-center justify-between px-4 py-3 cursor-pointer select-none"
               onClick={() => toggle(group.id)}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
+                {/* Toggle Icon */}
                 {collapsed[group.id] ? (
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="h-4 w-4 text-gray-600 dark:text-gray-300" />
                 ) : (
-                  <ChevronDown className="h-4 w-4" />
+                  <ChevronDown className="h-4 w-4 text-gray-600 dark:text-gray-300" />
                 )}
-                <div className="font-medium">{group.title}</div>
+                {/* Fixture Counter Button */}
+                <Button variant="outline" size="sm" className="h-7 px-2 text-xs">
+                  {group.fixtures.length}
+                </Button>
+                {/* Card Title */}
+                <div className="font-medium text-gray-900 dark:text-gray-100">{group.title}</div>
               </div>
-              <Button variant="outline" size="sm" className="h-7 px-2 text-xs">
-                {group.fixtures.length}
-              </Button>
             </div>
           )}
           {!collapsed[group.id] && (

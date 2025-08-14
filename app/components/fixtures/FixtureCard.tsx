@@ -12,7 +12,7 @@ import { useDisplaySettings } from '@/app/contexts/DisplaySettingsContext';
 import { useLiveScores } from '@/app/hooks/useLiveScores';
 import { LoadingIndicator } from '@/app/components/ui/loading-indicator';
 
-type MarketKey = '1x2' | 'yesno';
+type MarketKey = '1x2' | 'yesno' | 'htft' | 'score' | 'overunder' | 'corners' | 'btts' | 'doublechance' | 'firsthalf' | 'teamscorefirst' | 'correctscore' | 'homeoverunder' | 'awayoverunder';
 
 type MarketDefinition = {
   key: MarketKey;
@@ -122,35 +122,196 @@ export function FixtureCard({ fixture, compact = false }: { fixture: Fixture; co
   const marketsMap: Record<MarketKey, MarketDefinition> | null = useMemo(() => {
     if (!fixture.predictions || fixture.predictions.length === 0) return null;
     const map = {} as Record<MarketKey, MarketDefinition>;
-    const has1x2 = fixture.predictions
-      .map((p: FixturePrediction) => p.predictions)
-      .find((pred) => isThreeWayPred(pred));
-    if (has1x2) {
-      const m = has1x2;
-      map['1x2'] = {
-        key: '1x2',
-        label: 'Full Time Result (1 X 2)',
-        options: [
-          { code: '1', value: m.home ?? null },
-          { code: 'X', value: m.draw ?? null },
-          { code: '2', value: m.away ?? null },
-        ],
-      };
-    }
-    const hasYesNo = fixture.predictions
-      .map((p: FixturePrediction) => p.predictions)
-      .find((pred) => isYesNoPred(pred));
-    if (hasYesNo) {
-      const m = hasYesNo;
-      map['yesno'] = {
-        key: 'yesno',
-        label: 'Yes / No',
-        options: [
-          { code: 'Yes', value: m.yes ?? null },
-          { code: 'No', value: m.no ?? null },
-        ],
-      };
-    }
+    
+    // Process all prediction types
+    fixture.predictions.forEach((prediction: FixturePrediction) => {
+      const pred = prediction.predictions;
+      const typeName = prediction.type?.[0]?.name?.toLowerCase() || '';
+      const typeCode = prediction.type?.[0]?.code?.toLowerCase() || '';
+      
+      // 1X2 Market (Full Time Result)
+      if (isThreeWayPred(pred) && (typeName.includes('fulltime') || typeName.includes('result'))) {
+        map['1x2'] = {
+          key: '1x2',
+          label: prediction.type?.[0]?.name || 'Full Time Result (1 X 2)',
+          options: [
+            { code: '1', value: pred.home ?? null },
+            { code: 'X', value: pred.draw ?? null },
+            { code: '2', value: pred.away ?? null },
+          ],
+        };
+      }
+      
+      // First Half Winner
+      else if (isThreeWayPred(pred) && typeName.includes('first half')) {
+        map['firsthalf'] = {
+          key: 'firsthalf',
+          label: prediction.type?.[0]?.name || 'First Half Winner',
+          options: [
+            { code: '1', value: pred.home ?? null },
+            { code: 'X', value: pred.draw ?? null },
+            { code: '2', value: pred.away ?? null },
+          ],
+        };
+      }
+      
+      // Team To Score First
+      else if (isThreeWayPred(pred) && typeName.includes('score first')) {
+        map['teamscorefirst'] = {
+          key: 'teamscorefirst',
+          label: prediction.type?.[0]?.name || 'Team To Score First',
+          options: [
+            { code: '1', value: pred.home ?? null },
+            { code: 'X', value: pred.draw ?? null },
+            { code: '2', value: pred.away ?? null },
+          ],
+        };
+      }
+      
+      // Both Teams To Score
+      else if (isYesNoPred(pred) && typeName.includes('both teams to score')) {
+        map['btts'] = {
+          key: 'btts',
+          label: prediction.type?.[0]?.name || 'Both Teams To Score',
+          options: [
+            { code: 'Yes', value: pred.yes ?? null },
+            { code: 'No', value: pred.no ?? null },
+          ],
+        };
+      }
+      
+      // Over/Under Markets (General)
+      else if (isYesNoPred(pred) && typeName.includes('over/under') && !typeName.includes('corners') && !typeName.includes('home') && !typeName.includes('away')) {
+        const overUnderValue = typeCode.match(/over-under-(\d+(?:\.\d+)?)/)?.[1] || '';
+        map['overunder'] = {
+          key: 'overunder',
+          label: prediction.type?.[0]?.name || `Over/Under ${overUnderValue}`,
+          options: [
+            { code: 'Over', value: pred.yes ?? null },
+            { code: 'Under', value: pred.no ?? null },
+          ],
+        };
+      }
+      
+      // Home Over/Under Markets
+      else if (isYesNoPred(pred) && typeName.includes('home over/under')) {
+        const overUnderValue = typeCode.match(/home-over-under-(\d+(?:\.\d+)?)/)?.[1] || '';
+        map['homeoverunder'] = {
+          key: 'homeoverunder',
+          label: prediction.type?.[0]?.name || `Home Over/Under ${overUnderValue}`,
+          options: [
+            { code: 'Over', value: pred.yes ?? null },
+            { code: 'Under', value: pred.no ?? null },
+          ],
+        };
+      }
+      
+      // Away Over/Under Markets
+      else if (isYesNoPred(pred) && typeName.includes('away over/under')) {
+        const overUnderValue = typeCode.match(/away-over-under-(\d+(?:\.\d+)?)/)?.[1] || '';
+        map['awayoverunder'] = {
+          key: 'awayoverunder',
+          label: prediction.type?.[0]?.name || `Away Over/Under ${overUnderValue}`,
+          options: [
+            { code: 'Over', value: pred.yes ?? null },
+            { code: 'Under', value: pred.no ?? null },
+          ],
+        };
+      }
+      
+      // Corners Over/Under Markets
+      else if (isYesNoPred(pred) && typeName.includes('corners over/under')) {
+        const cornersValue = typeCode.match(/corners-over-under-(\d+(?:\.\d+)?)/)?.[1] || '';
+        map['corners'] = {
+          key: 'corners',
+          label: prediction.type?.[0]?.name || `Corners Over/Under ${cornersValue}`,
+          options: [
+            { code: 'Over', value: pred.yes ?? null },
+            { code: 'Under', value: pred.no ?? null },
+          ],
+        };
+      }
+      
+      // Half Time / Full Time Market
+      else if (pred && typeof pred === 'object' && 'home_home' in pred && typeName.includes('half time/full time')) {
+        const htft = pred as Record<string, number | null>;
+        map['htft'] = {
+          key: 'htft',
+          label: prediction.type?.[0]?.name || 'Half Time / Full Time',
+          options: [
+            { code: '1/1', value: htft.home_home ?? null },
+            { code: '1/X', value: htft.home_draw ?? null },
+            { code: '1/2', value: htft.home_away ?? null },
+            { code: 'X/1', value: htft.draw_home ?? null },
+            { code: 'X/X', value: htft.draw_draw ?? null },
+            { code: 'X/2', value: htft.draw_away ?? null },
+            { code: '2/1', value: htft.away_home ?? null },
+            { code: '2/X', value: htft.away_draw ?? null },
+            { code: '2/2', value: htft.away_away ?? null },
+          ],
+        };
+      }
+      
+      // Double Chance Market
+      else if (pred && typeof pred === 'object' && 'draw_home' in pred && typeName.includes('double chance')) {
+        const doubleChance = pred as Record<string, number | null>;
+        map['doublechance'] = {
+          key: 'doublechance',
+          label: prediction.type?.[0]?.name || 'Double Chance',
+          options: [
+            { code: '1X', value: doubleChance.draw_home ?? null },
+            { code: '12', value: doubleChance.home_away ?? null },
+            { code: 'X2', value: doubleChance.draw_away ?? null },
+          ],
+        };
+      }
+      
+      // Correct Score Market
+      else if (pred && typeof pred === 'object' && 'scores' in pred && typeName.includes('correct score')) {
+        const scorePred = pred as { scores: Record<string, number | null> };
+        if (scorePred.scores) {
+          const scoreOptions = [];
+          // Add common score combinations
+          const commonScores = ['0-0', '1-0', '1-1', '2-0', '2-1', '2-2', '3-0', '3-1', '3-2', '3-3'];
+          commonScores.forEach(score => {
+            if (scorePred.scores[score] !== undefined) {
+              scoreOptions.push({ code: score, value: scorePred.scores[score] ?? null });
+            }
+          });
+          // Add other options if they exist
+          if (scorePred.scores.Other_1 !== undefined) {
+            scoreOptions.push({ code: 'Other 1', value: scorePred.scores.Other_1 ?? null });
+          }
+          if (scorePred.scores.Other_2 !== undefined) {
+            scoreOptions.push({ code: 'Other 2', value: scorePred.scores.Other_2 ?? null });
+          }
+          if (scorePred.scores.Other_X !== undefined) {
+            scoreOptions.push({ code: 'Other X', value: scorePred.scores.Other_X ?? null });
+          }
+          
+          if (scoreOptions.length > 0) {
+            map['correctscore'] = {
+              key: 'correctscore',
+              label: prediction.type?.[0]?.name || 'Correct Score',
+              options: scoreOptions,
+            };
+          }
+        }
+      }
+      
+      // Generic Yes/No Market (fallback)
+      else if (isYesNoPred(pred)) {
+        map['yesno'] = {
+          key: 'yesno',
+          label: prediction.type?.[0]?.name || 'Yes / No',
+          options: [
+            { code: 'Yes', value: pred.yes ?? null },
+            { code: 'No', value: pred.no ?? null },
+          ],
+        };
+      }
+    });
+    
     return Object.keys(map).length > 0 ? map : null;
   }, [fixture.predictions]);
 
@@ -159,8 +320,20 @@ export function FixtureCard({ fixture, compact = false }: { fixture: Fixture; co
       setSelectedMarketKey(null);
       return;
     }
-    // Prefer 1x2, else yes/no
-    const preferred: MarketKey | null = marketsMap['1x2'] ? '1x2' : (marketsMap['yesno'] ? 'yesno' : null);
+    // Market priority: 1x2 > firsthalf > teamscorefirst > btts > overunder > htft > correctscore > doublechance > corners > homeoverunder > awayoverunder > yesno
+    const preferred: MarketKey | null = 
+      marketsMap['1x2'] ? '1x2' : 
+      marketsMap['firsthalf'] ? 'firsthalf' : 
+      marketsMap['teamscorefirst'] ? 'teamscorefirst' : 
+      marketsMap['btts'] ? 'btts' : 
+      marketsMap['overunder'] ? 'overunder' : 
+      marketsMap['htft'] ? 'htft' : 
+      marketsMap['correctscore'] ? 'correctscore' : 
+      marketsMap['doublechance'] ? 'doublechance' : 
+      marketsMap['corners'] ? 'corners' : 
+      marketsMap['homeoverunder'] ? 'homeoverunder' : 
+      marketsMap['awayoverunder'] ? 'awayoverunder' : 
+      marketsMap['yesno'] ? 'yesno' : null;
     setSelectedMarketKey(preferred);
   }, [marketsMap]);
 
@@ -237,7 +410,46 @@ export function FixtureCard({ fixture, compact = false }: { fixture: Fixture; co
                     <div className="flex gap-1 flex-1">
                       {(() => {
                         const market = (selectedMarketKey && marketsMap) ? marketsMap[selectedMarketKey] : primaryMarket;
-                        return market?.options?.map((opt) => (
+                        const options = market?.options || [];
+                        
+                        // For markets with many options (like Correct Score), show top 3 + expand option
+                        if (options.length > 6) {
+                          const topOptions = options
+                            .filter(opt => opt.value !== null)
+                            .sort((a, b) => (b.value || 0) - (a.value || 0))
+                            .slice(0, 3);
+                          
+                          return (
+                            <>
+                              {topOptions.map((opt) => (
+                                <Button
+                                  key={opt.code}
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-6 px-2 text-[12px] min-w-0 flex-1"
+                                  aria-label={`${opt.code} prediction: ${opt.value != null ? `${Number(opt.value).toFixed(0)}%` : 'No data'}`}
+                                >
+                                  <span className="font-medium">{opt.code}</span>
+                                  <span className="ml-1 text-blue-600">
+                                    {opt.value != null ? `${Number(opt.value).toFixed(0)}%` : '-'}
+                                  </span>
+                                </Button>
+                              ))}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-6 px-2 text-[12px]"
+                                onClick={() => setExpanded(!expanded)}
+                                aria-label="Show more options"
+                              >
+                                +{options.length - 3} more
+                              </Button>
+                            </>
+                          );
+                        }
+                        
+                        // For markets with 6 or fewer options, show all
+                        return options.map((opt) => (
                           <Button
                             key={opt.code}
                             variant="outline"
@@ -252,9 +464,39 @@ export function FixtureCard({ fixture, compact = false }: { fixture: Fixture; co
                           </Button>
                         ));
                       })()}
-          </div>
+                                         </div>
 
-                                               {/* Market selector dropdown */}
+                     {/* Expanded options view for markets with many options */}
+                     {expanded && (() => {
+                       const market = (selectedMarketKey && marketsMap) ? marketsMap[selectedMarketKey] : primaryMarket;
+                       const options = market?.options || [];
+                       
+                       if (options.length > 6) {
+                         return (
+                           <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-md">
+                             <div className="grid grid-cols-3 gap-1">
+                               {options.map((opt) => (
+                                 <Button
+                                   key={opt.code}
+                                   variant="outline"
+                                   size="sm"
+                                   className="h-6 px-1 text-[10px]"
+                                   aria-label={`${opt.code} prediction: ${opt.value != null ? `${Number(opt.value).toFixed(0)}%` : 'No data'}`}
+                                 >
+                                   <span className="font-medium">{opt.code}</span>
+                                   <span className="ml-1 text-blue-600">
+                                     {opt.value != null ? `${Number(opt.value).toFixed(0)}%` : '-'}
+                                   </span>
+                                 </Button>
+                               ))}
+                             </div>
+                           </div>
+                         );
+                       }
+                       return null;
+                     })()}
+
+                                                 {/* Market selector dropdown */}
                            {marketsMap && Object.keys(marketsMap).length > 0 && (
                       <div className="relative">
                         <Button
