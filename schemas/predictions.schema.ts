@@ -83,7 +83,7 @@ export const PredictionSchema = z.object({
     }),
   ]),
   type_id: z.number(),
-  type: z.array(TypeSchema).nullable().optional(), 
+  type: TypeSchema.nullable().optional(),
 });
 
 // Array schema for the complete data structure
