@@ -5,7 +5,7 @@ import { LatestFixturesClient } from './LatestFixturesClient';
 export default async function PredictionsPage() {
   // Server-side data fetching: upcoming fixtures for today with predictions
   const upcoming = await sportmonks.getUpcomingFixtures({
-    include: 'participants;scores;state;predictions.type;league.country',
+    include: 'participants;scores;state;predictions.type;league.country;events',
     sortBy: 'starting_at',
     filters: 'todayDate',
     order: 'desc',

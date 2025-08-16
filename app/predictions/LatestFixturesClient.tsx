@@ -96,7 +96,7 @@ export function LatestFixturesClient({ initialFixtures }: { initialFixtures: Fix
                   key={lg.id}
                   groups={[lg]}
                   compact={false}
-                  renderHeader={({ group, collapsed, toggle, count }) => (
+                  renderHeader={({ group, toggle, count }) => (
                     <div
                       className="flex items-center justify-between px-4 py-3 cursor-pointer select-none"
                       onClick={toggle}

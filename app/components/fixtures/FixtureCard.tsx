@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { useEffect, useMemo, useState, useRef, useContext } from 'react';
 import type { Fixture } from '@/schemas/fixture.schema';
 import type { Prediction as FixturePrediction } from '@/schemas/predictions.schema';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,6 +11,7 @@ import { cn, formatDateUTC, formatTimeUTC } from '@/lib/utils';
 import { useDisplaySettings } from '@/app/contexts/DisplaySettingsContext';
 import { useLiveScores } from '@/app/hooks/useLiveScores';
 import { LoadingIndicator } from '@/app/components/ui/loading-indicator';
+import { FixturesContext } from '@/app/contexts/FixturesContext';
 
 type MarketKey = string;
 
@@ -30,20 +31,45 @@ function isYesNoPred(obj: unknown): obj is { yes?: number | null; no?: number | 
 
 
 
-function formatTimeOrState(fixture: Fixture): string {
-  if (fixture.state?.short_name) return fixture.state.short_name;
-  if (fixture.state?.name) return fixture.state.name;
-  if (fixture.starting_at) {
-    return formatTimeUTC(fixture.starting_at);
-  }
-  return '';
-}
-
 function isLiveMatch(fixture: Fixture): boolean {
   return fixture.state?.short_name === 'LIVE' || (fixture.state?.name?.toLowerCase() || '').includes('live');
 }
 
-export function FixtureCard({ fixture, compact = false }: { fixture: Fixture; compact?: boolean }) {
+function getMatchPhase(fixture: Fixture): 'scheduled' | 'live' | 'finished' {
+  const status = (fixture.state?.name || '').toLowerCase();
+  if (/live|in progress/.test(status)) return 'live';
+  if (/finished|ft|ended/.test(status)) return 'finished';
+  return 'scheduled';
+}
+
+function getMinutesPlayedFromEvents(fixture: Fixture): number | null {
+  if (Array.isArray(fixture.events) && fixture.events.length > 0) {
+    let maxEvent = fixture.events[0];
+    let maxMinute = (maxEvent.minute || 0) + (maxEvent.extra_minute || 0);
+    for (const ev of fixture.events) {
+      const min = (ev.minute || 0) + (ev.extra_minute || 0);
+      if (min > maxMinute) {
+        maxMinute = min;
+        maxEvent = ev;
+      }
+    }
+    if (maxEvent.extra_minute) return Number(maxEvent.minute || 0) + Number(maxEvent.extra_minute || 0);
+    if (maxEvent.minute) return maxEvent.minute;
+  }
+  // fallback to estimation
+  if (fixture.starting_at) {
+    const start = new Date(fixture.starting_at + 'Z');
+    const now = new Date();
+    const diff = Math.floor((now.getTime() - start.getTime()) / 60000);
+    if (diff > 0 && diff < 200) return diff;
+  }
+  return null;
+}
+
+export function FixtureCard({ fixture: propFixture, compact = false }: { fixture: Fixture; compact?: boolean }) {
+  // Use context if available, otherwise fallback to prop
+  const context = useContext(FixturesContext);
+  const fixture = context?.fixtures?.find(f => f.id === propFixture.id) || propFixture;
   const [expanded, setExpanded] = useState(false);
   const [marketOpen, setMarketOpen] = useState(false);
   const [selectedMarketKey, setSelectedMarketKey] = useState<MarketKey | null>(null);
@@ -378,22 +404,39 @@ export function FixtureCard({ fixture, compact = false }: { fixture: Fixture; co
           <div className="grid grid-cols-4 gap-4 items-center" style={{ minHeight: '60px' }}>
             {/* Column 1: Status/Time */}
             <div className="flex flex-col justify-center">
-              {isLive ? (
-          <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                                         <span className="text-xs font-medium text-red-600 dark:text-red-400">Live</span>
-          </div>
-              ) : (
-                                       <div className="text-xs text-gray-600 dark:text-gray-300">
-          {fixture.starting_at && (
-                    <div className="flex items-center gap-1">
-                      <span>{formatTimeUTC(fixture.starting_at)}</span>
+              {(() => {
+                const phase = getMatchPhase(fixture);
+                if (phase === 'live') {
+                  const mins = getMinutesPlayedFromEvents(fixture);
+                  return (
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                      <span className="text-xs font-medium text-red-600 dark:text-red-400">
+                        {mins ? `${mins}' ` : ''}Live
+                      </span>
                     </div>
-                  )}
-                  {fixture.state?.name && fixture.state.name !== 'Not Started' && (
-                    <div className="text-gray-500">- {fixture.state.name}</div>
-                  )}
-                </div>
+                  );
+                }
+                if (phase === 'scheduled' && fixture.starting_at) {
+                  return (
+                    <div className="flex items-center gap-1">
+                      <span>{formatTimeUTC(fixture.starting_at || '')}</span>
+                    </div>
+                  );
+                }
+                // For finished/other states, show short name if available
+                if (fixture.state?.short_name) {
+                  return (
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs font-medium text-gray-500">{fixture.state.short_name}</span>
+                    </div>
+                  );
+                }
+                // If finished, show nothing (or status if desired)
+                return null;
+              })()}
+              {fixture.state?.name && fixture.state.name !== 'Not Started' && (
+                <div className="text-gray-500">- {fixture.state.name}</div>
               )}
             </div>
 
@@ -618,10 +661,10 @@ export function FixtureCard({ fixture, compact = false }: { fixture: Fixture; co
         <div className="flex items-center justify-between text-[12px] text-gray-600">
           <div className="flex items-center gap-1.5">
             <Clock className="h-3 w-3" />
-            <span className="tabular-nums">{formatTimeOrState(fixture)}</span>
+            <span className="tabular-nums">{formatTimeUTC(fixture.starting_at || '')}</span>
           </div>
           {fixture.starting_at && (
-            <span className="hidden sm:inline">{formatDateUTC(fixture.starting_at)}</span>
+            <span className="hidden sm:inline">{formatDateUTC(fixture.starting_at || '')}</span>
           )}
         </div>
 
@@ -641,7 +684,7 @@ export function FixtureCard({ fixture, compact = false }: { fixture: Fixture; co
                 <div className="text-lg font-bold text-blue-600 tabular-nums">{scoreAway}</div>
               </>
             ) : (
-              <div className="text-sm font-medium text-gray-700 tabular-nums">{formatTimeOrState(fixture)}</div>
+              <div className="text-sm font-medium text-gray-700 tabular-nums">{formatTimeUTC(fixture.starting_at || '')}</div>
             )}
           </div>
           <div className="flex items-center gap-2 min-w-0 justify-end" onClick={() => setShowH2H(true)}>

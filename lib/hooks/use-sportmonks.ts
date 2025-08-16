@@ -42,7 +42,7 @@ export const useRefreshLiveFixtures = (config?: ApiConfig) => {
       return data;
     },
     enabled: false, // Don't run automatically
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 60 * 1000, // 30 seconds
     gcTime: 2 * 60 * 1000, // 2 minutes
   });
 };
@@ -193,7 +193,7 @@ export const useCountries = (config?: ApiConfig) => {
       const data = await sportmonks.getCountries(config);
       return data;
     },
-    staleTime: 24 * 60 * 60 * 1000, // 24 hours
+    staleTime: 720 * 60 * 60 * 1000, // 30 days
     gcTime: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
 };

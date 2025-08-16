@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import type { Fixture } from '@/schemas/fixture.schema';
 import { FixtureList, type FixtureGroup } from '@/app/components/fixtures/FixtureList';
+import { useQuery } from '@tanstack/react-query';
+import { FixturesProvider, useFixtures } from '@/app/contexts/FixturesContext';
 
 function groupByLeague(fixtures: Fixture[]): FixtureGroup[] {
   const map = new Map<string, Fixture[]>();
@@ -17,24 +19,33 @@ function groupByLeague(fixtures: Fixture[]): FixtureGroup[] {
   return Array.from(map.entries()).map(([title, list]) => ({ id: title, title, fixtures: list }));
 }
 
-export function LiveFixturesClient({ initialFixtures }: { initialFixtures: Fixture[] }) {
-  const [fixtures, setFixtures] = useState<Fixture[]>(initialFixtures);
+function LiveFixturesInner() {
+  const { fixtures } = useFixtures();
   const groups = useMemo(() => groupByLeague(fixtures), [fixtures]);
+  return <FixtureList groups={groups} compact={false} />;
+}
 
-  const onRefresh = async () => {
-    const res = await fetch('/api/sportmonks/fixtures/live', { cache: 'no-store' });
-    const json = await res.json();
-    const next: Fixture[] = json?.data?.data || [];
-    setFixtures(next);
-  };
+export function LiveFixturesClient({ initialFixtures }: { initialFixtures: Fixture[] }) {
+  const {
+    data,
+  } = useQuery({
+    queryKey: ['live-fixtures'],
+    queryFn: async () => {
+      const res = await fetch('/api/sportmonks/fixtures/live', { cache: 'no-store' });
+      const json = await res.json();
+      // Try json.data.data, fallback to json.data, fallback to []
+      return json?.data?.data || json?.data || [];
+    },
+    refetchInterval: 30_000,
+    initialData: initialFixtures,
+  });
 
-  // Simple polling to keep live fixtures updated without reload
-  useEffect(() => {
-    const id = setInterval(() => { onRefresh().catch(() => {}) }, 30_000);
-    return () => clearInterval(id);
-  }, []);
-
-  return <FixtureList groups={groups} onRefresh={onRefresh} compact={false} />;
+  // Provide fixtures to context
+  return (
+    <FixturesProvider initialFixtures={data || []}>
+      <LiveFixturesInner />
+    </FixturesProvider>
+  );
 }
 
 
