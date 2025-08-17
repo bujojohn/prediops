@@ -32,40 +32,16 @@ export function LiveMatchCard({ liveMatch }: { liveMatch: Fixture }) {
   const matchStatus = liveMatch.state?.name || 'Live';
 
   // Debug logs
-  console.log('LiveMatchCard:', {
+ /*  console.log('LiveMatchCard:', {
     events: liveMatch.events,
     matchStatus,
     starting_at: liveMatch.starting_at
-  });
+  }); */
 
-  // Find the latest event minute
-  const latestMinute = useMemo(() => {
-    if (Array.isArray(liveMatch.events) && liveMatch.events.length > 0) {
-      let maxEvent = liveMatch.events[0];
-      let maxMinute = (maxEvent.minute || 0) + (maxEvent.extra_minute || 0);
-      for (const ev of liveMatch.events) {
-        const min = (ev.minute || 0) + (ev.extra_minute || 0);
-        if (min > maxMinute) {
-          maxMinute = min;
-          maxEvent = ev;
-        }
-      }
-      return maxEvent;
-    }
-    return null;
-  }, [liveMatch.events]);
+  // Remove latestMinute and all event-based minute logic
 
   // Format the minute string
   const minuteString = useMemo(() => {
-    if (latestMinute) {
-      if (latestMinute.extra_minute) {
-        return `${latestMinute.minute}+${latestMinute.extra_minute}'`;
-      }
-      if (latestMinute.minute) {
-        return `${latestMinute.minute}'`;
-      }
-    }
-    // Fallback: estimate from starting_at if match is live or in progress
     if ((/live|in progress/i).test(matchStatus) && liveMatch.starting_at) {
       const start = new Date(liveMatch.starting_at + 'Z'); // ensure UTC
       const now = new Date();
@@ -75,7 +51,7 @@ export function LiveMatchCard({ liveMatch }: { liveMatch: Fixture }) {
       }
     }
     return null;
-  }, [latestMinute, matchStatus, liveMatch.starting_at]);
+  }, [matchStatus, liveMatch.starting_at]);
 
   // Timeline popover outside click
   useEffect(() => {
@@ -134,13 +110,13 @@ export function LiveMatchCard({ liveMatch }: { liveMatch: Fixture }) {
             <div className="text-xs text-gray-600 mb-1">VS</div>
             {(/live|in progress/i).test(matchStatus) ? (
               <div className="flex items-center justify-center text-sm font-semibold text-red-600">
-                <span className="w-2 h-2 bg-red-500 rounded-full mr-2 inline-block" />
+                <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-2 inline-block" />
                 {minuteString ? (
                   <span>{minuteString} <span className="ml-1">Live</span></span>
                 ) : (
                   <span>Live</span>
                 )}
-                {/* Timeline popover trigger */}
+                {/* Timeline popover trigger (optional, can keep for event timeline) */}
                 <button
                   ref={timelineBtnRef}
                   className="ml-2 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -158,7 +134,6 @@ export function LiveMatchCard({ liveMatch }: { liveMatch: Fixture }) {
                     {Array.isArray(liveMatch.events) && liveMatch.events.length > 0 ? (
                       <ul className="space-y-2">
                         {[...liveMatch.events]
-                          .sort((a, b) => ((b.minute || 0) + (b.extra_minute || 0)) - ((a.minute || 0) + (a.extra_minute || 0)))
                           .map(ev => (
                             <li key={ev.id || Math.random()} className="flex items-start gap-2">
                               <span className="font-mono text-xs text-blue-600 min-w-[36px]">{ev.extra_minute ? `${ev.minute}+${ev.extra_minute}'` : ev.minute ? `${ev.minute}'` : ''}</span>
@@ -179,7 +154,11 @@ export function LiveMatchCard({ liveMatch }: { liveMatch: Fixture }) {
                 )}
               </div>
             ) :
-              (/finished|ft|ended/i).test(matchStatus) ? null : (
+              (/finished|ft|ended/i).test(matchStatus) ? (
+                <div className="flex items-center justify-center text-xs text-gray-500 font-medium">
+                  {liveMatch.state?.short_name || matchStatus}
+                </div>
+              ) : (
                 liveMatch.starting_at && (
                   <div className="flex items-center justify-center text-xs text-gray-700">
                     <Clock className="w-4 h-4 mr-1" />

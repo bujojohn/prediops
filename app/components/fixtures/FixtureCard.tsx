@@ -42,22 +42,8 @@ function getMatchPhase(fixture: Fixture): 'scheduled' | 'live' | 'finished' {
   return 'scheduled';
 }
 
-function getMinutesPlayedFromEvents(fixture: Fixture): number | null {
-  if (Array.isArray(fixture.events) && fixture.events.length > 0) {
-    let maxEvent = fixture.events[0];
-    let maxMinute = (maxEvent.minute || 0) + (maxEvent.extra_minute || 0);
-    for (const ev of fixture.events) {
-      const min = (ev.minute || 0) + (ev.extra_minute || 0);
-      if (min > maxMinute) {
-        maxMinute = min;
-        maxEvent = ev;
-      }
-    }
-    if (maxEvent.extra_minute) return Number(maxEvent.minute || 0) + Number(maxEvent.extra_minute || 0);
-    if (maxEvent.minute) return maxEvent.minute;
-  }
-  // fallback to estimation
-  if (fixture.starting_at) {
+function getMinutesPlayed(fixture: Fixture): number | null {
+  if (getMatchPhase(fixture) === 'live' && fixture.starting_at) {
     const start = new Date(fixture.starting_at + 'Z');
     const now = new Date();
     const diff = Math.floor((now.getTime() - start.getTime()) / 60000);
@@ -407,7 +393,7 @@ export function FixtureCard({ fixture: propFixture, compact = false }: { fixture
               {(() => {
                 const phase = getMatchPhase(fixture);
                 if (phase === 'live') {
-                  const mins = getMinutesPlayedFromEvents(fixture);
+                  const mins = getMinutesPlayed(fixture);
                   return (
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
