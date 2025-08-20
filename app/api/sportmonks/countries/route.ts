@@ -24,8 +24,8 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   try {
     const response = await sportmonks.getCountries({
-      includes: ['continent', 'leagues'],
-      select: ['name', 'official_name', 'fifa_name', 'iso2', 'iso3', 'image_path'],
+      includes: 'continent;leagues',
+      select: 'name,official_name,fifa_name,iso2,iso3,image_path',
       order: 'asc',
       sortBy: 'name'
     });
