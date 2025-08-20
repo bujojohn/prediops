@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sportmonks } from '@/lib/sportmonks';
 import { mockLiveFixtures } from '@/lib/mock-data';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const latestScores = await sportmonks.getLatestLiveScores({
       include: 'participants;scores;state;predictions;league;venue',
