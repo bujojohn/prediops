@@ -65,8 +65,7 @@ export function CountriesList({ onCountrySelect, selectedCountryId }: CountriesL
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          includes: ['continent', 'leagues'],
-          select: ['name', 'official_name', 'fifa_name', 'iso2', 'iso3', 'image_path'],
+          includes: ['continent', 'leagues:name,official_name,fifa_name,iso2,iso3,image_path'],
           order: 'asc',
           sortBy: 'name'
         }),
