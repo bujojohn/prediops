@@ -4,8 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Trophy, Calendar, BarChart3, Target } from 'lucide-react';
 
-type PageProps = { params: { id: string } };
-
 // Mock data - replace with actual API call
 const getLeagueData = async (id: string) => {
   const leagues = {
@@ -32,7 +30,7 @@ const getLeagueData = async (id: string) => {
   return leagues[id as keyof typeof leagues] || null;
 };
 
-export default async function LeaguePage({ params }: PageProps) {
+export default async function LeaguePage({ params }: { params: { id: string } }) {
   const league = await getLeagueData(params.id);
 
   if (!league) {
