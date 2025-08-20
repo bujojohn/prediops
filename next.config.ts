@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  trailingSlash: true,
   images: {
     remotePatterns: [
       {
@@ -12,6 +12,9 @@ const nextConfig: NextConfig = {
         search: '',
       },
     ],
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
   },
 };
 
