@@ -30,8 +30,9 @@ const getLeagueData = async (id: string) => {
   return leagues[id as keyof typeof leagues] || null;
 };
 
-export default async function LeaguePage({ params }: { params: { id: string } }) {
-  const league = await getLeagueData(params.id);
+export default async function LeaguePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const league = await getLeagueData(id);
 
   if (!league) {
     notFound();
