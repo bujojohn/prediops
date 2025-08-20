@@ -5,6 +5,7 @@ import type { Fixture } from '@/schemas/fixture.schema';
 import { FixtureList, type FixtureGroup } from '@/app/components/fixtures/FixtureList';
 import { useQuery } from '@tanstack/react-query';
 import { FixturesProvider, useFixtures } from '@/app/contexts/FixturesContext';
+import { ErrorBoundary } from '@/app/components/error-boundary/ErrorBoundary';
 
 function groupByLeague(fixtures: Fixture[]): FixtureGroup[] {
   const map = new Map<string, Fixture[]>();
@@ -28,6 +29,9 @@ function LiveFixturesInner() {
 export function LiveFixturesClient({ initialFixtures }: { initialFixtures: Fixture[] }) {
   const {
     data,
+    error,
+    isError,
+    isLoading,
   } = useQuery({
     queryKey: ['live-fixtures'],
     queryFn: async () => {
@@ -40,11 +44,30 @@ export function LiveFixturesClient({ initialFixtures }: { initialFixtures: Fixtu
     initialData: initialFixtures,
   });
 
+  if (isLoading) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        Loading live fixtures...
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="text-red-600 text-center py-8">
+        Failed to load live fixtures. Please try again later.<br />
+        <span className="text-xs text-gray-500">{error?.message || String(error)}</span>
+      </div>
+    );
+  }
+
   // Provide fixtures to context
   return (
-    <FixturesProvider initialFixtures={data || []}>
-      <LiveFixturesInner />
-    </FixturesProvider>
+    <ErrorBoundary>
+      <FixturesProvider initialFixtures={data || []}>
+        <LiveFixturesInner />
+      </FixturesProvider>
+    </ErrorBoundary>
   );
 }
 
