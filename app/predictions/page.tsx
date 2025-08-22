@@ -17,7 +17,7 @@ export default async function PredictionsPage() {
     <div className="container mx-auto p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-1">All Football Events</h1>
-        <span className="text-sm text-gray-600">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
           AI-powered predictions for upcoming matches
         </span>
       </div>

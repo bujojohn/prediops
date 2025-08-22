@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import type { Fixture } from '@/schemas/fixture.schema';
 import { FixtureList, type FixtureGroup } from '@/app/components/fixtures/FixtureList';
 import { dateKeyUTC, formatDateUTC, formatSemanticDateUTC } from '@/lib/utils';
@@ -39,7 +39,7 @@ export function LatestFixturesClient({ initialFixtures }: { initialFixtures: Fix
 
   const groups = useMemo(() => groupByDate(fixtures), [fixtures]);
 
-  const loadNextPage = async () => {
+  const loadNextPage = useCallback(async () => {
     if (isLoadingMore || !hasMore) return;
     setIsLoadingMore(true);
     try {
@@ -62,7 +62,7 @@ export function LatestFixturesClient({ initialFixtures }: { initialFixtures: Fix
     } finally {
       setIsLoadingMore(false);
     }
-  };
+  }, [isLoadingMore, hasMore, page, fixtures]);
 
   useEffect(() => {
     if (!sentinelRef.current || !hasMore) return;
@@ -76,7 +76,7 @@ export function LatestFixturesClient({ initialFixtures }: { initialFixtures: Fix
     }, { rootMargin: '200px' });
     observer.observe(node);
     return () => observer.unobserve(node);
-  }, [hasMore, sentinelRef.current, page, isLoadingMore]);
+  }, [hasMore, sentinelRef, page, isLoadingMore, loadNextPage]);
 
   return (
     <>

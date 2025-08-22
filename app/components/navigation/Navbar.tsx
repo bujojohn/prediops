@@ -24,30 +24,32 @@ export function Navbar() {
 
 
   return (
-         <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+         <nav className="bg-background shadow-sm border-b border-border" role="navigation" aria-label="Main">
       <div className="container mx-auto px-6">
         <div className="flex justify-between items-center h-16">
           {/* Logo and Brand */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
               <span className="text-2xl">⚽</span>
-                             <span className="font-bold text-xl text-gray-900 dark:text-white">Prediops</span>
+                             <span className="font-bold text-xl text-foreground">Prediops</span>
             </Link>
           </div>
           
 
           
           {/* Navigation Links - Desktop */}
-          <div className="hidden md:flex space-x-4">
+          <div className="hidden md:flex space-x-4" role="menubar" aria-label="Primary">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
+                                 aria-current={pathname === item.href ? 'page' : undefined}
                                  className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                    pathname === item.href
-                     ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20'
-                     : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700'
+                     ? 'text-primary bg-primary/10'
+                     : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                  }`}
+                aria-label={item.label}
               >
                 <span>{item.icon}</span>
                 <span>{item.label}</span>
@@ -56,7 +58,7 @@ export function Navbar() {
           </div>
           
           {/* Right Side Actions - Desktop */}
-          <div className="hidden md:flex items-center space-x-2">
+          <div className="hidden md:flex items-center space-x-2" aria-label="User actions">
             {/* Display Settings Toggle */}
             <DisplaySettingsToggle />
             
@@ -67,6 +69,7 @@ export function Navbar() {
                onClick={toggleTheme}
                className="p-2"
                title="Toggle dark mode"
+               aria-label="Toggle dark mode"
              >
                {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
              </Button>
@@ -77,6 +80,7 @@ export function Navbar() {
               size="sm"
               className="p-2 relative"
               title="Notifications"
+              aria-label="Notifications"
             >
               <Bell className="h-4 w-4" />
               <span className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full"></span>
@@ -88,6 +92,7 @@ export function Navbar() {
               size="sm"
               className="p-2"
               title="User profile"
+              aria-label="User profile"
             >
               <User className="h-4 w-4" />
             </Button>
@@ -109,7 +114,7 @@ export function Navbar() {
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-200">
+                        <div className="md:hidden border-t border-border">
             <div className="px-2 pt-2 pb-3 space-y-1">
               
               
@@ -120,8 +125,8 @@ export function Navbar() {
                   href={item.href}
                   className={`flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium transition-colors ${
                     pathname === item.href
-                      ? 'text-blue-600 bg-blue-50'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'text-primary bg-primary/10'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                   }`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
@@ -131,7 +136,7 @@ export function Navbar() {
               ))}
               
               {/* Mobile Actions */}
-              <div className="flex items-center justify-between px-3 py-2 border-t border-gray-200 mt-2">
+              <div className="flex items-center justify-between px-3 py-2 border-t border-border mt-2">
                 <div className="flex items-center space-x-2">
                   <DisplaySettingsToggle />
                                      <Button

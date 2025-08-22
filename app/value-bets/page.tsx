@@ -15,7 +15,7 @@ export default async function ValueBetsPage() {
     <div className="container mx-auto p-6">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Value Bets</h1>
-        <p className="text-gray-600">
+        <p className="text-gray-700 dark:text-gray-300">
           Profitable betting opportunities identified by AI analysis
         </p>
       </div>
@@ -32,10 +32,10 @@ export default async function ValueBetsPage() {
       ) : (
         <div className="text-center py-12">
           <div className="text-gray-400 text-6xl mb-4">💰</div>
-          <h3 className="text-xl font-semibold text-gray-600 mb-2">
+          <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
             No value bets available
           </h3>
-          <p className="text-gray-500">
+                      <p className="text-gray-600 dark:text-gray-400">
             Check back later for updated value betting opportunities
           </p>
         </div>

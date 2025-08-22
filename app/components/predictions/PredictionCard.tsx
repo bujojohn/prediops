@@ -22,7 +22,7 @@ export function PredictionCard({ prediction }: { prediction: Prediction }) {
   const getConfidenceColor = (probability: number) => {
     if (probability > 0.6) return 'text-green-600 bg-green-50';
     if (probability > 0.4) return 'text-yellow-600 bg-yellow-50';
-    return 'text-gray-600 bg-gray-50';
+    return 'text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800';
   };
 
   const highestProb = Math.max(
@@ -38,7 +38,7 @@ export function PredictionCard({ prediction }: { prediction: Prediction }) {
           {prediction.name || `${homeTeam} vs ${awayTeam}`}
         </h3>
         {prediction.starting_at && (
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-gray-600 dark:text-gray-400">
             {new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', year: 'numeric', month: 'short', day: '2-digit' }).format(new Date(prediction.starting_at))}
           </span>
         )}
@@ -74,7 +74,7 @@ export function PredictionCard({ prediction }: { prediction: Prediction }) {
       </div>
       
       <div className="mt-3 text-center">
-        <span className="text-xs text-gray-500">
+        <span className="text-xs text-gray-600 dark:text-gray-400">
           Confidence: {(highestProb * 100).toFixed(1)}%
         </span>
       </div>

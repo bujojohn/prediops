@@ -38,7 +38,7 @@ export function CountriesListClient({
   onCountrySelect, 
   selectedCountryId 
 }: CountriesListClientProps) {
-  const [countries, setCountries] = useState<Country[]>(initialCountries);
+  const [countries] = useState<Country[]>(initialCountries);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredCountries, setFilteredCountries] = useState<Country[]>(countries);
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 
 export type FilterType = 'today' | 'tomorrow' | 'weekend' | 'top-bets';
 
@@ -49,7 +49,7 @@ export function useQuickFilters() {
     return { start, end };
   }, []);
 
-  const filters: QuickFilter[] = [
+  const filters: QuickFilter[] = useMemo(() => ([
     {
       id: 'today',
       label: 'Today',
@@ -74,7 +74,7 @@ export function useQuickFilters() {
       href: '/value-bets?filter=top',
       getDateRange: () => ({ start: new Date(), end: new Date() }) // Not date-based
     }
-  ];
+  ]), [getTodayRange, getTomorrowRange, getWeekendRange]);
 
   const getFilterByType = useCallback((type: FilterType) => {
     return filters.find(filter => filter.id === type);

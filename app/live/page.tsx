@@ -20,7 +20,7 @@ export default async function LiveMatchesPage() {
       <div className="container mx-auto p-6">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Live Matches</h1>
-          <p className="text-gray-600">
+          <p className="text-gray-700 dark:text-gray-300">
             Real-time scores and match updates from around the world
           </p>
         </div>
@@ -35,7 +35,7 @@ export default async function LiveMatchesPage() {
       <div className="container mx-auto p-6">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Live Matches</h1>
-          <p className="text-gray-600">
+          <p className="text-gray-700 dark:text-gray-300">
             Real-time scores and match updates from around the world
           </p>
         </div>

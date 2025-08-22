@@ -244,7 +244,7 @@ export function AdvancedSearch({
               </div>
             ) : query.trim().length >= 2 ? (
               <div className="p-4 text-center text-sm text-gray-500">
-                No results found for "{query}"
+                {`No results found for "${query}"`}
               </div>
             ) : null}
           </CardContent>

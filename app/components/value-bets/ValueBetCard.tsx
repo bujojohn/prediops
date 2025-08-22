@@ -26,7 +26,7 @@ export function ValueBetCard({ valueBet, name, starting_at, participants }: Valu
   const getValueColor = (value: number) => {
     if (value > 0.1) return 'text-green-600 bg-green-50 border-green-200';
     if (value > 0.05) return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-    return 'text-gray-600 bg-gray-50 border-gray-200';
+    return 'text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700';
   };
 
   return (
@@ -39,7 +39,7 @@ export function ValueBetCard({ valueBet, name, starting_at, participants }: Valu
           {name || `${homeTeam} vs ${awayTeam}`}
         </h3>
         {starting_at && (
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-gray-600 dark:text-gray-400">
             {new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', year: 'numeric', month: 'short', day: '2-digit' }).format(new Date(starting_at))}
           </span>
         )}
@@ -104,9 +104,9 @@ export function ValueBetCard({ valueBet, name, starting_at, participants }: Valu
       )}
       
       <div className="text-center">
-        <span className="text-xs text-gray-500">
-          {valueBet.predictions.is_value ? 'Profitable Value Bet' : 'Not a Value Bet'}
-        </span>
+                    <span className="text-xs text-gray-600 dark:text-gray-400">
+              {valueBet.predictions.is_value ? 'Profitable Value Bet' : 'Not a Value Bet'}
+            </span>
       </div>
     </div>
   );

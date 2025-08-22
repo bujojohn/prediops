@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   Search,
   X,
@@ -155,7 +155,16 @@ export function GlobalSearchClient({
   }, []);
 
   const { data: searchData } = useSearch({ query, type: "all", limit: 10 });
-  const results = searchData?.data || [];
+  const results = useMemo(() => searchData?.data ?? [], [searchData]);
+
+  const handleResultClick = useCallback((result: SearchResult) => {
+    console.log("Navigating to:", result.url);
+    addToRecentSearches(query);
+    window.location.href = result.url;
+    setShowResults(false);
+    setQuery("");
+    setSelectedIndex(-1);
+  }, [query]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -187,17 +196,7 @@ export function GlobalSearchClient({
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [showResults, query, selectedIndex, results]);
-
-  const handleResultClick = (result: SearchResult) => {
-    console.log("Navigating to:", result.url);
-    addToRecentSearches(query);
-    // In a real app, you would use Next.js router to navigate
-    window.location.href = result.url;
-    setShowResults(false);
-    setQuery("");
-    setSelectedIndex(-1);
-  };
+  }, [showResults, query, selectedIndex, results, handleResultClick]);
 
   return (
     <ErrorBoundary>

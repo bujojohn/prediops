@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { sportmonks } from '@/lib/sportmonks';
 import { mockValueBets } from '@/lib/mock-data';
 
-export async function GET(_request: NextRequest) {
+export async function GET() {
   try {
     // Use default configuration (includes fixture:name)
     const valueBets = await sportmonks.getValueBets();

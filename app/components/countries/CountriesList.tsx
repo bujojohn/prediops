@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Search, Globe, Trophy } from 'lucide-react';
+import { FlagImage } from '@/app/components/ui/optimized-image';
 
 interface Country {
   id: number;
@@ -171,11 +172,7 @@ export function CountriesList({ onCountrySelect, selectedCountryId }: CountriesL
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     {country.image_path ? (
-                      <img
-                        src={country.image_path}
-                        alt={`${country.name} flag`}
-                        className="w-6 h-4 object-cover rounded"
-                      />
+                      <FlagImage src={country.image_path} alt={`${country.name} flag`} className="w-6 h-4" />
                     ) : (
                       <div className="w-6 h-4 bg-gray-200 rounded flex items-center justify-center">
                         <span className="text-xs text-gray-500">{country.iso2}</span>

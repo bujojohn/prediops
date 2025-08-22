@@ -1,5 +1,11 @@
 import axios from "axios";
 import { validateApiConfig } from "@/lib/validation/api-config";
+import type { Fixture } from "@/schemas/fixture.schema";
+import type { Prediction } from "@/schemas/predictions.schema";
+import type { ValueBet } from "@/schemas/valuebet.schema";
+import type { Country } from "@/schemas/country.schema";
+import type { League } from "@/schemas/league.schema";
+import type { Team } from "@/schemas/team.schema";
 
 const api = axios.create({
   baseURL: process.env.SPORTMONKS_BASE_URL || "https://api.sportmonks.com/v3/football",
@@ -39,6 +45,22 @@ export interface ApiConfig {
   populate?: boolean; // when true we send _filters=populate_
 }
 
+// Generic list response shape used by SportMonks v3 APIs
+export type ApiListResponse<T> = {
+  data: T[];
+  pagination?: {
+    count?: number;
+    per_page?: number | string;
+    current_page?: number | string;
+    next_page?: string | null;
+    has_more?: boolean;
+  };
+  subscription?: unknown;
+  rate_limit?: unknown;
+  timezone?: string;
+  [key: string]: unknown;
+};
+
 // Minimal adapter: pass config as-is, only map populate -> _filters and support legacy arrays
 function makeParams(config?: ApiConfig): Record<string, string | number | boolean> {
   if (!config) return {};
@@ -60,42 +82,42 @@ function makeParams(config?: ApiConfig): Record<string, string | number | boolea
 
 export const sportmonks = {
   // Get predictions with configurable options
-  async getPredictions(config?: ApiConfig) {
+  async getPredictions(config?: ApiConfig): Promise<ApiListResponse<Prediction>> {
     const url = `/predictions/probabilities`;
     const response = await api.get(url, { params: makeParams(config) });
     return response.data;
   },
 
   // Get value bets with configurable options
-  async getValueBets(config?: ApiConfig) {
+  async getValueBets(config?: ApiConfig): Promise<ApiListResponse<ValueBet>> {
     const url = `/predictions/value-bets`;
     const response = await api.get(url, { params: makeParams(config) });
     return response.data;
   },
 
   // Get live fixtures with configurable options
-  async getLiveFixtures(config?: ApiConfig) {
+  async getLiveFixtures(config?: ApiConfig): Promise<ApiListResponse<Fixture>> {
     const url = '/livescores/inplay';
     const response = await api.get(url, { params: makeParams(config) });
     return response.data;
   },
 
   // Get latest live scores with configurable options
-  async getLatestLiveScores(config?: ApiConfig) {
+  async getLatestLiveScores(config?: ApiConfig): Promise<ApiListResponse<Fixture>> {
     const url = "/livescores/latest";
     const response = await api.get(url, { params: makeParams(config) });
     return response.data;
   },
 
   // Get predictions for specific fixture with configurable options
-  async getFixturePredictions(fixtureId: string, config?: ApiConfig) {
+  async getFixturePredictions(fixtureId: string, config?: ApiConfig): Promise<ApiListResponse<Prediction>> {
     const url = `/predictions/probabilities/fixtures/${fixtureId}`;
     const response = await api.get(url, { params: makeParams(config) });
     return response.data;
   },
 
   // Get upcoming fixtures with configurable options
-  async getUpcomingFixtures(config?: ApiConfig) {
+  async getUpcomingFixtures(config?: ApiConfig): Promise<ApiListResponse<Fixture>> {
     const url = `/fixtures`;
     const response = await api.get(url, { params: makeParams(config) });
     return response.data;
@@ -123,21 +145,21 @@ export const sportmonks = {
   },
 
   // Get seasons with configurable options
-  async getSeasons(config?: ApiConfig) {
+  async getSeasons(config?: ApiConfig): Promise<ApiListResponse<unknown>> {
     const url = `/seasons`;
     const response = await api.get(url, { params: makeParams(config) });
     return response.data;
   },
 
   // Get leagues with configurable options
-  async getLeagues(config?: ApiConfig) {
+  async getLeagues(config?: ApiConfig): Promise<ApiListResponse<League>> {
     const url = `/leagues`;
     const response = await api.get(url, { params: makeParams(config) });
     return response.data;
   },
 
   // Get teams with configurable options
-  async getTeams(config?: ApiConfig) {
+  async getTeams(config?: ApiConfig): Promise<ApiListResponse<Team>> {
     const url = `/teams`;
     const response = await api.get(url, { params: makeParams(config) });
     return response.data;
@@ -151,7 +173,7 @@ export const sportmonks = {
   },
 
   // Get players with configurable options
-  async getPlayers(config?: ApiConfig) {
+  async getPlayers(config?: ApiConfig): Promise<ApiListResponse<unknown>> {
     const url = `/players`;
     const response = await api.get(url, { params: makeParams(config) });
     return response.data;
@@ -165,7 +187,7 @@ export const sportmonks = {
   },
 
   // Get countries with configurable options
-  async getCountries(config?: ApiConfig) {
+  async getCountries(config?: ApiConfig): Promise<ApiListResponse<Country>> {
     const url = `/countries`;
     const response = await api.get(url, { params: makeParams(config) });
     return response.data;

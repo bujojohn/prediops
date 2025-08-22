@@ -1,17 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { sportmonks, ApiConfig } from '@/lib/sportmonks';
-import { z } from 'zod';
-import { PredictionSchema, PredictionsArraySchema } from '@/schemas/predictions.schema';
-import { ValueBetSchema } from '@/schemas/valuebet.schema';
-import { FixtureSchema } from '@/schemas/fixture.schema';
-import { StandingSchema } from '@/schemas/standing.schema';
-import { TeamStatisticsSchema } from '@/schemas/team-statistics.schema';
-import { SeasonSchema } from '@/schemas/season.schema';
-import { LeagueSchema } from '@/schemas/league.schema';
-import { ParticipantSchema } from '@/schemas/participant.schema';
-import { PlayerSchema } from '@/schemas/player.schema';
-import { CountrySchema } from '@/schemas/country.schema';
-import { VenueSchema } from '@/schemas/venue.schema';
+// Removed unused imports
 
 // Query keys for React Query
 export const sportmonksKeys = {

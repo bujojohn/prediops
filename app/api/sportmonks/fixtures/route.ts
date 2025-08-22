@@ -26,7 +26,7 @@ export async function GET(request: Request) {
       timestamp: new Date().toISOString(),
       count: fixtures?.data?.length || 0,
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       {
         success: false,

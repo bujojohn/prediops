@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Image, ImageOff } from 'lucide-react';
+import { Image as ImageIcon, ImageOff as ImageOffIcon } from 'lucide-react';
 import { useDisplaySettings } from '@/app/contexts/DisplaySettingsContext';
 
 export function DisplaySettingsToggle() {
@@ -16,9 +16,9 @@ export function DisplaySettingsToggle() {
       title={settings.showTeamImages ? 'Hide team images' : 'Show team images'}
     >
       {settings.showTeamImages ? (
-        <Image className="h-4 w-4" />
+        <ImageIcon aria-hidden className="h-4 w-4" />
       ) : (
-        <ImageOff className="h-4 w-4" />
+        <ImageOffIcon aria-hidden className="h-4 w-4" />
       )}
       <span className="hidden sm:inline text-xs">
         {settings.showTeamImages ? 'Hide Images' : 'Show Images'}

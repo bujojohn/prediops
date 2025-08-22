@@ -34,9 +34,12 @@ export function LiveMatchesList({ initialFixtures }: LiveMatchesListProps) {
           setError(data.message || 'Failed to fetch live matches. Please try again later.');
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = (typeof error === 'object' && error && 'message' in error)
+        ? String((error as { message?: unknown }).message ?? '')
+        : '';
       setFixtures([]);
-      if (error?.message && error.message.toString().includes('403')) {
+      if (message && message.toString().includes('403')) {
         setError('Live data is unavailable due to an authorization error (403). Please check your API credentials or try again later.');
       } else {
         setError('Network error. Please try again later.');

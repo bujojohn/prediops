@@ -38,7 +38,7 @@ const initialState = {
 
 export const useAppStore = create<AppState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       ...initialState,
       
       toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),

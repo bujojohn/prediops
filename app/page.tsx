@@ -9,7 +9,7 @@ export default function Home() {
         <h1 className="text-5xl font-bold text-gray-900 mb-6">
           Prediops
         </h1>
-        <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+        <p className="text-xl text-gray-700 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
           AI-powered sports predictions and value betting opportunities across 111+ leagues worldwide
         </p>
         <div className="flex justify-center space-x-4">
@@ -33,7 +33,7 @@ export default function Home() {
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <div className="text-4xl mb-4">🎯</div>
           <h3 className="text-xl font-semibold mb-2">AI Predictions</h3>
-          <p className="text-gray-600">
+          <p className="text-gray-700 dark:text-gray-300">
             Professional-grade algorithms analyze match data to provide accurate predictions
           </p>
         </div>
@@ -41,7 +41,7 @@ export default function Home() {
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <div className="text-4xl mb-4">💰</div>
           <h3 className="text-xl font-semibold mb-2">Value Bets</h3>
-          <p className="text-gray-600">
+          <p className="text-gray-700 dark:text-gray-300">
             Identify profitable betting opportunities with our advanced value betting analysis
           </p>
         </div>
@@ -49,7 +49,7 @@ export default function Home() {
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <div className="text-4xl mb-4">⚽</div>
           <h3 className="text-xl font-semibold mb-2">Live Matches</h3>
-          <p className="text-gray-600">
+          <p className="text-gray-700 dark:text-gray-300">
             Real-time scores and match updates from leagues around the world
           </p>
         </div>
@@ -61,19 +61,19 @@ export default function Home() {
         <div className="grid md:grid-cols-4 gap-8 text-center">
           <div>
             <div className="text-3xl font-bold text-blue-600 mb-2">111+</div>
-            <div className="text-gray-600">Leagues Covered</div>
+            <div className="text-gray-700 dark:text-gray-300">Leagues Covered</div>
           </div>
           <div>
             <div className="text-3xl font-bold text-green-600 mb-2">24/7</div>
-            <div className="text-gray-600">Live Updates</div>
+            <div className="text-gray-700 dark:text-gray-300">Live Updates</div>
           </div>
           <div>
             <div className="text-3xl font-bold text-purple-600 mb-2">AI</div>
-            <div className="text-gray-600">Powered Analysis</div>
+            <div className="text-gray-700 dark:text-gray-300">Powered Analysis</div>
           </div>
           <div>
             <div className="text-3xl font-bold text-red-600 mb-2">Global</div>
-            <div className="text-gray-600">Coverage</div>
+            <div className="text-gray-700 dark:text-gray-300">Coverage</div>
           </div>
         </div>
       </div>
@@ -81,7 +81,7 @@ export default function Home() {
       {/* CTA Section */}
       <div className="text-center">
         <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
-        <p className="text-gray-600 mb-8">
+        <p className="text-gray-700 dark:text-gray-300 mb-8">
           Test your API connection and start exploring predictions
         </p>
         <Link 

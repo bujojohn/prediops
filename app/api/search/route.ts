@@ -136,13 +136,15 @@ export async function GET(request: NextRequest) {
 
     // Sort results by relevance (exact matches first, then partial matches)
     const sortedResults = results.sort((a, b) => {
-      const aExact = a.name.toLowerCase() === query.toLowerCase();
-      const bExact = b.name.toLowerCase() === query.toLowerCase();
+      const aName = (a?.name || '').toString();
+      const bName = (b?.name || '').toString();
+      const aExact = aName.toLowerCase() === query.toLowerCase();
+      const bExact = bName.toLowerCase() === query.toLowerCase();
       
       if (aExact && !bExact) return -1;
       if (!aExact && bExact) return 1;
       
-      return a.name.localeCompare(b.name);
+      return aName.localeCompare(bName);
     });
 
     return NextResponse.json({
