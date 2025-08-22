@@ -32,6 +32,7 @@ export function FixturePredictionMarkets({
   const [selectedMarketKey, setSelectedMarketKey] = useState<string>('');
   const [marketOpen, setMarketOpen] = useState(false);
   const [marketFilter, setMarketFilter] = useState('');
+  const [optionFilter, setOptionFilter] = useState('');
   const [showMorePopover, setShowMorePopover] = useState(false);
   const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -120,29 +121,65 @@ export function FixturePredictionMarkets({
   useEffect(() => {
     if (marketOpen && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const popoverWidth = 256; // w-64 = 16rem = 256px
+      
+      // Calculate if popover would go off-screen to the right
+      const wouldGoOffScreen = rect.left + popoverWidth > viewportWidth - 16; // 16px margin
+      
       setPopoverPosition({
         top: rect.bottom + window.scrollY + 4,
-        left: rect.left + window.scrollX
+        left: wouldGoOffScreen 
+          ? rect.right + window.scrollX - popoverWidth // Position to the left of button
+          : rect.left + window.scrollX // Position to the right of button
       });
     }
   }, [marketOpen]);
 
-  // Close popover when clicking outside
+  // Close popover when clicking outside or pressing ESC
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
         setMarketOpen(false);
+        setMarketFilter(''); // Clear search when closing
       }
       if (moreButtonRef.current && !moreButtonRef.current.contains(event.target as Node)) {
         setShowMorePopover(false);
+        setOptionFilter(''); // Clear search when closing
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMarketOpen(false);
+        setShowMorePopover(false);
+        setMarketFilter('');
+        setOptionFilter('');
       }
     };
 
     if (marketOpen || showMorePopover) {
       document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('keydown', handleKeyDown);
+      };
     }
   }, [marketOpen, showMorePopover]);
+
+  // Clear search filters when popovers close
+  useEffect(() => {
+    if (!marketOpen) {
+      setMarketFilter('');
+    }
+  }, [marketOpen]);
+
+  useEffect(() => {
+    if (!showMorePopover) {
+      setOptionFilter('');
+    }
+  }, [showMorePopover]);
 
   if (!marketsMap || Object.keys(marketsMap).length === 0) {
     return null;
@@ -154,6 +191,9 @@ export function FixturePredictionMarkets({
   // Popover component for market selection
   const MarketPopover = () => {
     if (!marketOpen) return null;
+
+    const filteredMarkets = Object.values(marketsMap)
+      .filter(m => m.label.toLowerCase().includes(marketFilter.toLowerCase()));
 
     return createPortal(
       <div 
@@ -169,12 +209,12 @@ export function FixturePredictionMarkets({
             value={marketFilter}
             onChange={e => setMarketFilter(e.target.value)}
             placeholder="Search markets..."
-            className="w-full px-2 py-1 text-xs rounded bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 focus:outline-none"
+            className="w-full px-2 py-1 text-xs rounded bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            autoFocus
           />
         </div>
-        {Object.values(marketsMap)
-          .filter(m => m.label.toLowerCase().includes(marketFilter.toLowerCase()))
-          .map((m) => (
+        {filteredMarkets.length > 0 ? (
+          filteredMarkets.map((m) => (
             <button
               type="button"
               key={m.key}
@@ -182,12 +222,21 @@ export function FixturePredictionMarkets({
                 'w-full text-left px-2 py-1.5 text-xs hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 truncate transition-colors',
                 selectedMarketKey === m.key && 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
               )}
-              onClick={() => { setSelectedMarketKey(m.key); setMarketOpen(false); }}
+              onClick={() => { 
+                setSelectedMarketKey(m.key); 
+                setMarketOpen(false); 
+                setMarketFilter(''); // Clear search when selecting
+              }}
               title={m.label}
             >
               {m.label}
             </button>
-          ))}
+          ))
+        ) : (
+          <div className="px-2 py-1.5 text-xs text-gray-500 dark:text-gray-400">
+            No markets found
+          </div>
+        )}
       </div>,
       document.body
     );
@@ -198,6 +247,12 @@ export function FixturePredictionMarkets({
     if (!showMorePopover || !moreButtonRef.current) return null;
 
     const rect = moreButtonRef.current.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const popoverWidth = 256; // w-64 = 16rem = 256px
+    
+    // Calculate if popover would go off-screen to the right
+    const wouldGoOffScreen = rect.left + popoverWidth > viewportWidth - 16; // 16px margin
+    
     const restOptions = options
       .filter(opt => opt.value !== null)
       .sort((a, b) => (b.value || 0) - (a.value || 0))
@@ -205,29 +260,50 @@ export function FixturePredictionMarkets({
 
     return createPortal(
       <div 
-        className="fixed z-[9999] w-64 max-w-[calc(100vw-2rem)] max-h-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg p-1.5 overflow-y-auto"
+        className="fixed z-[9999] w-64 max-w-[calc(100vw-2rem)] max-h-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg overflow-y-auto"
         style={{
           top: rect.bottom + window.scrollY + 4,
-          left: rect.left + window.scrollX,
+          left: wouldGoOffScreen 
+            ? rect.right + window.scrollX - popoverWidth // Position to the left of button
+            : rect.left + window.scrollX // Position to the right of button
         }}
       >
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
-          {restOptions.map((opt) => (
-            <Button
-              key={opt.code}
-              variant="outline"
-              size="sm"
-              className="h-10 px-3 py-2 text-center border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              aria-label={`${opt.code} prediction: ${opt.value != null ? `${Number(opt.value).toFixed(0)}%` : 'No data'}`}
-            >
-              <div className="flex flex-col items-center gap-0.5">
-                <span className="text-xs font-medium text-gray-900 dark:text-gray-300">{opt.code}</span>
-                <span className="text-xs font-semibold text-blue-700 dark:text-blue-400">
-                  {opt.value != null ? `${Number(opt.value).toFixed(0)}%` : '-'}
-                </span>
-              </div>
-            </Button>
-          ))}
+        <div className="p-1.5 border-b border-gray-100 dark:border-gray-700">
+          <input
+            type="text"
+            value={optionFilter}
+            onChange={e => setOptionFilter(e.target.value)}
+            placeholder="Search options..."
+            className="w-full px-2 py-1 text-xs rounded bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            autoFocus
+          />
+        </div>
+        <div className="p-1.5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
+            {restOptions
+              .filter(opt => opt.code.toLowerCase().includes(optionFilter.toLowerCase()))
+              .map((opt) => (
+                <Button
+                  key={opt.code}
+                  variant="outline"
+                  size="sm"
+                  className="h-10 px-3 py-2 text-center border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  aria-label={`${opt.code} prediction: ${opt.value != null ? `${Number(opt.value).toFixed(0)}%` : 'No data'}`}
+                >
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span className="text-xs font-medium text-gray-900 dark:text-gray-300">{opt.code}</span>
+                    <span className="text-xs font-semibold text-blue-700 dark:text-blue-400">
+                      {opt.value != null ? `${Number(opt.value).toFixed(0)}%` : '-'}
+                    </span>
+                  </div>
+                </Button>
+              ))}
+          </div>
+          {restOptions.filter(opt => opt.code.toLowerCase().includes(optionFilter.toLowerCase())).length === 0 && (
+            <div className="px-2 py-1.5 text-xs text-gray-500 dark:text-gray-400 text-center">
+              No options found
+            </div>
+          )}
         </div>
       </div>,
       document.body
