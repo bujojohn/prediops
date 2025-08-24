@@ -115,13 +115,13 @@ function getMatchPhase(fixture: Fixture): 'scheduled' | 'live' | 'finished' {
     return 'scheduled';
   } catch (error) {
     console.error('Error in getMatchPhase:', error);
-    return 'scheduled';
+  return 'scheduled';
   }
 }
 
 function getMinutesPlayed(fixture: Fixture): number | null {
   try {
-    if (getMatchPhase(fixture) === 'live' && fixture.starting_at) {
+  if (getMatchPhase(fixture) === 'live' && fixture.starting_at) {
       // Handle both ISO format and "2025-08-26 18:45:00" format
       let start: Date;
       if (fixture.starting_at.includes('T')) {
@@ -132,8 +132,8 @@ function getMinutesPlayed(fixture: Fixture): number | null {
         start = new Date(fixture.starting_at.replace(' ', 'T') + 'Z');
       }
       
-      const now = new Date();
-      const diff = Math.floor((now.getTime() - start.getTime()) / 60000);
+    const now = new Date();
+    const diff = Math.floor((now.getTime() - start.getTime()) / 60000);
       
       // More realistic range: 0-120 minutes (2 hours max for a football match)
       // This prevents matches from getting stuck at unrealistic times
@@ -141,8 +141,8 @@ function getMinutesPlayed(fixture: Fixture): number | null {
       
       // If diff is negative (future match) or too high, return null
       return null;
-    }
-    return null;
+  }
+  return null;
   } catch (error) {
     console.error('Error calculating minutes for fixture:', fixture.id, error);
     return null;

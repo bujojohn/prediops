@@ -4,6 +4,13 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import type { Fixture } from '@/schemas/fixture.schema';
 import { FixtureList, type FixtureGroup } from '@/app/components/fixtures/FixtureList';
 import { dateKeyUTC, formatDateUTC, formatSemanticDateUTC } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Calendar, RefreshCw } from 'lucide-react';
+import { 
+  DatePickerProvider, 
+  HorizontalDatePicker, 
+  useDatePickerWithFixtures 
+} from '@/app/components/date-picker';
 
 function groupByDate(fixtures: Fixture[]): FixtureGroup[] {
   const map = new Map<string, { title: string; fixtures: Fixture[] }>();
@@ -30,14 +37,64 @@ function groupByLeague(fixtures: Fixture[]): Array<{ id: string; title: string; 
   return Array.from(map.entries()).map(([id, { title, fixtures }]) => ({ id, title, fixtures }));
 }
 
-export function LatestFixturesClient({ initialFixtures }: { initialFixtures: Fixture[] }) {
+function PredictionsContent({ initialFixtures }: { initialFixtures: Fixture[] }) {
   const [fixtures, setFixtures] = useState<Fixture[]>(initialFixtures || []);
   const [page, setPage] = useState<number>(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [isLoadingDateFixtures, setIsLoadingDateFixtures] = useState(false);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
+  const {
+    selectedDate,
+    selectDate,
+    isLoading: fixturesLoading,
+    error: fixturesError,
+  } = useDatePickerWithFixtures();
+
   const groups = useMemo(() => groupByDate(fixtures), [fixtures]);
+
+  // Load fixtures for selected date
+  const loadFixturesForDate = useCallback(async (date: string) => {
+    try {
+      setIsLoadingDateFixtures(true);
+      const response = await fetch(`/api/sportmonks/fixtures/date/${date}?include=participants;scores;state;predictions.type;league.country;events&per_page=100`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to load fixtures for selected date');
+      }
+
+      const data = await response.json();
+      if (data.success && data.data) {
+        setFixtures(data.data);
+        setPage(1);
+        setHasMore(data.data.length >= 100);
+      } else {
+        setFixtures([]);
+        setHasMore(false);
+      }
+    } catch (err) {
+      console.error('Error loading fixtures for date:', date, err);
+      setFixtures([]);
+      setHasMore(false);
+    } finally {
+      setIsLoadingDateFixtures(false);
+    }
+  }, []);
+
+  // Handle date selection
+  const handleDateSelect = useCallback(async (date: string) => {
+    selectDate(date);
+    await loadFixturesForDate(date);
+  }, [selectDate, loadFixturesForDate]);
+
+  // Load initial fixtures for today if no fixtures exist
+  useEffect(() => {
+    if (fixtures.length === 0 && initialFixtures.length === 0) {
+      const today = new Date().toISOString().split('T')[0];
+      loadFixturesForDate(today);
+    }
+  }, [fixtures.length, initialFixtures.length, loadFixturesForDate]);
 
   const loadNextPage = useCallback(async () => {
     if (isLoadingMore || !hasMore) return;
@@ -79,51 +136,110 @@ export function LatestFixturesClient({ initialFixtures }: { initialFixtures: Fix
   }, [hasMore, sentinelRef, page, isLoadingMore, loadNextPage]);
 
   return (
-    <>
-      {/* Group headers with semantic dates */}
-      <div className="space-y-4">
-        {groups.map((g) => {
-          const leagueGroups = groupByLeague(g.fixtures);
-          return (
-            <div key={g.id} className="space-y-4">
-              {/* Date demarcation only */}
-              <div className="text-xs sm:text-sm text-gray-500 font-medium px-1">
-                {formatSemanticDateUTC(g.fixtures[0]?.starting_at || g.id)}
-              </div>
-              {/* Only one-level grouping: by league */}
-              {leagueGroups.map((lg) => (
-                <FixtureList
-                  key={lg.id}
-                  groups={[lg]}
-                  compact={false}
-                  renderHeader={({ group, toggle, count }) => (
-                    <div
-                      className="flex items-center justify-between px-4 py-3 cursor-pointer select-none"
-                      onClick={toggle}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="inline-block h-2 w-2 rounded-full bg-gray-300" />
-                        <div className="font-medium truncate">{group.title}</div>
-                      </div>
-                      <button type="button" className="text-xs px-2 py-1 border rounded text-gray-700">
-                        {count}
-                      </button>
-                    </div>
-                  )}
-                />
-              ))}
-            </div>
-          );
-        })}
-      </div>
-      <div ref={sentinelRef} className="h-8" />
-      {isLoadingMore && (
-        <div className="text-center text-xs text-gray-500 py-2">Loading more…</div>
+    <div className="space-y-6">
+      {/* Date Picker Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-blue-600" />
+            <CardTitle>Select Date for Predictions</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <HorizontalDatePicker
+            onDateSelect={handleDateSelect}
+            className="mb-4"
+          />
+          
+          <div className="text-sm text-gray-600">
+            <p><strong>Selected Date:</strong> {new Date(selectedDate).toLocaleDateString('en-US', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            })}</p>
+            {(fixturesLoading || isLoadingDateFixtures) && (
+              <p className="text-blue-600">Loading fixtures...</p>
+            )}
+            {fixturesError && <p className="text-red-600">Error: {fixturesError}</p>}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Fixtures Display */}
+      {fixtures.length > 0 ? (
+        <>
+          {/* Group headers with semantic dates */}
+          <div className="space-y-4">
+            {groups.map((g) => {
+              const leagueGroups = groupByLeague(g.fixtures);
+              return (
+                <div key={g.id} className="space-y-4">
+                  {/* Date demarcation only */}
+                  <div className="text-xs sm:text-sm text-gray-500 font-medium px-1">
+                    {formatSemanticDateUTC(g.fixtures[0]?.starting_at || g.id)}
+                  </div>
+                  {/* Only one-level grouping: by league */}
+                  {leagueGroups.map((lg) => (
+                    <FixtureList
+                      key={lg.id}
+                      groups={[lg]}
+                      compact={false}
+                      renderHeader={({ group, toggle, count }) => (
+                        <div
+                          className="flex items-center justify-between px-4 py-3 cursor-pointer select-none"
+                          onClick={toggle}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="inline-block h-2 w-2 rounded-full bg-gray-300" />
+                            <div className="font-medium truncate">{group.title}</div>
+                          </div>
+                          <button type="button" className="text-xs px-2 py-1 border rounded text-gray-700">
+                            {count}
+                          </button>
+                        </div>
+                      )}
+                    />
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+          <div ref={sentinelRef} className="h-8" />
+          {isLoadingMore && (
+            <div className="text-center text-xs text-gray-500 py-2">Loading more…</div>
+          )}
+          {!hasMore && (
+            <div className="text-center text-xs text-gray-400 py-2">No more matches.</div>
+          )}
+        </>
+      ) : (
+        <Card className="p-8">
+          <div className="text-center">
+            <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Fixtures Found</h3>
+            <p className="text-gray-600 mb-4">
+              No fixtures with predictions found for the selected date.
+            </p>
+            <button
+              onClick={() => loadFixturesForDate(selectedDate)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Refresh
+            </button>
+          </div>
+        </Card>
       )}
-      {!hasMore && (
-        <div className="text-center text-xs text-gray-400 py-2">No more matches.</div>
-      )}
-    </>
+    </div>
+  );
+}
+
+export function LatestFixturesClient({ initialFixtures }: { initialFixtures: Fixture[] }) {
+  return (
+    <DatePickerProvider>
+      <PredictionsContent initialFixtures={initialFixtures} />
+    </DatePickerProvider>
   );
 }
 

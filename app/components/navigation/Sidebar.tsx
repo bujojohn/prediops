@@ -64,6 +64,7 @@ export function Sidebar({ className }: SidebarProps) {
   const navigationItems = [
     { href: '/', label: 'Home', icon: Home },
     { href: '/predictions', label: 'Predictions', icon: Target },
+    { href: '/countries', label: 'Countries', icon: Globe },
     { href: '/value-bets', label: 'Value Bets', icon: DollarSign },
     { href: '/live', label: 'Live', icon: Zap },
   ];

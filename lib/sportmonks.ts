@@ -115,6 +115,13 @@ export const sportmonks = {
     const response = await api.get(url, { params: makeParams(config) });
     return response.data;
   },
+    // Get fixtures for the specific date
+    async getFixturesByDate(fixturesDate: string, config?: ApiConfig) {
+      const url = `/fixtures/date/${fixturesDate}`;
+      const response = await api.get(url, { params: makeParams(config) });
+      return response.data;
+    },
+  
 
   // Get upcoming fixtures with configurable options
   async getUpcomingFixtures(config?: ApiConfig): Promise<ApiListResponse<Fixture>> {

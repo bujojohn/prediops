@@ -9,6 +9,8 @@ import { SimpleLiveTest } from './simple-live-test';
 import { OptimizedLiveScoresTest } from './optimized-live-scores-test';
 import { SimpleOptimizedTest } from './simple-optimized-test';
 import { PredictionsTest } from './predictions-test';
+import { DatePickerTest } from './date-picker-test';
+import { DatePickerIntegrationTest } from './date-picker-integration-test';
 
 interface APIResponse {
   success: boolean;
@@ -73,7 +75,7 @@ function useLiveFixtures() {
 }
 
 export default function TestPage() {
-  const [activeTab, setActiveTab] = useState<'api' | 'mobile' | 'predictions' | 'live' | 'simple' | 'optimized' | 'simple-optimized' | 'predictions-test'>('api');
+  const [activeTab, setActiveTab] = useState<'api' | 'mobile' | 'predictions' | 'live' | 'simple' | 'optimized' | 'simple-optimized' | 'predictions-test' | 'date-picker' | 'date-picker-integration'>('api');
   const [pageError, setPageError] = useState<string | null>(null);
   const [dataLoaded, setDataLoaded] = useState(false);
 
@@ -94,7 +96,7 @@ export default function TestPage() {
   }, [activeTab, dataLoaded, predictionsQuery, valueBetsQuery, liveFixturesQuery]);
 
   // Handle tab changes with error catching
-  const handleTabChange = (tab: 'api' | 'mobile' | 'predictions' | 'live' | 'simple' | 'optimized' | 'simple-optimized' | 'predictions-test') => {
+  const handleTabChange = (tab: 'api' | 'mobile' | 'predictions' | 'live' | 'simple' | 'optimized' | 'simple-optimized' | 'predictions-test' | 'date-picker' | 'date-picker-integration') => {
     try {
       console.log('TestPage: Changing tab to:', tab);
       setActiveTab(tab);
@@ -246,6 +248,26 @@ export default function TestPage() {
           }`}
         >
           🧪 Predictions Test
+        </button>
+        <button
+          onClick={() => handleTabChange('date-picker')}
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'date-picker'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          📅 Date Picker
+        </button>
+        <button
+          onClick={() => handleTabChange('date-picker-integration')}
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'date-picker-integration'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          🔗 Integration Test
         </button>
       </div>
 
@@ -470,6 +492,20 @@ export default function TestPage() {
         <div>
           <h2 className="text-2xl font-bold mb-4">🧪 Predictions Test (No Live Polling)</h2>
           <PredictionsTest />
+        </div>
+      )}
+
+      {/* Date Picker Test Tab */}
+      {activeTab === 'date-picker' && (
+        <div>
+          <DatePickerTest />
+        </div>
+      )}
+
+      {/* Date Picker Integration Test Tab */}
+      {activeTab === 'date-picker-integration' && (
+        <div>
+          <DatePickerIntegrationTest />
         </div>
       )}
     </div>
