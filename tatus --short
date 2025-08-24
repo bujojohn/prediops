@@ -1,0 +1,365 @@
+[1mdiff --git a/app/components/fixtures/FixtureCard.tsx b/app/components/fixtures/FixtureCard.tsx[m
+[1mindex a4fcefc..c7955dd 100644[m
+[1m--- a/app/components/fixtures/FixtureCard.tsx[m
+[1m+++ b/app/components/fixtures/FixtureCard.tsx[m
+[36m@@ -37,15 +37,30 @@[m [mfunction isLiveMatch(fixture: Fixture): boolean {[m
+   const statusName = fixture.state?.name?.toLowerCase() || '';[m
+   [m
+   // Based on real API data: HT, 2nd, INPLAY_2ND_HALF, etc.[m
+[31m-  return status === 'live' || [m
+[32m+[m[32m  const isLive = status === 'live' ||[m[41m [m
+          status === 'ht' || [m
+          status === '2nd' || [m
+          status === '2h' ||[m
+[32m+[m[32m         status === '1st' ||[m
+          status.includes('inplay') ||[m
+          statusName.includes('live') ||[m
+          statusName.includes('half time') ||[m
+          statusName.includes('second half') ||[m
+[31m-         statusName.includes('2nd half');[m
+[32m+[m[32m         statusName.includes('2nd half') ||[m
+[32m+[m[32m         statusName.includes('first half') ||[m
+[32m+[m[32m         statusName.includes('1st half');[m
+[32m+[m[41m  [m
+[32m+[m[32m  // Debug logging for live match detection (commented out for production)[m
+[32m+[m[32m  // if (isLive) {[m
+[32m+[m[32m  //   console.log('Live match detected:', {[m
+[32m+[m[32m  //     fixtureId: fixture.id,[m
+[32m+[m[32m  //     status,[m
+[32m+[m[32m  //     statusName,[m
+[32m+[m[32m  //     isLive[m
+[32m+[m[32m  //   });[m
+[32m+[m[32m  // }[m
+[32m+[m[41m  [m
+[32m+[m[32m  return isLive;[m
+ }[m
+ [m
+ // Helper function to get a more accurate match status display[m
+[36m@@ -108,20 +123,27 @@[m [mfunction getMatchPhase(fixture: Fixture): 'scheduled' | 'live' | 'finished' {[m
+     const status = fixture.state?.short_name?.toLowerCase() || '';[m
+     const statusName = fixture.state?.name?.toLowerCase() || '';[m
+     [m
+[32m+[m[32m    // Debug logging for phase detection (commented out for production)[m
+[32m+[m[32m    // console.log('Phase detection for fixture', fixture.id, ':', {[m
+[32m+[m[32m    //   status,[m
+[32m+[m[32m    //   statusName,[m
+[32m+[m[32m    //   isLiveMatch: isLiveMatch(fixture)[m
+[32m+[m[32m    // });[m
+[32m+[m[41m    [m
+     // Based on real API data: HT, 2nd, INPLAY_2ND_HALF, etc.[m
+[31m-    if (/live|in progress|ht|2nd|2h|inplay/.test(status) || [m
+[31m-        /live|in progress|half time|second half|2nd half/.test(statusName)) return 'live';[m
+[32m+[m[32m    if (/live|in progress|ht|2nd|2h|inplay|1st/.test(status) ||[m[41m [m
+[32m+[m[32m        /live|in progress|half time|second half|2nd half|first half|1st half/.test(statusName)) return 'live';[m
+     if (/finished|ft|ended|suspended|cancelled/.test(status)) return 'finished';[m
+     return 'scheduled';[m
+   } catch (error) {[m
+     console.error('Error in getMatchPhase:', error);[m
+[31m-  return 'scheduled';[m
+[32m+[m[32m    return 'scheduled';[m
+   }[m
+ }[m
+ [m
+ function getMinutesPlayed(fixture: Fixture): number | null {[m
+   try {[m
+[31m-  if (getMatchPhase(fixture) === 'live' && fixture.starting_at) {[m
+[32m+[m[32m    if (getMatchPhase(fixture) === 'live' && fixture.starting_at) {[m
+       // Handle both ISO format and "2025-08-26 18:45:00" format[m
+       let start: Date;[m
+       if (fixture.starting_at.includes('T')) {[m
+[36m@@ -132,8 +154,18 @@[m [mfunction getMinutesPlayed(fixture: Fixture): number | null {[m
+         start = new Date(fixture.starting_at.replace(' ', 'T') + 'Z');[m
+       }[m
+       [m
+[31m-    const now = new Date();[m
+[31m-    const diff = Math.floor((now.getTime() - start.getTime()) / 60000);[m
+[32m+[m[32m      const now = new Date();[m
+[32m+[m[32m      const diff = Math.floor((now.getTime() - start.getTime()) / 60000);[m
+[32m+[m[41m      [m
+[32m+[m[32m      // Debug logging for minute calculation (commented out for production)[m
+[32m+[m[32m      // console.log('Minute calculation for fixture', fixture.id, ':', {[m
+[32m+[m[32m      //   starting_at: fixture.starting_at,[m
+[32m+[m[32m      //   start: start.toISOString(),[m
+[32m+[m[32m      //   now: now.toISOString(),[m
+[32m+[m[32m      //   diff,[m
+[32m+[m[32m      //   status: fixture.state?.short_name,[m
+[32m+[m[32m      //   phase: getMatchPhase(fixture)[m
+[32m+[m[32m      // });[m
+       [m
+       // More realistic range: 0-120 minutes (2 hours max for a football match)[m
+       // This prevents matches from getting stuck at unrealistic times[m
+[36m@@ -141,8 +173,8 @@[m [mfunction getMinutesPlayed(fixture: Fixture): number | null {[m
+       [m
+       // If diff is negative (future match) or too high, return null[m
+       return null;[m
+[31m-  }[m
+[31m-  return null;[m
+[32m+[m[32m    }[m
+[32m+[m[32m    return null;[m
+   } catch (error) {[m
+     console.error('Error calculating minutes for fixture:', fixture.id, error);[m
+     return null;[m
+[36m@@ -485,11 +517,22 @@[m [mexport function FixtureCard({ fixture: propFixture, compact = false }: { fixture[m
+            return ([m
+            <Card className="w-full dark:bg-gray-800 dark:border-gray-700">[m
+         <CardContent className="p-3">[m
+[31m-          <div className="grid grid-cols-4 gap-4 items-center" style={{ minHeight: '60px' }}>[m
+[32m+[m[32m          <div className="grid grid-cols-4 gap-4 items-center group" style={{ minHeight: '60px' }}>[m
+             {/* Column 1: Status/Time */}[m
+             <div className="flex flex-col justify-center">[m
+               {(() => {[m
+                 const phase = getMatchPhase(fixture);[m
+[32m+[m[41m                [m
+[32m+[m[32m                // Debug logging for display logic (commented out for production)[m
+[32m+[m[32m                // console.log('Display logic for fixture', fixture.id, ':', {[m
+[32m+[m[32m                //   phase,[m
+[32m+[m[32m                //   status: fixture.state?.short_name,[m
+[32m+[m[32m                //   statusName: fixture.state?.name,[m
+[32m+[m[32m                //   isLive: isLiveMatch(fixture),[m
+[32m+[m[32m                //   starting_at: fixture.starting_at,[m
+[32m+[m[32m                //   liveScore: liveScore ? { currentMinute: liveScore.currentMinute } : null[m
+[32m+[m[32m                // });[m
+[32m+[m[41m                [m
+                 if (phase === 'live') {[m
+                   return ([m
+                     <div className="flex items-center gap-2">[m
+[36m@@ -497,7 +540,11 @@[m [mexport function FixtureCard({ fixture: propFixture, compact = false }: { fixture[m
+                       <span className="text-xs font-medium text-red-600 dark:text-red-400">[m
+                         {(() => {[m
+                           try {[m
+[31m-                            return getMatchStatusDisplay(fixture, liveScore);[m
+[32m+[m[32m                            // Pass the currentMinute from liveScore if available[m
+[32m+[m[32m                            const liveScoreData = liveScore ? { currentMinute: liveScore.currentMinute } : null;[m
+[32m+[m[32m                            const status = getMatchStatusDisplay(fixture, liveScoreData);[m
+[32m+[m[32m                            // console.log('Live match status for fixture', fixture.id, ':', status);[m
+[32m+[m[32m                            return status;[m
+                           } catch (error) {[m
+                             console.error('Error in getMatchStatusDisplay:', error);[m
+                             return 'Live';[m
+[36m@@ -517,7 +564,7 @@[m [mexport function FixtureCard({ fixture: propFixture, compact = false }: { fixture[m
+                 // For finished/other states, show short name if available[m
+                 if (fixture.state?.short_name) {[m
+                   return ([m
+[31m-                    <div className="flex items-center gap-1">[m
+[32m+[m[32m                    <div className="flex items-center gap-1" title={fixture.state.name || fixture.state.short_name}>[m
+                       <span className="text-xs font-medium text-gray-500">{fixture.state.short_name}</span>[m
+                     </div>[m
+                   );[m
+[36m@@ -525,12 +572,7 @@[m [mexport function FixtureCard({ fixture: propFixture, compact = false }: { fixture[m
+                 // If finished, show nothing (or status if desired)[m
+                 return null;[m
+               })()}[m
+[31m-              {/* Only show state name for non-live matches to avoid confusion */}[m
+[31m-              {fixture.state?.name && [m
+[31m-               fixture.state.name !== 'Not Started' && [m
+[31m-               getMatchPhase(fixture) !== 'live' && ([m
+[31m-                <div className="text-gray-500">- {fixture.state.name}</div>[m
+[31m-              )}[m
+[32m+[m[32m              {/* Removed redundant full status display - now shown on hover via title attribute */}[m
+             </div>[m
+ [m
+             {/* Column 2: Teams */}[m
+[1mdiff --git a/app/hooks/useLiveScores.ts b/app/hooks/useLiveScores.ts[m
+[1mindex 72af849..a195b4c 100644[m
+[1m--- a/app/hooks/useLiveScores.ts[m
+[1m+++ b/app/hooks/useLiveScores.ts[m
+[36m@@ -41,39 +41,55 @@[m [mexport function useLiveScores(fixtures: Fixture[], enabled: boolean = true) {[m
+       if (!res.ok) throw new Error('Failed to fetch live scores');[m
+       [m
+       const data = await res.json();[m
+[31m-      const liveFixturesData: Fixture[] = data?.data || [];[m
+[32m+[m[41m      [m
+[32m+[m[32m      // Ensure we have an array of fixtures[m
+[32m+[m[32m      let liveFixturesData: Fixture[] = [];[m
+[32m+[m[32m      if (data?.data && Array.isArray(data.data)) {[m
+[32m+[m[32m        liveFixturesData = data.data;[m
+[32m+[m[32m      } else if (Array.isArray(data)) {[m
+[32m+[m[32m        liveFixturesData = data;[m
+[32m+[m[32m      } else {[m
+[32m+[m[32m        console.warn('Unexpected live fixtures data structure:', data);[m
+[32m+[m[32m        return;[m
+[32m+[m[32m      }[m
+       [m
+       const newScores = new Map<number, LiveScore>();[m
+       [m
+       liveFixturesData.forEach(fixture => {[m
+[32m+[m[32m        // Safety check: ensure fixture has required properties[m
+[32m+[m[32m        if (!fixture || typeof fixture !== 'object' || !fixture.id) {[m
+[32m+[m[32m          console.warn('Invalid fixture object:', fixture);[m
+[32m+[m[32m          return;[m
+[32m+[m[32m        }[m
+[32m+[m[41m        [m
+         const homeScore = fixture.scores?.find(s => s.score?.participant === 'home')?.score?.goals ?? null;[m
+         const awayScore = fixture.scores?.find(s => s.score?.participant === 'away')?.score?.goals ?? null;[m
+         [m
+[31m-                 // Calculate current minute for live matches (including 2nd half)[m
+[31m-         let currentMinute: number | null = null;[m
+[31m-         if (fixture.starting_at && [m
+[31m-             (fixture.state?.short_name === 'LIVE' || [m
+[31m-              fixture.state?.short_name === '2H' || [m
+[31m-              fixture.state?.short_name === '2nd')) {[m
+[31m-           try {[m
+[31m-             const start = new Date(fixture.starting_at);[m
+[31m-             const now = new Date();[m
+[31m-             const diff = Math.floor((now.getTime() - start.getTime()) / 60000);[m
+[31m-             [m
+[31m-             // More realistic range: 0-120 minutes (2 hours max for a football match)[m
+[31m-             if (diff >= 0 && diff <= 120) currentMinute = diff;[m
+[31m-           } catch (error) {[m
+[31m-             console.error('Error calculating minutes for fixture:', fixture.id, error);[m
+[31m-           }[m
+[31m-         }[m
+[31m-        [m
+[32m+[m[32m        // Calculate current minute for live matches (including 2nd half)[m
+[32m+[m[32m        let currentMinute: number | null = null;[m
+[32m+[m[32m        if (fixture.starting_at &&[m[41m [m
+[32m+[m[32m            (fixture.state?.short_name === 'LIVE' ||[m[41m [m
+[32m+[m[32m             fixture.state?.short_name === '2H' ||[m[41m [m
+[32m+[m[32m             fixture.state?.short_name === '2nd')) {[m
+[32m+[m[32m          try {[m
+[32m+[m[32m            const start = new Date(fixture.starting_at);[m
+[32m+[m[32m            const now = new Date();[m
+[32m+[m[32m            const diff = Math.floor((now.getTime() - start.getTime()) / 60000);[m
+[32m+[m[41m            [m
+[32m+[m[32m            // More realistic range: 0-120 minutes (2 hours max for a football match)[m
+[32m+[m[32m            if (diff >= 0 && diff <= 120) currentMinute = diff;[m
+[32m+[m[32m          } catch (error) {[m
+[32m+[m[32m            console.error('Error calculating minutes for fixture:', fixture.id, error);[m
+[32m+[m[32m          }[m
+[32m+[m[32m        }[m
+[32m+[m[41m       [m
+         newScores.set(fixture.id, {[m
+           fixtureId: fixture.id,[m
+           homeScore,[m
+           awayScore,[m
+           state: fixture.state?.name || '',[m
+           currentMinute,[m
+[31m-                     matchStatus: fixture.state?.short_name?.toLowerCase() as 'live' | 'ht' | '2h' | 'ft' | 'cancelled' | 'postponed' | null[m
+[32m+[m[32m          matchStatus: fixture.state?.short_name?.toLowerCase() as 'live' | 'ht' | '2h' | 'ft' | 'cancelled' | 'postponed' | null[m
+         });[m
+       });[m
+       [m
+[1mdiff --git a/app/predictions/LatestFixturesClient.tsx b/app/predictions/LatestFixturesClient.tsx[m
+[1mindex 1baeff5..2e3a85a 100644[m
+[1m--- a/app/predictions/LatestFixturesClient.tsx[m
+[1m+++ b/app/predictions/LatestFixturesClient.tsx[m
+[36m@@ -5,7 +5,7 @@[m [mimport type { Fixture } from '@/schemas/fixture.schema';[m
+ import { FixtureList, type FixtureGroup } from '@/app/components/fixtures/FixtureList';[m
+ import { dateKeyUTC, formatDateUTC, formatSemanticDateUTC } from '@/lib/utils';[m
+ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';[m
+[31m-import { Calendar, RefreshCw } from 'lucide-react';[m
+[32m+[m[32mimport { Calendar, RefreshCw, ChevronDown, ChevronRight } from 'lucide-react';[m
+ import { [m
+   DatePickerProvider, [m
+   HorizontalDatePicker, [m
+[36m@@ -37,12 +37,15 @@[m [mfunction groupByLeague(fixtures: Fixture[]): Array<{ id: string; title: string;[m
+   return Array.from(map.entries()).map(([id, { title, fixtures }]) => ({ id, title, fixtures }));[m
+ }[m
+ [m
+[32m+[m
+[32m+[m
+ function PredictionsContent({ initialFixtures }: { initialFixtures: Fixture[] }) {[m
+   const [fixtures, setFixtures] = useState<Fixture[]>(initialFixtures || []);[m
+   const [page, setPage] = useState<number>(1);[m
+   const [isLoadingMore, setIsLoadingMore] = useState(false);[m
+   const [hasMore, setHasMore] = useState(true);[m
+   const [isLoadingDateFixtures, setIsLoadingDateFixtures] = useState(false);[m
+[32m+[m[32m  const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());[m
+   const sentinelRef = useRef<HTMLDivElement | null>(null);[m
+ [m
+   const {[m
+[36m@@ -54,6 +57,43 @@[m [mfunction PredictionsContent({ initialFixtures }: { initialFixtures: Fixture[] })[m
+ [m
+   const groups = useMemo(() => groupByDate(fixtures), [fixtures]);[m
+ [m
+[32m+[m[32m  // Initialize collapsed dates - collapse all except today[m
+[32m+[m[32m  useEffect(() => {[m
+[32m+[m[32m    if (groups.length > 0) {[m
+[32m+[m[32m      const today = new Date().toISOString().split('T')[0];[m
+[32m+[m[32m      const newCollapsedDates = new Set<string>();[m
+[32m+[m[41m      [m
+[32m+[m[32m      groups.forEach(group => {[m
+[32m+[m[32m        // Check if this group contains today's fixtures[m
+[32m+[m[32m        const hasTodayFixture = group.fixtures.some(fixture => {[m
+[32m+[m[32m          if (!fixture.starting_at) return false;[m
+[32m+[m[32m          const fixtureDate = new Date(fixture.starting_at).toISOString().split('T')[0];[m
+[32m+[m[32m          return fixtureDate === today;[m
+[32m+[m[32m        });[m
+[32m+[m[41m        [m
+[32m+[m[32m        // If not today's group, collapse it[m
+[32m+[m[32m        if (!hasTodayFixture) {[m
+[32m+[m[32m          newCollapsedDates.add(group.id);[m
+[32m+[m[32m        }[m
+[32m+[m[32m      });[m
+[32m+[m[41m      [m
+[32m+[m[32m      setCollapsedDates(newCollapsedDates);[m
+[32m+[m[32m    }[m
+[32m+[m[32m  }, [groups]);[m
+[32m+[m
+[32m+[m[32m  // Toggle collapse state for a specific date group[m
+[32m+[m[32m  const toggleDateCollapse = useCallback((dateId: string) => {[m
+[32m+[m[32m    setCollapsedDates(prev => {[m
+[32m+[m[32m      const newSet = new Set(prev);[m
+[32m+[m[32m      if (newSet.has(dateId)) {[m
+[32m+[m[32m        newSet.delete(dateId);[m
+[32m+[m[32m      } else {[m
+[32m+[m[32m        newSet.add(dateId);[m
+[32m+[m[32m      }[m
+[32m+[m[32m      return newSet;[m
+[32m+[m[32m    });[m
+[32m+[m[32m  }, []);[m
+[32m+[m
+   // Load fixtures for selected date[m
+   const loadFixturesForDate = useCallback(async (date: string) => {[m
+     try {[m
+[36m@@ -171,39 +211,66 @@[m [mfunction PredictionsContent({ initialFixtures }: { initialFixtures: Fixture[] })[m
+         <>[m
+           {/* Group headers with semantic dates */}[m
+           <div className="space-y-4">[m
+[31m-            {groups.map((g) => {[m
+[31m-              const leagueGroups = groupByLeague(g.fixtures);[m
+[31m-              return ([m
+[31m-                <div key={g.id} className="space-y-4">[m
+[31m-                  {/* Date demarcation only */}[m
+[31m-                  <div className="text-xs sm:text-sm text-gray-500 font-medium px-1">[m
+[31m-                    {formatSemanticDateUTC(g.fixtures[0]?.starting_at || g.id)}[m
+[31m-                  </div>[m
+[31m-                  {/* Only one-level grouping: by league */}[m
+[31m-                  {leagueGroups.map((lg) => ([m
+[31m-                    <FixtureList[m
+[31m-                      key={lg.id}[m
+[31m-                      groups={[lg]}[m
+[31m-                      compact={false}[m
+[31m-                      renderHeader={({ group, toggle, count }) => ([m
+[31m-                        <div[m
+[31m-                          className="flex items-center justify-between px-4 py-3 cursor-pointer select-none"[m
+[31m-                          onClick={toggle}[m
+[31m-                        >[m
+[31m-                          <div className="flex items-center gap-2">[m
+[31m-                            <span className="inline-block h-2 w-2 rounded-full bg-gray-300" />[m
+[31m-                            <div className="font-medium truncate">{group.title}</div>[m
+[31m-                          </div>[m
+[31m-                          <button type="button" className="text-xs px-2 py-1 border rounded text-gray-700">[m
+[31m-                            {count}[m
+[31m-                          </button>[m
+[31m-                        </div>[m
+[31m-                      )}[m
+[31m-                    />[m
+[31m-                  ))}[m
+[31m-                </div>[m
+[31m-              );[m
+[31m-            })}[m
+[32m+[m[32m                         {groups.map((g) => {[m
+[32m+[m[32m               const leagueGroups = groupByLeague(g.fixtures);[m
+[32m+[m[32m               return ([m
+[32m+[m[32m                 <div key={g.id} className="space-y-4">[m
+[32m+[m[32m                   {/* Date label with toggle */}[m
+[32m+[m[32m                   <div[m[41m [m
+[32m+[m[32m                     className="flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"[m
+[32m+[m[32m                     onClick={() => toggleDateCollapse(g.id)}[m
+[32m+[m[32m                   >[m
+[32m+[m[32m                     <div className="flex items-center gap-2">[m
+[32m+[m[32m                       <span className="text-sm font-medium text-gray-700 dark:text-gray-300">[m
+[32m+[m[32m                         {formatSemanticDateUTC(g.fixtures[0]?.starting_at || g.id)}[m
+[32m+[m[32m                       </span>[m
+[32m+[m[32m                       <span classN

@@ -20,15 +20,7 @@ export default async function PredictionsPage() {
 
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">
-          🎯 Predictions & Probabilities
-        </h1>
-        <p className="text-lg text-gray-600">
-          View AI-powered predictions and betting probabilities for upcoming matches
-        </p>
-      </div>
-
+  
       <Suspense fallback={<div>Loading predictions...</div>}>
         <LatestFixturesClient initialFixtures={initialFixtures} />
       </Suspense>

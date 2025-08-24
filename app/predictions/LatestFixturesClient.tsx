@@ -5,7 +5,7 @@ import type { Fixture } from '@/schemas/fixture.schema';
 import { FixtureList, type FixtureGroup } from '@/app/components/fixtures/FixtureList';
 import { dateKeyUTC, formatDateUTC, formatSemanticDateUTC } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, RefreshCw } from 'lucide-react';
+import { Calendar, RefreshCw, ChevronDown, ChevronRight } from 'lucide-react';
 import { 
   DatePickerProvider, 
   HorizontalDatePicker, 
@@ -37,12 +37,15 @@ function groupByLeague(fixtures: Fixture[]): Array<{ id: string; title: string; 
   return Array.from(map.entries()).map(([id, { title, fixtures }]) => ({ id, title, fixtures }));
 }
 
+
+
 function PredictionsContent({ initialFixtures }: { initialFixtures: Fixture[] }) {
   const [fixtures, setFixtures] = useState<Fixture[]>(initialFixtures || []);
   const [page, setPage] = useState<number>(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingDateFixtures, setIsLoadingDateFixtures] = useState(false);
+  const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const {
@@ -53,6 +56,43 @@ function PredictionsContent({ initialFixtures }: { initialFixtures: Fixture[] })
   } = useDatePickerWithFixtures();
 
   const groups = useMemo(() => groupByDate(fixtures), [fixtures]);
+
+  // Initialize collapsed dates - collapse all except today
+  useEffect(() => {
+    if (groups.length > 0) {
+      const today = new Date().toISOString().split('T')[0];
+      const newCollapsedDates = new Set<string>();
+      
+      groups.forEach(group => {
+        // Check if this group contains today's fixtures
+        const hasTodayFixture = group.fixtures.some(fixture => {
+          if (!fixture.starting_at) return false;
+          const fixtureDate = new Date(fixture.starting_at).toISOString().split('T')[0];
+          return fixtureDate === today;
+        });
+        
+        // If not today's group, collapse it
+        if (!hasTodayFixture) {
+          newCollapsedDates.add(group.id);
+        }
+      });
+      
+      setCollapsedDates(newCollapsedDates);
+    }
+  }, [groups]);
+
+  // Toggle collapse state for a specific date group
+  const toggleDateCollapse = useCallback((dateId: string) => {
+    setCollapsedDates(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(dateId)) {
+        newSet.delete(dateId);
+      } else {
+        newSet.add(dateId);
+      }
+      return newSet;
+    });
+  }, []);
 
   // Load fixtures for selected date
   const loadFixturesForDate = useCallback(async (date: string) => {
@@ -171,39 +211,66 @@ function PredictionsContent({ initialFixtures }: { initialFixtures: Fixture[] })
         <>
           {/* Group headers with semantic dates */}
           <div className="space-y-4">
-            {groups.map((g) => {
-              const leagueGroups = groupByLeague(g.fixtures);
-              return (
-                <div key={g.id} className="space-y-4">
-                  {/* Date demarcation only */}
-                  <div className="text-xs sm:text-sm text-gray-500 font-medium px-1">
-                    {formatSemanticDateUTC(g.fixtures[0]?.starting_at || g.id)}
-                  </div>
-                  {/* Only one-level grouping: by league */}
-                  {leagueGroups.map((lg) => (
-                    <FixtureList
-                      key={lg.id}
-                      groups={[lg]}
-                      compact={false}
-                      renderHeader={({ group, toggle, count }) => (
-                        <div
-                          className="flex items-center justify-between px-4 py-3 cursor-pointer select-none"
-                          onClick={toggle}
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="inline-block h-2 w-2 rounded-full bg-gray-300" />
-                            <div className="font-medium truncate">{group.title}</div>
-                          </div>
-                          <button type="button" className="text-xs px-2 py-1 border rounded text-gray-700">
-                            {count}
-                          </button>
-                        </div>
-                      )}
-                    />
-                  ))}
-                </div>
-              );
-            })}
+                         {groups.map((g) => {
+               const leagueGroups = groupByLeague(g.fixtures);
+               return (
+                 <div key={g.id} className="space-y-4">
+                   {/* Date label with toggle */}
+                   <div 
+                     className="flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                     onClick={() => toggleDateCollapse(g.id)}
+                   >
+                     <div className="flex items-center gap-2">
+                       <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                         {formatSemanticDateUTC(g.fixtures[0]?.starting_at || g.id)}
+                       </span>
+                       <span className="text-xs text-gray-500">
+                         ({g.fixtures.length} fixture{g.fixtures.length !== 1 ? 's' : ''})
+                       </span>
+                       {collapsedDates.has(g.id) && (
+                         <span className="text-xs text-blue-600 dark:text-blue-400">
+                           Click to expand
+                         </span>
+                       )}
+                     </div>
+                     <div className="flex items-center gap-2">
+                       {collapsedDates.has(g.id) ? (
+                         <ChevronRight className="h-4 w-4 text-gray-500" />
+                       ) : (
+                         <ChevronDown className="h-4 w-4 text-gray-500" />
+                       )}
+                     </div>
+                   </div>
+                   
+                   {/* Fixtures - only show if not collapsed */}
+                   {!collapsedDates.has(g.id) && (
+                     <div className="space-y-4">
+                       {leagueGroups.map((lg) => (
+                         <FixtureList
+                           key={lg.id}
+                           groups={[lg]}
+                           compact={false}
+                           renderHeader={({ group, toggle, count }) => (
+                             <div
+                               className="flex items-center justify-between px-4 py-3 cursor-pointer select-none"
+                               onClick={toggle}
+                             >
+                               <div className="flex items-center gap-2">
+                                 <span className="inline-block h-2 w-2 rounded-full bg-gray-300" />
+                                 <div className="font-medium truncate">{group.title}</div>
+                               </div>
+                               <button type="button" className="text-xs px-2 py-1 border rounded text-gray-700">
+                                 {count}
+                               </button>
+                             </div>
+                             )}
+                           />
+                         ))}
+                     </div>
+                   )}
+                 </div>
+               );
+             })}
           </div>
           <div ref={sentinelRef} className="h-8" />
           {isLoadingMore && (

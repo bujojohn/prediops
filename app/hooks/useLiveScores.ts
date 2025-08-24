@@ -41,39 +41,55 @@ export function useLiveScores(fixtures: Fixture[], enabled: boolean = true) {
       if (!res.ok) throw new Error('Failed to fetch live scores');
       
       const data = await res.json();
-      const liveFixturesData: Fixture[] = data?.data || [];
+      
+      // Ensure we have an array of fixtures
+      let liveFixturesData: Fixture[] = [];
+      if (data?.data && Array.isArray(data.data)) {
+        liveFixturesData = data.data;
+      } else if (Array.isArray(data)) {
+        liveFixturesData = data;
+      } else {
+        console.warn('Unexpected live fixtures data structure:', data);
+        return;
+      }
       
       const newScores = new Map<number, LiveScore>();
       
       liveFixturesData.forEach(fixture => {
+        // Safety check: ensure fixture has required properties
+        if (!fixture || typeof fixture !== 'object' || !fixture.id) {
+          console.warn('Invalid fixture object:', fixture);
+          return;
+        }
+        
         const homeScore = fixture.scores?.find(s => s.score?.participant === 'home')?.score?.goals ?? null;
         const awayScore = fixture.scores?.find(s => s.score?.participant === 'away')?.score?.goals ?? null;
         
-                 // Calculate current minute for live matches (including 2nd half)
-         let currentMinute: number | null = null;
-         if (fixture.starting_at && 
-             (fixture.state?.short_name === 'LIVE' || 
-              fixture.state?.short_name === '2H' || 
-              fixture.state?.short_name === '2nd')) {
-           try {
-             const start = new Date(fixture.starting_at);
-             const now = new Date();
-             const diff = Math.floor((now.getTime() - start.getTime()) / 60000);
-             
-             // More realistic range: 0-120 minutes (2 hours max for a football match)
-             if (diff >= 0 && diff <= 120) currentMinute = diff;
-           } catch (error) {
-             console.error('Error calculating minutes for fixture:', fixture.id, error);
-           }
-         }
-        
+        // Calculate current minute for live matches (including 2nd half)
+        let currentMinute: number | null = null;
+        if (fixture.starting_at && 
+            (fixture.state?.short_name === 'LIVE' || 
+             fixture.state?.short_name === '2H' || 
+             fixture.state?.short_name === '2nd')) {
+          try {
+            const start = new Date(fixture.starting_at);
+            const now = new Date();
+            const diff = Math.floor((now.getTime() - start.getTime()) / 60000);
+            
+            // More realistic range: 0-120 minutes (2 hours max for a football match)
+            if (diff >= 0 && diff <= 120) currentMinute = diff;
+          } catch (error) {
+            console.error('Error calculating minutes for fixture:', fixture.id, error);
+          }
+        }
+       
         newScores.set(fixture.id, {
           fixtureId: fixture.id,
           homeScore,
           awayScore,
           state: fixture.state?.name || '',
           currentMinute,
-                     matchStatus: fixture.state?.short_name?.toLowerCase() as 'live' | 'ht' | '2h' | 'ft' | 'cancelled' | 'postponed' | null
+          matchStatus: fixture.state?.short_name?.toLowerCase() as 'live' | 'ht' | '2h' | 'ft' | 'cancelled' | 'postponed' | null
         });
       });
       

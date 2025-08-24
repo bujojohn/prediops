@@ -37,15 +37,30 @@ function isLiveMatch(fixture: Fixture): boolean {
   const statusName = fixture.state?.name?.toLowerCase() || '';
   
   // Based on real API data: HT, 2nd, INPLAY_2ND_HALF, etc.
-  return status === 'live' || 
+  const isLive = status === 'live' || 
          status === 'ht' || 
          status === '2nd' || 
          status === '2h' ||
+         status === '1st' ||
          status.includes('inplay') ||
          statusName.includes('live') ||
          statusName.includes('half time') ||
          statusName.includes('second half') ||
-         statusName.includes('2nd half');
+         statusName.includes('2nd half') ||
+         statusName.includes('first half') ||
+         statusName.includes('1st half');
+  
+  // Debug logging for live match detection (commented out for production)
+  // if (isLive) {
+  //   console.log('Live match detected:', {
+  //     fixtureId: fixture.id,
+  //     status,
+  //     statusName,
+  //     isLive
+  //   });
+  // }
+  
+  return isLive;
 }
 
 // Helper function to get a more accurate match status display
@@ -108,20 +123,27 @@ function getMatchPhase(fixture: Fixture): 'scheduled' | 'live' | 'finished' {
     const status = fixture.state?.short_name?.toLowerCase() || '';
     const statusName = fixture.state?.name?.toLowerCase() || '';
     
+    // Debug logging for phase detection (commented out for production)
+    // console.log('Phase detection for fixture', fixture.id, ':', {
+    //   status,
+    //   statusName,
+    //   isLiveMatch: isLiveMatch(fixture)
+    // });
+    
     // Based on real API data: HT, 2nd, INPLAY_2ND_HALF, etc.
-    if (/live|in progress|ht|2nd|2h|inplay/.test(status) || 
-        /live|in progress|half time|second half|2nd half/.test(statusName)) return 'live';
+    if (/live|in progress|ht|2nd|2h|inplay|1st/.test(status) || 
+        /live|in progress|half time|second half|2nd half|first half|1st half/.test(statusName)) return 'live';
     if (/finished|ft|ended|suspended|cancelled/.test(status)) return 'finished';
     return 'scheduled';
   } catch (error) {
     console.error('Error in getMatchPhase:', error);
-  return 'scheduled';
+    return 'scheduled';
   }
 }
 
 function getMinutesPlayed(fixture: Fixture): number | null {
   try {
-  if (getMatchPhase(fixture) === 'live' && fixture.starting_at) {
+    if (getMatchPhase(fixture) === 'live' && fixture.starting_at) {
       // Handle both ISO format and "2025-08-26 18:45:00" format
       let start: Date;
       if (fixture.starting_at.includes('T')) {
@@ -132,8 +154,18 @@ function getMinutesPlayed(fixture: Fixture): number | null {
         start = new Date(fixture.starting_at.replace(' ', 'T') + 'Z');
       }
       
-    const now = new Date();
-    const diff = Math.floor((now.getTime() - start.getTime()) / 60000);
+      const now = new Date();
+      const diff = Math.floor((now.getTime() - start.getTime()) / 60000);
+      
+      // Debug logging for minute calculation (commented out for production)
+      // console.log('Minute calculation for fixture', fixture.id, ':', {
+      //   starting_at: fixture.starting_at,
+      //   start: start.toISOString(),
+      //   now: now.toISOString(),
+      //   diff,
+      //   status: fixture.state?.short_name,
+      //   phase: getMatchPhase(fixture)
+      // });
       
       // More realistic range: 0-120 minutes (2 hours max for a football match)
       // This prevents matches from getting stuck at unrealistic times
@@ -141,8 +173,8 @@ function getMinutesPlayed(fixture: Fixture): number | null {
       
       // If diff is negative (future match) or too high, return null
       return null;
-  }
-  return null;
+    }
+    return null;
   } catch (error) {
     console.error('Error calculating minutes for fixture:', fixture.id, error);
     return null;
@@ -485,11 +517,22 @@ export function FixtureCard({ fixture: propFixture, compact = false }: { fixture
            return (
            <Card className="w-full dark:bg-gray-800 dark:border-gray-700">
         <CardContent className="p-3">
-          <div className="grid grid-cols-4 gap-4 items-center" style={{ minHeight: '60px' }}>
+          <div className="grid grid-cols-4 gap-4 items-center group" style={{ minHeight: '60px' }}>
             {/* Column 1: Status/Time */}
             <div className="flex flex-col justify-center">
               {(() => {
                 const phase = getMatchPhase(fixture);
+                
+                // Debug logging for display logic (commented out for production)
+                // console.log('Display logic for fixture', fixture.id, ':', {
+                //   phase,
+                //   status: fixture.state?.short_name,
+                //   statusName: fixture.state?.name,
+                //   isLive: isLiveMatch(fixture),
+                //   starting_at: fixture.starting_at,
+                //   liveScore: liveScore ? { currentMinute: liveScore.currentMinute } : null
+                // });
+                
                 if (phase === 'live') {
                   return (
                     <div className="flex items-center gap-2">
@@ -497,7 +540,11 @@ export function FixtureCard({ fixture: propFixture, compact = false }: { fixture
                       <span className="text-xs font-medium text-red-600 dark:text-red-400">
                         {(() => {
                           try {
-                            return getMatchStatusDisplay(fixture, liveScore);
+                            // Pass the currentMinute from liveScore if available
+                            const liveScoreData = liveScore ? { currentMinute: liveScore.currentMinute } : null;
+                            const status = getMatchStatusDisplay(fixture, liveScoreData);
+                            // console.log('Live match status for fixture', fixture.id, ':', status);
+                            return status;
                           } catch (error) {
                             console.error('Error in getMatchStatusDisplay:', error);
                             return 'Live';
@@ -517,7 +564,7 @@ export function FixtureCard({ fixture: propFixture, compact = false }: { fixture
                 // For finished/other states, show short name if available
                 if (fixture.state?.short_name) {
                   return (
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1" title={fixture.state.name || fixture.state.short_name}>
                       <span className="text-xs font-medium text-gray-500">{fixture.state.short_name}</span>
                     </div>
                   );
@@ -525,12 +572,7 @@ export function FixtureCard({ fixture: propFixture, compact = false }: { fixture
                 // If finished, show nothing (or status if desired)
                 return null;
               })()}
-              {/* Only show state name for non-live matches to avoid confusion */}
-              {fixture.state?.name && 
-               fixture.state.name !== 'Not Started' && 
-               getMatchPhase(fixture) !== 'live' && (
-                <div className="text-gray-500">- {fixture.state.name}</div>
-              )}
+              {/* Removed redundant full status display - now shown on hover via title attribute */}
             </div>
 
             {/* Column 2: Teams */}
