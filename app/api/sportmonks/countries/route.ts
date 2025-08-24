@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sportmonks } from '@/lib/sportmonks';
-import { mockCountries } from '@/lib/mock-data';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,11 +12,18 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Countries API Error:', error);
     
-    // Return mock data on error
-    return NextResponse.json({
-      data: mockCountries,
-      message: 'Using mock data due to API error'
-    });
+    // Return proper error response instead of misleading mock data
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    return NextResponse.json(
+      { 
+        success: false,
+        error: 'Failed to fetch countries',
+        message: errorMessage,
+        note: 'Check your SportMonks API configuration'
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -33,10 +39,17 @@ export async function GET() {
   } catch (error) {
     console.error('Countries API Error:', error);
     
-    // Return mock data on error
-    return NextResponse.json({
-      data: mockCountries,
-      message: 'Using mock data due to API error'
-    });
+    // Return proper error response instead of misleading mock data
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    return NextResponse.json(
+      { 
+        success: false,
+        error: 'Failed to fetch countries',
+        message: errorMessage,
+        note: 'Check your SportMonks API configuration'
+      },
+      { status: 500 }
+    );
   }
 } 

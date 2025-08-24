@@ -1,0 +1,7 @@
+[33mcommit 3afc45c801fc95279a7d2fc9a6a8c76eb7b03b66[m[33m ([m[1;31morigin/main[m[33m, [m[1;32mmain[m[33m, [m[1;32mcleanups[m[33m)[m
+Author: Anthony Ojo <ojoanthony@gmail.com>
+Date:   Thu Aug 21 06:22:12 2025 +0100
+
+    Add Google Analytics tracking code with Next.js Script component
+
+app/layout.tsx

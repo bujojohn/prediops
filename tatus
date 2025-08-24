@@ -1,0 +1,5 @@
+[33me180570[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mstyling-enhancements[m[33m, [m[1;31morigin/styling-enhancements[m[33m)[m fix: improve popover positioning and search functionality for fixture prediction markets
+[33m7877c0d[m feat: enhance styling system with comprehensive CSS architecture and utilities
+[33m3afc45c[m[33m ([m[1;31morigin/main[m[33m, [m[1;32mmain[m[33m, [m[1;32mcleanups[m[33m)[m Add Google Analytics tracking code with Next.js Script component
+[33m99a0301[m Add isLoading state handling and improve error handling in LiveFixturesClient
+[33m190a9cd[m Refactor: remove select from API config and use field selection in include as per Sportmonks best practices

@@ -1,37 +1,38 @@
 import { NextResponse } from 'next/server';
 import { sportmonks } from '@/lib/sportmonks';
-import { mockValueBets } from '@/lib/mock-data';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined;
+    
     // Use default configuration (includes fixture:name)
     const valueBets = await sportmonks.getValueBets();
     
+    // Apply limit if specified
+    const limitedData = limit && valueBets?.data ? {
+      ...valueBets,
+      data: valueBets.data.slice(0, limit)
+    } : valueBets;
+    
     return NextResponse.json({
       success: true,
-      data: valueBets,
+      data: limitedData,
       timestamp: new Date().toISOString(),
-      count: valueBets?.data?.length || 0,
+      count: limitedData?.data?.length || 0,
     });
   } catch (error) {
     console.error('Value Bets API Error:', error);
     
-    // Return mock data if API is not configured
-    if (error instanceof Error && error.message.includes('401')) {
-      return NextResponse.json({
-        success: true,
-        data: mockValueBets,
-        timestamp: new Date().toISOString(),
-        count: mockValueBets.data.length,
-        note: 'Using mock data - API token not configured'
-      });
-    }
+    // Return proper error response instead of misleading mock data
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     
     return NextResponse.json(
       { 
         success: false,
         error: 'Failed to fetch value bets',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: errorMessage,
+        note: 'Check your SportMonks API configuration'
       },
       { status: 500 }
     );

@@ -7,23 +7,69 @@ import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Prediction } from '@/schemas/predictions.schema';
 
+/**
+ * Represents a single prediction option with its code and probability value
+ */
 interface PredictionOption {
+  /** The option code (e.g., '1', 'X', '2', 'Yes', 'No') */
   code: string;
+  /** The probability value as a percentage (0-100) or null if not available */
   value: number | null;
 }
 
+/**
+ * Represents a prediction market with multiple options
+ */
 interface PredictionMarket {
+  /** Unique identifier for the market */
   key: string;
+  /** Human-readable label for the market */
   label: string;
+  /** Array of prediction options for this market */
   options: PredictionOption[];
 }
 
+/**
+ * Props for the FixturePredictionMarkets component
+ */
 interface FixturePredictionMarketsProps {
+  /** Array of prediction data from the API */
   predictions: Prediction[];
+  /** Optional CSS class name for styling */
   className?: string;
+  /** Layout variant - mobile for compact layout, desktop for expanded layout */
   variant?: 'mobile' | 'desktop';
 }
 
+/**
+ * FixturePredictionMarkets Component
+ * 
+ * A responsive component that displays prediction markets for football fixtures.
+ * Supports multiple market types including 1X2, Both Teams to Score, Over/Under,
+ * Double Chance, and Correct Score predictions.
+ * 
+ * Features:
+ * - Responsive design with mobile and desktop variants
+ * - Search functionality for markets and options
+ * - Popover-based market selection
+ * - Cached search results for performance
+ * - Smooth animations and transitions
+ * - Accessibility features (ARIA labels, keyboard navigation)
+ * 
+ * @param props - Component props
+ * @param props.predictions - Array of prediction data from the API
+ * @param props.className - Optional CSS class name for styling
+ * @param props.variant - Layout variant ('mobile' | 'desktop')
+ * 
+ * @example
+ * ```tsx
+ * <FixturePredictionMarkets 
+ *   predictions={fixture.predictions} 
+ *   variant="desktop" 
+ *   className="my-custom-class" 
+ * />
+ * ```
+ */
 export function FixturePredictionMarkets({ 
   predictions, 
   className, 
@@ -35,10 +81,56 @@ export function FixturePredictionMarkets({
   const [optionFilter, setOptionFilter] = useState('');
   const [showMorePopover, setShowMorePopover] = useState(false);
   const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const moreButtonRef = useRef<HTMLButtonElement>(null);
+  
+  // Performance monitoring
+  const renderStartTime = useRef<number>(0);
+  const searchCount = useRef<number>(0);
+  const cacheHitCount = useRef<number>(0);
+  
+  // Search result caching
+  const searchCache = useRef<Map<string, PredictionMarket[]>>(new Map());
+  const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
+  const cacheTimestamps = useRef<Map<string, number>>(new Map());
+  
+  /**
+   * Performs cached search on prediction markets
+   * @param query - Search query string
+   * @param items - Array of prediction markets to search
+   * @returns Filtered array of markets matching the query
+   */
+  const getCachedSearchResults = (query: string, items: PredictionMarket[]): PredictionMarket[] => {
+    searchCount.current++;
+    const cacheKey = `${query}-${items.length}`;
+    const now = Date.now();
+    const timestamp = cacheTimestamps.current.get(cacheKey);
+    
+    // Check if cache is valid
+    if (timestamp && (now - timestamp) < CACHE_EXPIRY) {
+      const cached = searchCache.current.get(cacheKey);
+      if (cached) {
+        cacheHitCount.current++;
+        return cached;
+      }
+    }
+    
+    // Perform search and cache results
+    const results = items.filter(item => 
+      item.label.toLowerCase().includes(query.toLowerCase())
+    );
+    
+    searchCache.current.set(cacheKey, results);
+    cacheTimestamps.current.set(cacheKey, now);
+    
+    return results;
+  };
 
-  // Process predictions into markets
+  /**
+   * Process raw prediction data into organized markets
+   * Supports multiple market types: 1X2, BTTS, Over/Under, Double Chance, Correct Score
+   */
   const marketsMap = useMemo(() => {
     const map: Record<string, PredictionMarket> = {};
     
@@ -100,8 +192,81 @@ export function FixturePredictionMarkets({
               { code: 'No', value: pred.no },
             ],
           };
+        } else if (typeName.includes('over') || typeCode.includes('over')) {
+          map['overunder'] = {
+            key: 'overunder',
+            label: prediction.type?.name || 'Over/Under',
+            options: [
+              { code: 'Over', value: pred.yes },
+              { code: 'Under', value: pred.no },
+            ],
+          };
+        } else if (typeName.includes('clean sheet') || typeCode.includes('clean-sheet')) {
+          map['cleansheet'] = {
+            key: 'cleansheet',
+            label: prediction.type?.name || 'Clean Sheet',
+            options: [
+              { code: 'Yes', value: pred.yes },
+              { code: 'No', value: pred.no },
+            ],
+          };
+        } else if (typeName.includes('win to nil') || typeCode.includes('win-to-nil')) {
+          map['wintonil'] = {
+            key: 'wintonil',
+            label: prediction.type?.name || 'Win to Nil',
+            options: [
+              { code: 'Yes', value: pred.yes },
+              { code: 'No', value: pred.no },
+            ],
+          };
         }
-        // Add other yes/no markets as needed...
+      }
+      
+      // Half Time/Full Time predictions
+      else if (pred && typeof pred === 'object' && 'home_home' in pred && 'away_away' in pred && 'draw_draw' in pred) {
+        const htft = pred as { 
+          home_home: number | null; home_away: number | null; home_draw: number | null;
+          away_home: number | null; away_away: number | null; away_draw: number | null;
+          draw_draw: number | null; draw_home: number | null; draw_away: number | null;
+        };
+        map['htft'] = {
+          key: 'htft',
+          label: prediction.type?.name || 'Half Time/Full Time',
+          options: [
+            { code: '1/1', value: htft.home_home },
+            { code: '1/X', value: htft.home_draw },
+            { code: '1/2', value: htft.home_away },
+            { code: 'X/1', value: htft.draw_home },
+            { code: 'X/X', value: htft.draw_draw },
+            { code: 'X/2', value: htft.draw_away },
+            { code: '2/1', value: htft.away_home },
+            { code: '2/X', value: htft.away_draw },
+            { code: '2/2', value: htft.away_away },
+          ],
+        };
+      }
+      
+      // Correct score predictions
+      else if (pred && typeof pred === 'object' && 'scores' in pred && 'score' in pred) {
+        const scorePred = pred as { scores: Record<string, number>; score: Record<string, number> };
+        
+        // Use the scores object for display
+        const scoreOptions = Object.entries(scorePred.scores)
+          .filter(([, value]) => value !== null)
+          .sort(([, a], [, b]) => (b || 0) - (a || 0))
+          .slice(0, 8) // Limit to top 8 scores
+          .map(([key, value]) => ({
+            code: key,
+            value
+          }));
+        
+        if (scoreOptions.length > 0) {
+          map['correctscore'] = {
+            key: 'correctscore',
+            label: prediction.type?.name || 'Correct Score',
+            options: scoreOptions,
+          };
+        }
       }
       
       // Add more market types as needed...
@@ -117,22 +282,55 @@ export function FixturePredictionMarkets({
     }
   }, [marketsMap, selectedMarketKey]);
 
-  // Calculate popover position
+  // Calculate popover position with improved positioning logic
   useEffect(() => {
     if (marketOpen && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
       const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
       const popoverWidth = 256; // w-64 = 16rem = 256px
+      const popoverHeight = 320; // max-h-80 = 20rem = 320px
       
       // Calculate if popover would go off-screen to the right
-      const wouldGoOffScreen = rect.left + popoverWidth > viewportWidth - 16; // 16px margin
+      const wouldGoOffScreenRight = rect.left + popoverWidth > viewportWidth - 16;
       
-      setPopoverPosition({
-        top: rect.bottom + window.scrollY + 4,
-        left: wouldGoOffScreen 
-          ? rect.right + window.scrollX - popoverWidth // Position to the left of button
-          : rect.left + window.scrollX // Position to the right of button
-      });
+      // Calculate if popover would go off-screen to the bottom
+      const wouldGoOffScreenBottom = rect.bottom + popoverHeight > viewportHeight - 16;
+      
+      let left = rect.left + window.scrollX;
+      let top = rect.bottom + window.scrollY + 4;
+      
+      // Adjust horizontal position - prefer right alignment if possible
+      if (wouldGoOffScreenRight) {
+        left = rect.right + window.scrollX - popoverWidth;
+      }
+      
+      // Adjust vertical position if it would go off-screen at the bottom
+      if (wouldGoOffScreenBottom) {
+        top = rect.top + window.scrollY - popoverHeight - 4;
+      }
+      
+      // Ensure popover doesn't go off-screen to the left
+      if (left < 16) {
+        left = 16;
+      }
+      
+      // Ensure popover doesn't go off-screen to the top
+      if (top < 16) {
+        top = 16;
+      }
+      
+      // Ensure popover doesn't go off-screen to the right
+      if (left + popoverWidth > viewportWidth - 16) {
+        left = viewportWidth - popoverWidth - 16;
+      }
+      
+      // Ensure popover doesn't go off-screen to the right
+      if (left + popoverWidth > viewportWidth - 16) {
+        left = viewportWidth - popoverWidth - 16;
+      }
+      
+      setPopoverPosition({ top, left });
     }
   }, [marketOpen]);
 
@@ -140,21 +338,27 @@ export function FixturePredictionMarkets({
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
+        setIsTransitioning(true);
         setMarketOpen(false);
         setMarketFilter(''); // Clear search when closing
+        setTimeout(() => setIsTransitioning(false), 200); // Match animation duration
       }
       if (moreButtonRef.current && !moreButtonRef.current.contains(event.target as Node)) {
+        setIsTransitioning(true);
         setShowMorePopover(false);
         setOptionFilter(''); // Clear search when closing
+        setTimeout(() => setIsTransitioning(false), 200); // Match animation duration
       }
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        setIsTransitioning(true);
         setMarketOpen(false);
         setShowMorePopover(false);
         setMarketFilter('');
         setOptionFilter('');
+        setTimeout(() => setIsTransitioning(false), 200); // Match animation duration
       }
     };
 
@@ -181,6 +385,17 @@ export function FixturePredictionMarkets({
     }
   }, [showMorePopover]);
 
+  // Performance monitoring - track render time
+  useEffect(() => {
+    renderStartTime.current = performance.now();
+    return () => {
+      const renderTime = performance.now() - renderStartTime.current;
+      if (renderTime > 16) { // Log slow renders (>16ms = 60fps)
+        console.warn(`FixturePredictionMarkets render took ${renderTime.toFixed(2)}ms`);
+      }
+    };
+  });
+
   if (!marketsMap || Object.keys(marketsMap).length === 0) {
     return null;
   }
@@ -188,22 +403,28 @@ export function FixturePredictionMarkets({
   const selectedMarket = marketsMap[selectedMarketKey];
   const options = selectedMarket?.options || [];
 
-  // Popover component for market selection
+  /**
+   * Market selection popover component
+   * Renders a searchable list of available prediction markets
+   */
   const MarketPopover = () => {
     if (!marketOpen) return null;
 
-    const filteredMarkets = Object.values(marketsMap)
-      .filter(m => m.label.toLowerCase().includes(marketFilter.toLowerCase()));
+    const filteredMarkets = getCachedSearchResults(marketFilter, Object.values(marketsMap));
 
     return createPortal(
       <div 
-        className="fixed z-[9999] w-64 max-w-[calc(100vw-2rem)] max-h-80 rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg overflow-y-auto"
+        className={cn(
+          "fixed z-[9999] w-64 max-w-[calc(100vw-2rem)] max-h-80 rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg transition-all duration-200",
+          isTransitioning ? "opacity-0 scale-95" : "opacity-100 scale-100"
+        )}
         style={{
           top: popoverPosition.top,
           left: popoverPosition.left,
         }}
       >
-        <div className="p-1.5 border-b border-gray-100 dark:border-gray-700">
+        {/* Search header - always visible */}
+        <div className="p-1.5 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-t-md">
           <input
             type="text"
             value={marketFilter}
@@ -213,62 +434,101 @@ export function FixturePredictionMarkets({
             autoFocus
           />
         </div>
-        {filteredMarkets.length > 0 ? (
-          filteredMarkets.map((m) => (
-            <button
-              type="button"
-              key={m.key}
-              className={cn(
-                'w-full text-left px-2 py-1.5 text-xs hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 truncate transition-colors',
-                selectedMarketKey === m.key && 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-              )}
-              onClick={() => { 
-                setSelectedMarketKey(m.key); 
-                setMarketOpen(false); 
-                setMarketFilter(''); // Clear search when selecting
-              }}
-              title={m.label}
-            >
-              {m.label}
-            </button>
-          ))
-        ) : (
-          <div className="px-2 py-1.5 text-xs text-gray-500 dark:text-gray-400">
-            No markets found
-          </div>
-        )}
+        
+        {/* Scrollable content area */}
+        <div className="max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-gray-100 dark:scrollbar-track-gray-800">
+          {filteredMarkets.length > 0 ? (
+            filteredMarkets.map((m) => (
+              <button
+                type="button"
+                key={m.key}
+                className={cn(
+                  'w-full text-left px-2 py-1.5 text-xs hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 truncate transition-colors',
+                  selectedMarketKey === m.key && 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                )}
+                onClick={() => { 
+                  setSelectedMarketKey(m.key); 
+                  setMarketOpen(false); 
+                  setMarketFilter(''); // Clear search when selecting
+                }}
+                title={m.label}
+              >
+                {m.label}
+              </button>
+            ))
+          ) : (
+            <div className="px-2 py-1.5 text-xs text-gray-500 dark:text-gray-400">
+              No markets found
+            </div>
+          )}
+        </div>
       </div>,
       document.body
     );
   };
 
-  // More options popover component
+  /**
+   * More options popover component
+   * Displays additional prediction options when there are many available
+   */
   const MoreOptionsPopover = () => {
     if (!showMorePopover || !moreButtonRef.current) return null;
 
     const rect = moreButtonRef.current.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
     const popoverWidth = 256; // w-64 = 16rem = 256px
+    const popoverHeight = 320; // max-h-80 = 20rem = 320px
     
     // Calculate if popover would go off-screen to the right
-    const wouldGoOffScreen = rect.left + popoverWidth > viewportWidth - 16; // 16px margin
+    const wouldGoOffScreenRight = rect.left + popoverWidth > viewportWidth - 16;
+    
+    // Calculate if popover would go off-screen to the bottom
+    const wouldGoOffScreenBottom = rect.bottom + popoverHeight > viewportHeight - 16;
+    
+    let left = rect.left + window.scrollX;
+    let top = rect.bottom + window.scrollY + 4;
+    
+    // Adjust horizontal position
+    if (wouldGoOffScreenRight) {
+      left = rect.right + window.scrollX - popoverWidth;
+    }
+    
+    // Adjust vertical position if it would go off-screen at the bottom
+    if (wouldGoOffScreenBottom) {
+      top = rect.top + window.scrollY - popoverHeight - 4;
+    }
+    
+    // Ensure popover doesn't go off-screen to the left
+    if (left < 16) {
+      left = 16;
+    }
+    
+    // Ensure popover doesn't go off-screen to the top
+    if (top < 16) {
+      top = 16;
+    }
     
     const restOptions = options
       .filter(opt => opt.value !== null)
       .sort((a, b) => (b.value || 0) - (a.value || 0))
       .slice(3);
 
+    const filteredOptions = restOptions.filter(opt => opt.code.toLowerCase().includes(optionFilter.toLowerCase()));
+
     return createPortal(
       <div 
-        className="fixed z-[9999] w-64 max-w-[calc(100vw-2rem)] max-h-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg overflow-y-auto"
+        className={cn(
+          "fixed z-[9999] w-64 max-w-[calc(100vw-2rem)] max-h-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg transition-all duration-200",
+          isTransitioning ? "opacity-0 scale-95" : "opacity-100 scale-100"
+        )}
         style={{
-          top: rect.bottom + window.scrollY + 4,
-          left: wouldGoOffScreen 
-            ? rect.right + window.scrollX - popoverWidth // Position to the left of button
-            : rect.left + window.scrollX // Position to the right of button
+          top,
+          left
         }}
       >
-        <div className="p-1.5 border-b border-gray-100 dark:border-gray-700">
+        {/* Search header - always visible */}
+        <div className="p-1.5 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-t-md">
           <input
             type="text"
             value={optionFilter}
@@ -278,11 +538,12 @@ export function FixturePredictionMarkets({
             autoFocus
           />
         </div>
-        <div className="p-1.5">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
-            {restOptions
-              .filter(opt => opt.code.toLowerCase().includes(optionFilter.toLowerCase()))
-              .map((opt) => (
+        
+        {/* Scrollable content area */}
+        <div className="max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-gray-100 dark:scrollbar-track-gray-800 p-1.5">
+          {filteredOptions.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
+              {filteredOptions.map((opt) => (
                 <Button
                   key={opt.code}
                   variant="outline"
@@ -298,8 +559,8 @@ export function FixturePredictionMarkets({
                   </div>
                 </Button>
               ))}
-          </div>
-          {restOptions.filter(opt => opt.code.toLowerCase().includes(optionFilter.toLowerCase())).length === 0 && (
+            </div>
+          ) : (
             <div className="px-2 py-1.5 text-xs text-gray-500 dark:text-gray-400 text-center">
               No options found
             </div>
@@ -383,8 +644,8 @@ export function FixturePredictionMarkets({
       <div className="flex items-center gap-1 flex-wrap">
         <div className="flex gap-1 flex-1 relative flex-wrap">
           {(() => {
-            // For markets with many options, show top 3 + expand option
-            if (options.length > 6) {
+            // For markets with more than 3 options, show top 3 + expand option
+            if (options.length > 3) {
               const topOptions = options
                 .filter(opt => opt.value !== null)
                 .sort((a, b) => (b.value || 0) - (a.value || 0))
@@ -421,7 +682,7 @@ export function FixturePredictionMarkets({
               );
             }
             
-            // For markets with 6 or fewer options, show all
+            // For markets with 3 or fewer options, show all
             return options.map((opt) => (
               <Button
                 key={opt.code}
