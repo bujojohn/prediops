@@ -3,7 +3,7 @@ import { sportmonks } from '@/lib/sportmonks';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { date: string } }
+  { params }: { params: Promise<{ date: string }> }
 ) {
   try {
     const { searchParams } = new URL(request.url);
@@ -11,7 +11,7 @@ export async function GET(
     const limit = parseInt(searchParams.get('limit') || '50');
     const page = parseInt(searchParams.get('page') || '1');
 
-    const { date } = params;
+    const { date } = await params;
     
     // Validate date format (YYYY-MM-DD)
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
@@ -43,7 +43,8 @@ export async function GET(
     });
 
   } catch (error) {
-    console.error('Error fetching fixtures by date:', error);
+    // Log error for debugging (commented out for production)
+    // console.error('Error fetching fixtures by date:', error);
     
     return NextResponse.json(
       { 
