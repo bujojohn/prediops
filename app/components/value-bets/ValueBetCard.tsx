@@ -2,6 +2,19 @@
 
 import { useState } from 'react';
 import type { ValueBet } from '../../../schemas/valuebet.schema';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { 
+  TrendingUp, 
+  DollarSign, 
+  Target, 
+  ChevronDown, 
+  ChevronUp,
+  Calendar,
+  BookOpen,
+  Percent
+} from 'lucide-react';
 
 interface ValueBetCardProps {
   valueBet: ValueBet;
@@ -24,90 +37,172 @@ export function ValueBetCard({ valueBet, name, starting_at, participants }: Valu
   const awayTeam = participants?.find(p => p.meta.location === 'away')?.name || 'Away';
   
   const getValueColor = (value: number) => {
-    if (value > 0.1) return 'text-green-600 bg-green-50 border-green-200';
-    if (value > 0.05) return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-    return 'text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700';
+    if (value > 0.1) return 'text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800';
+    if (value > 0.05) return 'text-green-600 bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800';
+    return 'text-slate-600 bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700';
+  };
+
+  const getValueBadgeVariant = (value: number) => {
+    if (value > 0.1) return 'default';
+    if (value > 0.05) return 'secondary';
+    return 'outline';
+  };
+
+  const getValueBadgeColor = (value: number) => {
+    if (value > 0.1) return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-100';
+    if (value > 0.05) return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100';
+    return 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-100';
   };
 
   return (
-    <div 
-      className="border rounded-lg p-4 bg-white shadow hover:shadow-md transition-all duration-200 cursor-pointer"
-      onClick={() => setIsExpanded(!isExpanded)}
-    >
-      <div className="flex justify-between items-start mb-3">
-        <h3 className="font-semibold text-lg">
-          {name || `${homeTeam} vs ${awayTeam}`}
-        </h3>
-        {starting_at && (
-          <span className="text-xs text-gray-600 dark:text-gray-400">
-            {new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', year: 'numeric', month: 'short', day: '2-digit' }).format(new Date(starting_at))}
-          </span>
-        )}
-      </div>
+    <Card className="group hover:shadow-xl transition-all duration-300 border-0 shadow-lg overflow-hidden">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <CardTitle className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+              {name || `${homeTeam} vs ${awayTeam}`}
+            </CardTitle>
+            {starting_at && (
+              <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                <Calendar className="h-4 w-4" />
+                {new Intl.DateTimeFormat('en-GB', { 
+                  timeZone: 'UTC', 
+                  year: 'numeric', 
+                  month: 'short', 
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                }).format(new Date(starting_at))}
+              </div>
+            )}
+          </div>
+          <Badge 
+            variant={getValueBadgeVariant(valueBet.predictions.stake)}
+            className={`${getValueBadgeColor(valueBet.predictions.stake)} font-medium`}
+          >
+            {valueBet.predictions.is_value ? 'Value Bet' : 'Not Value'}
+          </Badge>
+        </div>
+      </CardHeader>
       
-      <div className={`border rounded-lg p-3 mb-3 ${getValueColor(valueBet.predictions.stake)}`}>
-        <div className="flex justify-between items-center mb-2">
-          <span className="font-medium">Bet</span>
-          <span className="font-bold">{valueBet.predictions.bet}</span>
-        </div>
-        
-        <div className="grid grid-cols-3 gap-4 text-sm">
-          <div>
-            <span className="text-gray-600">Bookmaker:</span>
-            <div className="font-semibold">{valueBet.predictions.bookmaker}</div>
-          </div>
-          <div>
-            <span className="text-gray-600">Odds:</span>
-            <div className="font-semibold">{valueBet.predictions.odd.toFixed(2)}</div>
-          </div>
-          <div>
-            <span className="text-gray-600">Fair Odd:</span>
-            <div className="font-semibold">{valueBet.predictions.fair_odd.toFixed(2)}</div>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-4 text-sm mt-2">
-          <div>
-            <span className="text-gray-600">Stake:</span>
-            <div className="font-semibold">{valueBet.predictions.stake}</div>
-          </div>
-          <div>
-            <span className="text-gray-600">Value:</span>
-            <div className="font-semibold">{valueBet.predictions.is_value ? 'Yes' : 'No'}</div>
-          </div>
-        </div>
-      </div>
-      
-      {isExpanded && (
-        <div className="mt-4 p-3 bg-gray-50 rounded-lg border">
-          <h4 className="font-semibold text-gray-800 mb-2">Detailed Analysis</h4>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Expected Value:</span>
-              <span className="font-medium">
-                {valueBet.predictions.is_value ? 'Positive' : 'Negative'}
-              </span>
+      <CardContent className="space-y-4">
+        {/* Main Bet Info */}
+        <div className={`border-2 rounded-xl p-4 ${getValueColor(valueBet.predictions.stake)}`}>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Target className="h-5 w-5 text-slate-600" />
+              <span className="font-semibold text-slate-900 dark:text-white">Bet</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Confidence:</span>
-              <span className="font-medium">
-                {valueBet.predictions.is_value ? 'High' : 'Low'}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Risk Level:</span>
-              <span className="font-medium">
-                {valueBet.predictions.stake > 0.1 ? 'High' : 'Medium'}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      <div className="text-center">
-                    <span className="text-xs text-gray-600 dark:text-gray-400">
-              {valueBet.predictions.is_value ? 'Profitable Value Bet' : 'Not a Value Bet'}
+            <span className="font-bold text-lg text-slate-900 dark:text-white">
+              {valueBet.predictions.bet}
             </span>
-      </div>
-    </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex items-center gap-2">
+              <BookOpen className="h-4 w-4 text-slate-500" />
+              <div>
+                <div className="text-xs text-slate-600 dark:text-slate-400">Bookmaker</div>
+                <div className="font-semibold text-slate-900 dark:text-white">
+                  {valueBet.predictions.bookmaker}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-slate-500" />
+              <div>
+                <div className="text-xs text-slate-600 dark:text-slate-400">Odds</div>
+                <div className="font-semibold text-slate-900 dark:text-white">
+                  {valueBet.predictions.odd.toFixed(2)}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Value Analysis */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="text-center p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+            <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Fair Odds</div>
+            <div className="font-bold text-slate-900 dark:text-white">
+              {valueBet.predictions.fair_odd.toFixed(2)}
+            </div>
+          </div>
+          <div className="text-center p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+            <div className="text-xs text-slate-600 dark:text-slate-400 mb-1">Value</div>
+            <div className="font-bold text-slate-900 dark:text-white">
+              {valueBet.predictions.stake.toFixed(3)}
+            </div>
+          </div>
+        </div>
+
+        {/* Expandable Details */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="w-full flex items-center justify-center gap-2 text-slate-600 hover:text-slate-900"
+        >
+          {isExpanded ? (
+            <>
+              <ChevronUp className="h-4 w-4" />
+              Hide Details
+            </>
+          ) : (
+            <>
+              <ChevronDown className="h-4 w-4" />
+              Show Details
+            </>
+          )}
+        </Button>
+        
+        {isExpanded && (
+          <div className="space-y-3 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg border">
+            <h4 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Detailed Analysis
+            </h4>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-600 dark:text-slate-400">Expected Value:</span>
+                <Badge variant={valueBet.predictions.is_value ? 'default' : 'secondary'}>
+                  {valueBet.predictions.is_value ? 'Positive' : 'Negative'}
+                </Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-600 dark:text-slate-400">Confidence:</span>
+                <Badge variant={valueBet.predictions.is_value ? 'default' : 'outline'}>
+                  {valueBet.predictions.is_value ? 'High' : 'Low'}
+                </Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-600 dark:text-slate-400">Risk Level:</span>
+                <Badge 
+                  variant={valueBet.predictions.stake > 0.1 ? 'destructive' : 'secondary'}
+                >
+                  {valueBet.predictions.stake > 0.1 ? 'High' : 'Medium'}
+                </Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-600 dark:text-slate-400">Value Percentage:</span>
+                <div className="flex items-center gap-1">
+                  <Percent className="h-3 w-3" />
+                  <span className="font-medium">
+                    {(valueBet.predictions.stake * 100).toFixed(1)}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Footer Status */}
+        <div className="text-center pt-2 border-t border-slate-200 dark:border-slate-700">
+          <span className={`text-xs font-medium ${valueBet.predictions.is_value ? 'text-green-600' : 'text-slate-500'}`}>
+            {valueBet.predictions.is_value ? '✅ Profitable Value Bet' : '❌ Not a Value Bet'}
+          </span>
+        </div>
+      </CardContent>
+    </Card>
   );
 } 
