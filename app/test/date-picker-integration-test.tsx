@@ -92,7 +92,7 @@ export function DatePickerIntegrationTest() {
           🔗 Date Picker Integration Test
         </h1>
         <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-          Test the date picker integration across the application to ensure it's working correctly.
+          Test the date picker integration across the application to ensure it&apos;s working correctly.
         </p>
       </div>
 

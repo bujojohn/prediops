@@ -21,7 +21,7 @@ export function HorizontalDatePicker({
   maxFutureDays = 14,
   showNavigation = true 
 }: HorizontalDatePickerProps) {
-  const { state, selectDate, isDateCached, isDatePreloaded, addCachedDate, addPreloadedDate } = useDatePicker();
+  const { state, selectDate, isDateCached, isDatePreloaded, addPreloadedDate } = useDatePicker();
   
   // Center the visible range on today's date initially
   const todayIndex = maxPastDays;

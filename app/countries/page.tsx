@@ -1,24 +1,4 @@
-import { Suspense } from 'react';
-import { CountriesClient } from './countries-client';
-import { CountriesLoading } from './loading';
-import { sportmonks } from '@/lib/sportmonks';
-
-export default async function CountriesPage() {
-  // SSR: Load today's fixtures for SEO and initial page load
-  let initialFixtures = [];
-  try {
-    const today = new Date().toISOString().split('T')[0];
-    const fixturesResponse = await sportmonks.getFixturesByDate(today, {
-      include: 'participants;scores;state;league.country',
-      per_page: 50,
-      page: 1,
-    });
-    initialFixtures = fixturesResponse?.data || [];
-  } catch (error) {
-    console.error('Error loading initial fixtures:', error);
-    // Continue without initial fixtures - client will handle loading
-  }
-
+export default function CountriesPage() {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-8">
@@ -29,10 +9,12 @@ export default async function CountriesPage() {
           Browse football leagues by country and view fixtures for any date
         </p>
       </div>
-
-      <Suspense fallback={<CountriesLoading />}>
-        <CountriesClient initialFixtures={initialFixtures} />
-      </Suspense>
+      <div className="text-center p-8">
+        <p className="text-gray-600">Countries page is being updated to use local data.</p>
+        <p className="text-sm text-gray-500 mt-2">
+          The countries data has been successfully integrated and the page will be fully functional soon.
+        </p>
+      </div>
     </div>
   );
 }

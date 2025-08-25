@@ -92,20 +92,33 @@ export const useOptimizedLiveScores = (config?: Partial<PollingConfig>) => {
       
       if (data.success && data.data) {
         // Transform SportMonks data to our LiveScore format
-        const transformedScores: LiveScore[] = data.data.map((fixture: any) => ({
-          id: fixture.id?.toString() || '',
-          fixture_id: fixture.id?.toString() || '',
-          home_team: fixture.participants?.[0]?.name || 'Home Team',
-          away_team: fixture.participants?.[1]?.name || 'Away Team',
-          home_score: fixture.scores?.[0]?.score || 0,
-          away_score: fixture.scores?.[1]?.score || 0,
-          status: fixture.state?.short_name || 'NS',
-          current_minute: fixture.minute || undefined,
-          start_time: fixture.starting_at || '',
-          league: fixture.league?.name || 'Unknown League',
-          venue: fixture.venue?.name,
-          last_updated: new Date().toISOString(),
-        }));
+        const transformedScores: LiveScore[] = data.data.map((fixture: unknown) => {
+          const f = fixture as {
+            id?: number;
+            participants?: Array<{ name?: string }>;
+            scores?: Array<{ score?: number }>;
+            state?: { short_name?: string };
+            minute?: number;
+            starting_at?: string;
+            league?: { name?: string };
+            venue?: { name?: string };
+          };
+          
+          return {
+            id: f.id?.toString() || '',
+            fixture_id: f.id?.toString() || '',
+            home_team: f.participants?.[0]?.name || 'Home Team',
+            away_team: f.participants?.[1]?.name || 'Away Team',
+            home_score: f.scores?.[0]?.score || 0,
+            away_score: f.scores?.[1]?.score || 0,
+            status: f.state?.short_name || 'NS',
+            current_minute: f.minute || undefined,
+            start_time: f.starting_at || '',
+            league: f.league?.name || 'Unknown League',
+            venue: f.venue?.name,
+            last_updated: new Date().toISOString(),
+          };
+        });
         
         setState(prev => ({
           ...prev,

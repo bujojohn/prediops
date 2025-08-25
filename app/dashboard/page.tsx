@@ -1,21 +1,15 @@
-import { sportmonks } from '@/lib/sportmonks';
+import { getCountries } from '@/lib/data/countries';
 import { CountriesListClient } from '@/app/components/countries/CountriesListClient';
 import type { Country } from '@/schemas/country.schema';
 
 export default async function DashboardPage() {
-  // Server-side data fetching
+  // Use local countries data
   let countries: Country[] = [];
   
   try {
-    const response = await sportmonks.getCountries({
-      include: 'continent;leagues:name,official_name,fifa_name,iso2,iso3,image_path',
-      order: 'asc',
-      sortBy: 'name'
-    });
-    
-    countries = response.data || [];
+    countries = getCountries();
   } catch (error) {
-    console.error('Failed to fetch countries:', error);
+    console.error('Failed to load countries:', error);
     // Fallback to empty array - client component will handle this gracefully
   }
 

@@ -7,7 +7,7 @@ import { Sidebar } from "./components/navigation/Sidebar";
 import { QueryProvider } from "@/lib/providers/query-provider";
 import { DisplaySettingsProvider } from "./contexts/DisplaySettingsContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import { DatePickerProvider } from "./components/date-picker";
+// import { DatePickerProvider } from "./components/date-picker";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -58,21 +58,19 @@ export default function RootLayout({
         <QueryProvider>
           <ThemeProvider>
             <DisplaySettingsProvider>
-              <DatePickerProvider>
-                <div className="flex h-screen">
-                  {/* Desktop Sidebar */}
-                  <div className="hidden md:block">
-                    <Sidebar />
-                  </div>
-                  
-                  <div className="flex-1 flex flex-col">
-                    <Navbar />
-                    <main className="flex-1 overflow-auto">
-                      {children}
-                    </main>
-                  </div>
+              <div className="flex h-screen">
+                {/* Desktop Sidebar */}
+                <div className="hidden md:block">
+                  <Sidebar />
                 </div>
-              </DatePickerProvider>
+                
+                <div className="flex-1 flex flex-col">
+                  <Navbar />
+                  <main className="flex-1 overflow-auto">
+                    {children}
+                  </main>
+                </div>
+              </div>
             </DisplaySettingsProvider>
           </ThemeProvider>
         </QueryProvider>

@@ -64,7 +64,7 @@ export function SimpleOptimizedTest() {
               <div className="text-right">
                 <div className="text-xl font-bold">{score.home_score} - {score.away_score}</div>
                 {score.current_minute && (
-                  <div className="text-sm text-gray-600">{score.current_minute}'</div>
+                  <div className="text-sm text-gray-600">{score.current_minute}&apos;</div>
                 )}
               </div>
             </div>

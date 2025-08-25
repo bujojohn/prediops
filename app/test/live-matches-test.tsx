@@ -55,39 +55,21 @@ export function LiveMatchesTest() {
   const [testFixtures, setTestFixtures] = useState<Fixture[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Use hooks at the top level (React rules)
+  const liveMatchesHook = useLiveMatches(testFixtures);
+  const liveMatchesStore = useLiveMatchesStore();
   
-  // Wrap hooks in try-catch to handle any initialization errors
-  let liveMatchesData: any[] = [];
-  let liveMatchCount = 0;
-  let hasLiveMatches = false;
-  let formatMinutes: any = () => '';
-  let getStatusDisplay: any = () => '';
-  let clearAllMatches: any = () => {};
-  let matches: any = new Map();
-  let startTimer: any = () => {};
-  let stopTimer: any = () => {};
-  let updateMinutes: any = () => {};
+  // Destructure with fallbacks
+  const liveMatchesData = liveMatchesHook.liveMatchesData || [];
+  const liveMatchCount = liveMatchesHook.liveMatchCount || 0;
+  const hasLiveMatches = liveMatchesHook.hasLiveMatches || false;
+  const formatMinutes = liveMatchesHook.formatMinutes || (() => '');
+  const getStatusDisplay = liveMatchesHook.getStatusDisplay || (() => '');
+  const clearAllMatches = liveMatchesHook.clearAllMatches || (() => {});
   
-  try {
-    const liveMatchesHook = useLiveMatches(testFixtures);
-    const liveMatchesStore = useLiveMatchesStore();
-    
-    // Destructure with fallbacks
-    liveMatchesData = liveMatchesHook.liveMatchesData || [];
-    liveMatchCount = liveMatchesHook.liveMatchCount || 0;
-    hasLiveMatches = liveMatchesHook.hasLiveMatches || false;
-    formatMinutes = liveMatchesHook.formatMinutes || (() => '');
-    getStatusDisplay = liveMatchesHook.getStatusDisplay || (() => '');
-    clearAllMatches = liveMatchesHook.clearAllMatches || (() => {});
-    
-    matches = liveMatchesStore.matches || new Map();
-    startTimer = liveMatchesStore.startTimer || (() => {});
-    stopTimer = liveMatchesStore.stopTimer || (() => {});
-    updateMinutes = liveMatchesStore.updateMinutes || (() => {});
-  } catch (err) {
-    console.error('Error initializing live matches:', err);
-    setError(err instanceof Error ? err.message : 'Unknown error occurred');
-  }
+  const matches = liveMatchesStore.matches || new Map();
+  const updateMinutes = liveMatchesStore.updateMinutes || (() => {});
 
   // Start test with mock fixtures
   const startTest = () => {

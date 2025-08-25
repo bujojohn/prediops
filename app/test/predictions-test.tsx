@@ -3,7 +3,12 @@
 import { useState, useEffect } from 'react';
 
 export function PredictionsTest() {
-  const [predictions, setPredictions] = useState<any[]>([]);
+  const [predictions, setPredictions] = useState<Array<{
+  id: number;
+  type?: { name: string };
+  fixture_id: number;
+  created_at: string;
+}>>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshCount, setRefreshCount] = useState(0);

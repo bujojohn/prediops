@@ -56,16 +56,27 @@ export const useSimpleLiveScores = () => {
       
       if (data.success && data.data) {
         // Transform to simple format
-        const transformedScores: SimpleLiveScore[] = data.data.map((fixture: any) => ({
-          id: fixture.id?.toString() || '',
-          homeTeam: fixture.participants?.[0]?.name || 'Home Team',
-          awayTeam: fixture.participants?.[1]?.name || 'Away Team',
-          homeScore: fixture.scores?.[0]?.score || 0,
-          awayScore: fixture.scores?.[1]?.score || 0,
-          status: mapStatus(fixture.state?.short_name || 'NS'),
-          minute: fixture.minute || undefined,
-          startTime: fixture.starting_at || '',
-        }));
+        const transformedScores: SimpleLiveScore[] = data.data.map((fixture: unknown) => {
+          const f = fixture as {
+            id?: number;
+            participants?: Array<{ name?: string }>;
+            scores?: Array<{ score?: number }>;
+            state?: { short_name?: string };
+            minute?: number;
+            starting_at?: string;
+          };
+          
+          return {
+            id: f.id?.toString() || '',
+            homeTeam: f.participants?.[0]?.name || 'Home Team',
+            awayTeam: f.participants?.[1]?.name || 'Away Team',
+            homeScore: f.scores?.[0]?.score || 0,
+            awayScore: f.scores?.[1]?.score || 0,
+            status: mapStatus(f.state?.short_name || 'NS'),
+            minute: f.minute || undefined,
+            startTime: f.starting_at || '',
+          };
+        });
         
         setState(prev => ({
           ...prev,
