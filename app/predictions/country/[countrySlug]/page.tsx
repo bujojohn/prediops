@@ -48,14 +48,14 @@ export default async function CountryPredictionsPage({
 
     const allLeagues = leaguesResponse?.data || [];
     const countryLeagues = allLeagues.filter((league) => {
-      return (league as any).country_id?.toString() === country.id.toString() || 
-             (league as any).country?.id?.toString() === country.id.toString();
+      return (league as { country_id?: number; country?: { id: number } }).country_id?.toString() === country.id.toString() || 
+             (league as { country_id?: number; country?: { id: number } }).country?.id?.toString() === country.id.toString();
     });
 
     // Sort leagues by name
-    const sortedLeagues = countryLeagues.sort((a: { name?: string }, b: { name?: string }) => {
-      const nameA = a.name?.toLowerCase() || '';
-      const nameB = b.name?.toLowerCase() || '';
+    const sortedLeagues = countryLeagues.sort((a, b) => {
+      const nameA = (a as { name?: string }).name?.toLowerCase() || '';
+      const nameB = (b as { name?: string }).name?.toLowerCase() || '';
       return nameA.localeCompare(nameB);
     });
 
@@ -68,13 +68,13 @@ export default async function CountryPredictionsPage({
     });
 
     const allFixtures = fixturesResponse?.data || [];
-    const countryFixtures = allFixtures.filter((fixture: { league?: { country?: { id: number } } }) => {
-      return fixture.league?.country?.id === country.id;
+    const countryFixtures = allFixtures.filter((fixture: unknown) => {
+      return (fixture as { league?: { country?: { id: number } } }).league?.country?.id === country.id;
     });
 
     // Filter by specific league if provided
     const filteredFixtures = leagueId 
-      ? countryFixtures.filter((fixture: { league?: { id: number } }) => fixture.league?.id?.toString() === leagueId)
+      ? countryFixtures.filter((fixture: unknown) => (fixture as { league?: { id: number } }).league?.id?.toString() === leagueId)
       : countryFixtures;
 
     return (
@@ -82,7 +82,6 @@ export default async function CountryPredictionsPage({
         country={country}
         leagues={sortedLeagues}
         fixtures={filteredFixtures}
-        selectedLeagueId={leagueId ? parseInt(leagueId) : undefined}
       />
     );
   } catch (error) {
