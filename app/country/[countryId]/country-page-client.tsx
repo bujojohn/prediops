@@ -69,15 +69,13 @@ export function CountryPageClient({ country, initialFixtures }: CountryPageClien
   //   loadFixturesForDate(date);
   // }, [loadFixturesForDate]);
 
-  // Group fixtures by league
+  // Group fixtures by league (using included league data)
   const fixturesByLeague = fixtures.reduce((acc, fixture) => {
-    // For now, we'll group by fixture ID since we don't have league info in fixtures
-    // This would need to be enhanced based on your actual API structure
-    const leagueId = fixture.id; // Placeholder - should be fixture.league.id
+    const leagueId = (fixture as unknown as { league?: { id?: number } }).league?.id ?? fixture.id;
     if (!acc[leagueId]) {
-      acc[leagueId] = [];
+      acc[leagueId] = [] as Fixture[];
     }
-    acc[leagueId].push(fixture);
+    (acc[leagueId] as Fixture[]).push(fixture);
     return acc;
   }, {} as Record<number, Fixture[]>);
 
@@ -157,7 +155,9 @@ export function CountryPageClient({ country, initialFixtures }: CountryPageClien
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Trophy className="h-5 w-5 text-yellow-600" />
-                    <CardTitle className="text-lg">League {leagueId}</CardTitle>
+                    <CardTitle className="text-lg">
+                      {(leagueFixtures[0] as unknown as { league?: { name?: string } }).league?.name || `League ${leagueId}`}
+                    </CardTitle>
                     <Badge variant="outline">{leagueFixtures.length} fixtures</Badge>
                   </div>
                   <Button

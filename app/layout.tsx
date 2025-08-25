@@ -2,11 +2,10 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
-import { Navbar } from "./components/navigation/Navbar";
-import { Sidebar } from "./components/navigation/Sidebar";
 import { QueryProvider } from "@/lib/providers/query-provider";
 import { DisplaySettingsProvider } from "./contexts/DisplaySettingsContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { SidebarWrapper } from "./components/navigation/SidebarWrapper";
 // import { DatePickerProvider } from "./components/date-picker";
 
 const geistSans = Geist({
@@ -58,19 +57,9 @@ export default function RootLayout({
         <QueryProvider>
           <ThemeProvider>
             <DisplaySettingsProvider>
-              <div className="flex h-screen">
-                {/* Desktop Sidebar */}
-                <div className="hidden md:block">
-                  <Sidebar />
-                </div>
-                
-                <div className="flex-1 flex flex-col">
-                  <Navbar />
-                  <main className="flex-1 overflow-auto">
-                    {children}
-                  </main>
-                </div>
-              </div>
+              <SidebarWrapper>
+                {children}
+              </SidebarWrapper>
             </DisplaySettingsProvider>
           </ThemeProvider>
         </QueryProvider>

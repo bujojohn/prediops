@@ -1,23 +1,31 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { 
   ChevronLeft, 
   ChevronRight, 
   Globe, 
-  Calendar,
-  Home,
+  Search,
+  Star,
+  TrendingUp,
+  Zap,
+  Filter,
   Target,
   DollarSign,
-  Zap,
-  Filter
+  Clock,
+  MapPin,
+  Trophy
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AdvancedSearch } from '@/app/components/search/AdvancedSearch';
-import { useQuickFilters } from '@/app/hooks/useQuickFilters';
+import { getCountries, searchCountries } from '@/lib/data/countries';
+import { Country } from '@/schemas/country.schema';
+import { Badge } from '@/components/ui/badge';
+import { getCountryPredictionsUrl, getCountriesWithLeagues } from '@/lib/utils/country-utils';
 import { 
   SidebarTheme, 
   SidebarHeader, 
@@ -31,55 +39,114 @@ interface SidebarProps {
 export function Sidebar({ className }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedCountries, setExpandedCountries] = useState<Set<number>>(new Set());
+  const [expandedLeagues, setExpandedLeagues] = useState<Set<number>>(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredCountries, setFilteredCountries] = useState<Country[]>([]);
+  const [allCountries, setAllCountries] = useState<Country[]>([]);
+  const [favoriteCountries, setFavoriteCountries] = useState<Set<number>>(new Set());
+  const [countryLeagues, setCountryLeagues] = useState<Record<number, any[]>>({});
+  const [loadingLeagues, setLoadingLeagues] = useState<Set<number>>(new Set());
   const pathname = usePathname();
-  const { filters: quickFilters } = useQuickFilters();
 
-  const countries = [
-    {
-      id: 1,
-      name: 'England',
-      leagues: [
-        { id: 1, name: 'Premier League', fixture_count: 380 },
-        { id: 2, name: 'Championship', fixture_count: 552 },
-      ]
-    },
-    {
-      id: 2,
-      name: 'Spain',
-      leagues: [
-        { id: 3, name: 'La Liga', fixture_count: 380 },
-        { id: 4, name: 'La Liga 2', fixture_count: 462 },
-      ]
-    },
-    {
-      id: 3,
-      name: 'Germany',
-      leagues: [
-        { id: 5, name: 'Bundesliga', fixture_count: 306 },
-        { id: 6, name: '2. Bundesliga', fixture_count: 306 },
-      ]
+  // Load countries data with available leagues
+  useEffect(() => {
+    const loadCountriesWithLeagues = async () => {
+      try {
+        const countriesWithLeagues = await getCountriesWithLeagues();
+        
+        if (countriesWithLeagues.length > 0) {
+          setAllCountries(countriesWithLeagues);
+          setFilteredCountries(countriesWithLeagues.slice(0, 20)); // Show top 20 initially
+        } else {
+          // If no countries with leagues, fall back to all countries
+          const countries = getCountries();
+          setAllCountries(countries);
+          setFilteredCountries(countries.slice(0, 20));
+        }
+      } catch (error) {
+        console.error('Error loading countries with leagues:', error);
+        // Fallback to all countries if API fails
+        try {
+          const countries = getCountries();
+          setAllCountries(countries);
+          setFilteredCountries(countries.slice(0, 20));
+        } catch (fallbackError) {
+          console.error('Error loading fallback countries:', fallbackError);
+        }
+      }
+    };
+
+    // Load immediately with fallback
+    const countries = getCountries();
+    setAllCountries(countries);
+    setFilteredCountries(countries.slice(0, 20));
+    
+    // Then try to load countries with leagues
+    loadCountriesWithLeagues();
+  }, []);
+
+  // Filter countries based on search
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      const results = searchCountries(searchQuery);
+      setFilteredCountries(results.slice(0, 15)); // Limit search results
+    } else {
+      setFilteredCountries(allCountries.slice(0, 20));
     }
-  ];
+  }, [searchQuery, allCountries]);
 
-  const navigationItems = [
-    { href: '/', label: 'Home', icon: Home },
-    { href: '/predictions', label: 'Predictions', icon: Target },
-    { href: '/countries', label: 'Countries', icon: Globe },
-    { href: '/value-bets', label: 'Value Bets', icon: DollarSign },
-    { href: '/live', label: 'Live', icon: Zap },
-  ];
-
-  const toggleCountry = (countryId: number) => {
+  const toggleCountry = async (countryId: number) => {
     const newExpanded = new Set(expandedCountries);
     if (newExpanded.has(countryId)) {
       newExpanded.delete(countryId);
+      setExpandedCountries(newExpanded);
     } else {
       newExpanded.add(countryId);
+      setExpandedCountries(newExpanded);
+      
+      // Load leagues for this country if not already loaded
+      if (!countryLeagues[countryId] && !loadingLeagues.has(countryId)) {
+        setLoadingLeagues(prev => new Set(prev).add(countryId));
+        try {
+          const response = await fetch(`/api/sportmonks/leagues/country/${countryId}`);
+          const data = await response.json();
+          if (data.success) {
+            setCountryLeagues(prev => ({
+              ...prev,
+              [countryId]: data.data || []
+            }));
+          }
+        } catch (error) {
+          console.error('Error loading leagues for country:', countryId, error);
+        } finally {
+          setLoadingLeagues(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(countryId);
+            return newSet;
+          });
+        }
+      }
     }
-    setExpandedCountries(newExpanded);
   };
 
-  const filteredCountries = countries;
+  const toggleFavorite = (countryId: number) => {
+    const newFavorites = new Set(favoriteCountries);
+    if (newFavorites.has(countryId)) {
+      newFavorites.delete(countryId);
+    } else {
+      newFavorites.add(countryId);
+    }
+    setFavoriteCountries(newFavorites);
+  };
+
+  // Get favorite countries first
+  const sortedCountries = [...filteredCountries].sort((a, b) => {
+    const aIsFavorite = favoriteCountries.has(a.id);
+    const bIsFavorite = favoriteCountries.has(b.id);
+    if (aIsFavorite && !bIsFavorite) return -1;
+    if (!aIsFavorite && bIsFavorite) return 1;
+    return (a.name || '').localeCompare(b.name || '');
+  });
 
   return (
     <SidebarTheme className={cn(isCollapsed ? 'w-16' : 'w-80', className)}>
@@ -87,8 +154,8 @@ export function Sidebar({ className }: SidebarProps) {
       <SidebarHeader>
         {!isCollapsed && (
           <div className="flex items-center gap-2">
-            <Globe className="h-5 w-5 text-sidebar-primary" />
-            <span className="font-semibold text-sidebar-foreground">Navigation</span>
+            <Target className="h-5 w-5 text-sidebar-primary" />
+            <span className="font-semibold text-sidebar-foreground">Prediops</span>
           </div>
         )}
         <Button
@@ -108,130 +175,243 @@ export function Sidebar({ className }: SidebarProps) {
       {/* Search */}
       {!isCollapsed && (
         <SidebarSection>
-          <AdvancedSearch 
-            placeholder="Search leagues, teams..."
-            onResultSelect={(result) => {
-              console.log('Selected:', result);
-              // Handle navigation here
-            }}
-          />
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-sidebar-foreground/50" />
+            <Input
+              placeholder="Search countries..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 bg-sidebar-accent border-sidebar-border text-sidebar-foreground placeholder:text-sidebar-foreground/50"
+            />
+          </div>
         </SidebarSection>
       )}
 
-      {/* Countries and Leagues */}
+      {/* Quick Actions */}
+      {!isCollapsed && (
+        <SidebarSection>
+          <div className="flex items-center gap-2 mb-3">
+            <Zap className="h-4 w-4 text-sidebar-foreground" />
+            <span className="text-sm font-medium text-sidebar-foreground">Quick Actions</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Link href="/predictions">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start gap-2 text-xs border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent"
+              >
+                <Target className="h-3 w-3" />
+                Predictions
+              </Button>
+            </Link>
+            <Link href="/value-bets">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start gap-2 text-xs border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent"
+              >
+                <DollarSign className="h-3 w-3" />
+                Value Bets
+              </Button>
+            </Link>
+            <Link href="/live">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start gap-2 text-xs border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent"
+              >
+                <Clock className="h-3 w-3" />
+                Live
+              </Button>
+            </Link>
+            <Link href="/countries">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start gap-2 text-xs border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent"
+              >
+                <Globe className="h-3 w-3" />
+                All Countries
+              </Button>
+            </Link>
+          </div>
+        </SidebarSection>
+      )}
+
+      {/* Countries List */}
       <div className="flex-1 overflow-y-auto">
         <SidebarSection>
           {!isCollapsed && (
-            <div className="flex items-center gap-2 mb-3">
-              <Globe className="h-4 w-4 text-sidebar-foreground" />
-              <span className="text-sm font-medium text-sidebar-foreground">Countries & Leagues</span>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Globe className="h-4 w-4 text-sidebar-foreground" />
+                <span className="text-sm font-medium text-sidebar-foreground">Countries</span>
+              </div>
+              <span className="text-xs text-sidebar-foreground/60">
+                {filteredCountries.length} of {allCountries.length}
+              </span>
             </div>
           )}
           
-          <div className="space-y-2">
-            {filteredCountries.map((country) => (
+          <div className="space-y-1">
+            {sortedCountries.map((country) => (
               <div key={country.id}>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => toggleCountry(country.id)}
-                  className={cn(
-                    "w-full justify-start gap-2 text-sm",
-                    "text-sidebar-foreground hover:text-sidebar-primary-foreground hover:bg-sidebar-accent",
-                    isCollapsed && "justify-center px-2"
-                  )}
-                >
-                  <div className="w-4 h-4 rounded-full bg-sidebar-accent flex items-center justify-center">
-                    <span className="text-xs font-bold text-sidebar-foreground">
-                      {country.name.charAt(0)}
-                    </span>
-                  </div>
-                  {!isCollapsed && (
-                    <>
-                      <span className="flex-1 text-left">{country.name}</span>
-                      <ChevronRight 
-                        className={cn(
-                          "h-3 w-3 transition-transform text-sidebar-foreground",
-                          expandedCountries.has(country.id) && "rotate-90"
-                        )} 
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => toggleCountry(country.id)}
+                    className={cn(
+                      "flex-1 justify-start gap-2 text-sm h-8",
+                      "text-sidebar-foreground hover:text-sidebar-primary-foreground hover:bg-sidebar-accent",
+                      isCollapsed && "justify-center px-2"
+                    )}
+                  >
+                    {country.image_path ? (
+                      <img 
+                        src={country.image_path} 
+                        alt={country.name || 'Flag'}
+                        className="w-4 h-4 rounded object-cover"
                       />
-                    </>
+                    ) : (
+                      <div className="w-4 h-4 rounded-full bg-sidebar-accent flex items-center justify-center">
+                        <span className="text-xs font-bold text-sidebar-foreground">
+                          {country.name?.charAt(0) || '?'}
+                        </span>
+                      </div>
+                    )}
+                                         {!isCollapsed && (
+                       <>
+                         <span className="flex-1 text-left truncate">{country.name || 'Unknown'}</span>
+                         {(country as any).fixtureCount > 0 && (
+                           <Badge variant="outline" className="ml-2 text-xs px-1 py-0">
+                             {(country as any).fixtureCount}
+                           </Badge>
+                         )}
+                         <ChevronRight 
+                           className={cn(
+                             "h-3 w-3 transition-transform text-sidebar-foreground",
+                             expandedCountries.has(country.id) && "rotate-90"
+                           )} 
+                         />
+                       </>
+                     )}
+                  </Button>
+                  
+                  {!isCollapsed && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleFavorite(country.id)}
+                      className={cn(
+                        "h-8 w-8 p-0",
+                        favoriteCountries.has(country.id)
+                          ? "text-yellow-500 hover:text-yellow-600"
+                          : "text-sidebar-foreground/50 hover:text-sidebar-foreground"
+                      )}
+                    >
+                      <Star className="h-3 w-3" />
+                    </Button>
                   )}
-                </Button>
+                </div>
 
                 {expandedCountries.has(country.id) && !isCollapsed && (
-                  <div className="ml-6 mt-2 space-y-1">
-                    {country.leagues.map((league) => (
-                      <Link key={league.id} href={`/predictions?league=${league.id}`}>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="w-full justify-start gap-2 text-xs text-sidebar-foreground hover:text-sidebar-primary-foreground hover:bg-sidebar-accent"
-                        >
-                          <div className="w-3 h-3 rounded-full bg-sidebar-primary"></div>
-                          <span className="flex-1 text-left">{league.name}</span>
-                          <span className="text-xs text-sidebar-foreground">
-                            {league.fixture_count}
-                          </span>
-                        </Button>
-                      </Link>
-                    ))}
+                  <div className="ml-6 mt-1 mb-2 space-y-1">
+                    {/* Loading state */}
+                    {loadingLeagues.has(country.id) && (
+                      <div className="text-xs text-sidebar-foreground/60 px-2 py-1">
+                        Loading leagues...
+                      </div>
+                    )}
+                    
+                    {/* Leagues list */}
+                    {countryLeagues[country.id] && countryLeagues[country.id].length > 0 && (
+                      <>
+                                                 {countryLeagues[country.id].slice(0, 5).map((league: any) => (
+                           <Link 
+                             key={league.id} 
+                             href={`/predictions/league/${league.id}`}
+                           >
+                                                         <Button
+                               variant="ghost"
+                               size="sm"
+                               className="w-full justify-start gap-2 text-xs text-sidebar-foreground hover:text-sidebar-primary-foreground hover:bg-sidebar-accent"
+                             >
+                               <Trophy className="h-3 w-3" />
+                               <span className="truncate">{league.name}</span>
+                               <div className="ml-auto flex gap-1">
+                                 {(league as any).fixtureCount > 0 && (
+                                   <Badge variant="outline" className="text-xs px-1 py-0">
+                                     {(league as any).fixtureCount}
+                                   </Badge>
+                                 )}
+                                 {league.active && (
+                                   <Badge variant="outline" className="text-xs px-1 py-0">
+                                     Active
+                                   </Badge>
+                                 )}
+                               </div>
+                             </Button>
+                          </Link>
+                        ))}
+                        
+                        {/* View all leagues link */}
+                        {countryLeagues[country.id].length > 5 && (
+                          <Link href={getCountryPredictionsUrl(country)}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start gap-2 text-xs text-sidebar-foreground hover:text-sidebar-primary-foreground hover:bg-sidebar-accent"
+                            >
+                              <ChevronRight className="h-3 w-3" />
+                              <span>View all {countryLeagues[country.id].length} leagues</span>
+                            </Button>
+                          </Link>
+                        )}
+                      </>
+                    )}
+                    
+                    {/* No leagues found */}
+                    {countryLeagues[country.id] && countryLeagues[country.id].length === 0 && (
+                      <div className="text-xs text-sidebar-foreground/60 px-2 py-1">
+                        No leagues found
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             ))}
           </div>
+
+          {!isCollapsed && searchQuery && filteredCountries.length === 0 && (
+            <div className="text-center py-4">
+              <p className="text-sm text-sidebar-foreground/60">No countries found</p>
+            </div>
+          )}
         </SidebarSection>
       </div>
 
-      {/* Navigation Links */}
-      <SidebarSection>
-        <div className="space-y-2">
-          {navigationItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href;
-            
-            return (
-              <Link key={item.href} href={item.href}>
-                <Button
-                  variant={isActive ? "default" : "ghost"}
-                  className={cn(
-                    "w-full justify-start gap-3",
-                    isActive 
-                      ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90"
-                      : "text-sidebar-foreground hover:text-sidebar-primary-foreground hover:bg-sidebar-accent",
-                    isCollapsed && "justify-center px-2"
-                  )}
-                >
-                  <Icon className="h-4 w-4" />
-                  {!isCollapsed && <span>{item.label}</span>}
-                </Button>
-              </Link>
-            );
-          })}
-        </div>
-      </SidebarSection>
-
-      {/* Quick Filters */}
+      {/* Performance Stats */}
       {!isCollapsed && (
         <SidebarSection>
           <div className="flex items-center gap-2 mb-3">
-            <Filter className="h-4 w-4 text-sidebar-foreground" />
-            <span className="text-sm font-medium text-sidebar-foreground">Quick Filters</span>
+            <TrendingUp className="h-4 w-4 text-sidebar-foreground" />
+            <span className="text-sm font-medium text-sidebar-foreground">Today's Stats</span>
           </div>
-          <div className="space-y-2">
-            {quickFilters.map((filter) => (
-              <Link key={filter.id} href={filter.href}>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start gap-2 text-sm text-sidebar-foreground hover:text-sidebar-primary-foreground hover:bg-sidebar-accent"
-                >
-                  <Calendar className="h-3 w-3" />
-                  <span>{filter.label}</span>
-                </Button>
-              </Link>
-            ))}
+          <div className="space-y-2 text-xs">
+            <div className="flex justify-between">
+              <span className="text-sidebar-foreground/70">Active Predictions</span>
+              <span className="text-sidebar-foreground font-medium">1,247</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sidebar-foreground/70">Success Rate</span>
+              <span className="text-green-500 font-medium">68.5%</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sidebar-foreground/70">Live Matches</span>
+              <span className="text-blue-500 font-medium">23</span>
+            </div>
           </div>
         </SidebarSection>
       )}

@@ -6,8 +6,14 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined;
     
-    // Use default configuration (includes fixture:name)
-    const liveFixtures = await sportmonks.getLiveFixtures();
+    // Use configuration that includes all necessary data for live match detection
+    const liveFixtures = await sportmonks.getLiveFixtures({
+      include: 'participants;scores;state;predictions.type;league.country;events',
+      sortBy: 'starting_at',
+      order: 'desc',
+      per_page: 50,
+      page: 1
+    });
     
     // Apply limit if specified
     const limitedData = limit && liveFixtures?.data ? {

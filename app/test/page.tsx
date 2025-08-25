@@ -137,14 +137,14 @@ export default function TestPage() {
   // SportMonks API returns: { data: T[], pagination?: {...}, subscription?: {...}, rate_limit?: {...} }
   const response: APIResponse = {
     success: !hasErrors,
-    data: {
+          data: {
       predictions: Array.isArray(predictionsQuery.data?.data) ? predictionsQuery.data.data.slice(0, 3) : [],
       valueBets: Array.isArray(valueBetsQuery.data?.data) ? valueBetsQuery.data.data.slice(0, 3) : [],
       liveFixtures: Array.isArray(liveFixturesQuery.data?.data) ? liveFixturesQuery.data.data.slice(0, 3) : [],
       note: predictionsQuery.data?.note || valueBetsQuery.data?.note || liveFixturesQuery.data?.note,
     },
     error: hasErrors ? 'One or more API calls failed' : undefined,
-    timestamp: new Date().toISOString(),
+          timestamp: new Date().toISOString(),
   };
 
   if (isLoading) return (
@@ -292,22 +292,22 @@ export default function TestPage() {
           
           {response?.success ? (
             <div className="space-y-6">
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <p className="text-green-700 font-semibold flex items-center">
-              ✅ SUCCESS! Your SportMonks API is working!
-            </p>
-            <p className="text-green-600 text-sm mt-1">
-              Active Plan: Custom Worldwide + Predictions
-            </p>
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <p className="text-green-700 font-semibold flex items-center">
+                  ✅ SUCCESS! Your SportMonks API is working!
+                </p>
+                <p className="text-green-600 text-sm mt-1">
+                  Active Plan: Custom Worldwide + Predictions
+                </p>
             <p className="text-blue-600 text-sm mt-2">
               ⚡ Performance Optimized: Limited data loading, manual refresh, reduced update frequency
             </p>
-            {response.data?.note && (
-              <p className="text-yellow-600 text-sm mt-2">
-              ⚠️ {response.data.note}
-              </p>
-            )}
-          </div>
+                {response.data?.note && (
+                  <p className="text-yellow-600 text-sm mt-2">
+                  ⚠️ {response.data.note}
+                  </p>
+                )}
+              </div>
 
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="bg-white border rounded-lg p-4">
