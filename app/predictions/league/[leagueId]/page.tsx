@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation';
 import { sportmonks } from '@/lib/sportmonks';
-import { League } from '@/schemas/league.schema';
-import { Fixture } from '@/schemas/fixture.schema';
+
 import { LeaguePredictionsClient } from './league-predictions-client';
 
 interface LeaguePredictionsPageProps {
@@ -24,7 +23,7 @@ export default async function LeaguePredictionsPage({
     });
 
     const allLeagues = leagueResponse?.data || [];
-    const league = allLeagues.find((l: any) => l.id?.toString() === leagueId);
+    const league = allLeagues.find((l: { id?: number }) => l.id?.toString() === leagueId);
 
     if (!league) {
       notFound();
@@ -41,7 +40,7 @@ export default async function LeaguePredictionsPage({
 
     const allFixtures = fixturesResponse?.data || [];
     
-    const leagueFixtures = allFixtures.filter((fixture: any) => {
+    const leagueFixtures = allFixtures.filter((fixture: { league?: { id?: number } }) => {
       const fixtureLeagueId = fixture.league?.id?.toString();
       return fixtureLeagueId === leagueId;
     });
@@ -52,8 +51,7 @@ export default async function LeaguePredictionsPage({
         fixtures={leagueFixtures}
       />
     );
-  } catch (error) {
-    console.error('Error loading league predictions:', error);
+  } catch {
     notFound();
   }
 }
@@ -70,7 +68,7 @@ export async function generateMetadata({ params }: { params: Promise<{ leagueId:
     });
 
     const allLeagues = leagueResponse?.data || [];
-    const league = allLeagues.find((l: any) => l.id?.toString() === leagueId);
+    const league = allLeagues.find((l: { id?: number }) => l.id?.toString() === leagueId);
 
     if (!league) {
       return {
@@ -87,7 +85,7 @@ export async function generateMetadata({ params }: { params: Promise<{ leagueId:
       description: `Get AI-powered predictions, live scores, and fixtures for ${leagueName}${countryName ? ` in ${countryName}` : ''}. View matches and betting opportunities.`,
       keywords: `${leagueName}, ${countryName}, football predictions, live scores, fixtures, betting, ${league.short_code || ''}`,
     };
-  } catch (error) {
+  } catch {
     return {
       title: 'League Predictions | Prediops',
       description: 'Get AI-powered predictions and live scores for football leagues.'

@@ -47,9 +47,9 @@ export default async function CountryPredictionsPage({
     });
 
     const allLeagues = leaguesResponse?.data || [];
-    const countryLeagues = allLeagues.filter((league: { country_id?: number; country?: { id: number } }) => {
-      return league.country_id?.toString() === country.id.toString() || 
-             league.country?.id?.toString() === country.id.toString();
+    const countryLeagues = allLeagues.filter((league) => {
+      return (league as any).country_id?.toString() === country.id.toString() || 
+             (league as any).country?.id?.toString() === country.id.toString();
     });
 
     // Sort leagues by name

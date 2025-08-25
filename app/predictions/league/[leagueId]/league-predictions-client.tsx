@@ -1,15 +1,13 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Trophy, 
   Calendar, 
   Globe,
   Target,
-  Users,
   TrendingUp,
   Clock
 } from 'lucide-react';
@@ -28,7 +26,7 @@ export function LeaguePredictionsClient({
   league, 
   fixtures 
 }: LeaguePredictionsClientProps) {
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+
 
   // Group fixtures by date
   const fixturesByDate = useMemo(() => {

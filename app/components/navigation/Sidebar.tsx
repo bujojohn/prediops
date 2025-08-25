@@ -279,11 +279,14 @@ export function Sidebar({ className }: SidebarProps) {
                                          {!isCollapsed && (
                        <>
                          <span className="flex-1 text-left truncate">{country.name || 'Unknown'}</span>
-                         {(country as { fixtureCount?: number }).fixtureCount > 0 && (
-                           <Badge variant="outline" className="ml-2 text-xs px-1 py-0">
-                             {(country as { fixtureCount?: number }).fixtureCount}
-                           </Badge>
-                         )}
+                                                   {(() => {
+                            const fixtureCount = (country as { fixtureCount?: number }).fixtureCount;
+                            return fixtureCount && fixtureCount > 0 ? (
+                              <Badge variant="outline" className="ml-2 text-xs px-1 py-0">
+                                {fixtureCount}
+                              </Badge>
+                            ) : null;
+                          })()}
                          <ChevronRight 
                            className={cn(
                              "h-3 w-3 transition-transform text-sidebar-foreground",
@@ -323,7 +326,7 @@ export function Sidebar({ className }: SidebarProps) {
                     {/* Leagues list */}
                     {countryLeagues[country.id] && countryLeagues[country.id].length > 0 && (
                       <>
-                                                 {countryLeagues[country.id].slice(0, 5).map((league: { id: number; name: string; fixtureCount?: number; active?: boolean }) => (
+                                                 {(countryLeagues[country.id] as { id: number; name: string; fixtureCount?: number; active?: boolean }[]).slice(0, 5).map((league) => (
                            <Link 
                              key={league.id} 
                              href={`/predictions/league/${league.id}`}
@@ -336,11 +339,11 @@ export function Sidebar({ className }: SidebarProps) {
                                <Trophy className="h-3 w-3" />
                                <span className="truncate">{league.name}</span>
                                <div className="ml-auto flex gap-1">
-                                 {league.fixtureCount > 0 && (
-                                   <Badge variant="outline" className="text-xs px-1 py-0">
-                                     {league.fixtureCount}
-                                   </Badge>
-                                 )}
+                                                                   {league.fixtureCount && league.fixtureCount > 0 && (
+                                    <Badge variant="outline" className="text-xs px-1 py-0">
+                                      {league.fixtureCount}
+                                    </Badge>
+                                  )}
                                  {league.active && (
                                    <Badge variant="outline" className="text-xs px-1 py-0">
                                      Active
