@@ -136,7 +136,7 @@ export function Footer() {
 
             {/* Version Info */}
             <div className="text-xs text-slate-500">
-              <span>Powered by Next.js & AI</span>
+                              <span>Powered by Joobuatech</span>
             </div>
           </div>
         </div>
