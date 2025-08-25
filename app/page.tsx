@@ -301,26 +301,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-slate-900 text-white py-12">
-        <div className="container mx-auto px-6">
-          <div className="text-center">
-            <div className="flex items-center justify-center mb-4">
-              <Target className="h-6 w-6 text-blue-400 mr-2" />
-              <span className="text-xl font-bold">Prediops</span>
-            </div>
-            <p className="text-slate-400 mb-4">
-              AI-powered sports predictions and value betting opportunities
-            </p>
-            <div className="flex justify-center space-x-6 text-sm text-slate-400">
-              <Link href="/predictions" className="hover:text-white transition-colors">Predictions</Link>
-              <Link href="/value-bets" className="hover:text-white transition-colors">Value Bets</Link>
-              <Link href="/live" className="hover:text-white transition-colors">Live Matches</Link>
-              <Link href="/countries" className="hover:text-white transition-colors">Countries</Link>
-            </div>
-          </div>
-        </div>
-      </footer>
+
     </div>
   );
 }

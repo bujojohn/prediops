@@ -411,14 +411,7 @@ export function Sidebar({ className }: SidebarProps) {
         </SidebarSection>
       )}
 
-      {/* Footer */}
-      {!isCollapsed && (
-        <div className="p-4 border-t border-sidebar-border">
-          <div className="text-xs text-sidebar-foreground/60 text-center">
-            Prediops v1.0
-          </div>
-        </div>
-      )}
+      
     </SidebarTheme>
   );
 } 

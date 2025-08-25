@@ -6,6 +6,7 @@ import { QueryProvider } from "@/lib/providers/query-provider";
 import { DisplaySettingsProvider } from "./contexts/DisplaySettingsContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { SidebarWrapper } from "./components/navigation/SidebarWrapper";
+import { Footer } from "./components/layout/Footer";
 // import { DatePickerProvider } from "./components/date-picker";
 
 const geistSans = Geist({
@@ -59,6 +60,7 @@ export default function RootLayout({
             <DisplaySettingsProvider>
               <SidebarWrapper>
                 {children}
+                <Footer />
               </SidebarWrapper>
             </DisplaySettingsProvider>
           </ThemeProvider>
