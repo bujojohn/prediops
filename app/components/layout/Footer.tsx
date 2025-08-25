@@ -25,12 +25,12 @@ export function Footer() {
             <p className="text-slate-400 text-sm leading-relaxed">
               AI-powered sports predictions and value betting opportunities across 111+ leagues worldwide.
             </p>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="text-xs">
-                v1.0.0
-              </Badge>
-              <span className="text-xs text-slate-500">Latest Release</span>
-            </div>
+                         <div className="flex items-center gap-2">
+               <Badge variant="secondary" className="text-xs">
+                 v2.0.0
+               </Badge>
+               <span className="text-xs text-slate-500">Latest Release</span>
+             </div>
           </div>
 
           {/* Quick Links */}
