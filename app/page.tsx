@@ -7,14 +7,11 @@ import {
   Target, 
   TrendingUp, 
   Globe, 
-  Zap, 
   Shield, 
   Clock, 
   BarChart3, 
-  Users,
   ArrowRight,
   Play,
-  Star,
   CheckCircle
 } from 'lucide-react';
 

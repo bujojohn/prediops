@@ -1,6 +1,5 @@
 import { Metadata } from 'next';
 import { sportmonks } from '@/lib/sportmonks';
-import { ValueBetCard } from '../components/value-bets/ValueBetCard';
 import { ValueBet } from '@/schemas/valuebet.schema';
 import { ValueBetsClient } from './value-bets-client';
 

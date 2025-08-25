@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
@@ -13,15 +13,12 @@ import {
   Star,
   TrendingUp,
   Zap,
-  Filter,
   Target,
   DollarSign,
   Clock,
-  MapPin,
   Trophy
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { AdvancedSearch } from '@/app/components/search/AdvancedSearch';
 import { getCountries, searchCountries } from '@/lib/data/countries';
 import { Country } from '@/schemas/country.schema';
 import { Badge } from '@/components/ui/badge';
@@ -39,14 +36,12 @@ interface SidebarProps {
 export function Sidebar({ className }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedCountries, setExpandedCountries] = useState<Set<number>>(new Set());
-  const [expandedLeagues, setExpandedLeagues] = useState<Set<number>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredCountries, setFilteredCountries] = useState<Country[]>([]);
   const [allCountries, setAllCountries] = useState<Country[]>([]);
   const [favoriteCountries, setFavoriteCountries] = useState<Set<number>>(new Set());
-  const [countryLeagues, setCountryLeagues] = useState<Record<number, any[]>>({});
+  const [countryLeagues, setCountryLeagues] = useState<Record<number, unknown[]>>({});
   const [loadingLeagues, setLoadingLeagues] = useState<Set<number>>(new Set());
-  const pathname = usePathname();
 
   // Load countries data with available leagues
   useEffect(() => {
@@ -284,9 +279,9 @@ export function Sidebar({ className }: SidebarProps) {
                                          {!isCollapsed && (
                        <>
                          <span className="flex-1 text-left truncate">{country.name || 'Unknown'}</span>
-                         {(country as any).fixtureCount > 0 && (
+                         {(country as { fixtureCount?: number }).fixtureCount > 0 && (
                            <Badge variant="outline" className="ml-2 text-xs px-1 py-0">
-                             {(country as any).fixtureCount}
+                             {(country as { fixtureCount?: number }).fixtureCount}
                            </Badge>
                          )}
                          <ChevronRight 
@@ -328,7 +323,7 @@ export function Sidebar({ className }: SidebarProps) {
                     {/* Leagues list */}
                     {countryLeagues[country.id] && countryLeagues[country.id].length > 0 && (
                       <>
-                                                 {countryLeagues[country.id].slice(0, 5).map((league: any) => (
+                                                 {countryLeagues[country.id].slice(0, 5).map((league: { id: number; name: string; fixtureCount?: number; active?: boolean }) => (
                            <Link 
                              key={league.id} 
                              href={`/predictions/league/${league.id}`}
@@ -341,9 +336,9 @@ export function Sidebar({ className }: SidebarProps) {
                                <Trophy className="h-3 w-3" />
                                <span className="truncate">{league.name}</span>
                                <div className="ml-auto flex gap-1">
-                                 {(league as any).fixtureCount > 0 && (
+                                 {league.fixtureCount > 0 && (
                                    <Badge variant="outline" className="text-xs px-1 py-0">
-                                     {(league as any).fixtureCount}
+                                     {league.fixtureCount}
                                    </Badge>
                                  )}
                                  {league.active && (
@@ -397,7 +392,7 @@ export function Sidebar({ className }: SidebarProps) {
         <SidebarSection>
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp className="h-4 w-4 text-sidebar-foreground" />
-            <span className="text-sm font-medium text-sidebar-foreground">Today's Stats</span>
+                              <span className="text-sm font-medium text-sidebar-foreground">Today&apos;s Stats</span>
           </div>
           <div className="space-y-2 text-xs">
             <div className="flex justify-between">

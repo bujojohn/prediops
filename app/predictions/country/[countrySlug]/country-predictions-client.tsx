@@ -6,12 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Trophy, 
-  Calendar, 
   ChevronRight, 
   ChevronDown,
   Globe,
-  Target,
-  Users
+  Target
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -25,22 +23,19 @@ interface CountryPredictionsClientProps {
   country: Country;
   leagues: League[];
   fixtures: Fixture[];
-  selectedLeagueId?: number;
 }
 
 export function CountryPredictionsClient({ 
   country, 
   leagues, 
-  fixtures, 
-  selectedLeagueId 
+  fixtures
 }: CountryPredictionsClientProps) {
   const [expandedLeagues, setExpandedLeagues] = useState<Set<number>>(new Set());
-  const [selectedLeague, setSelectedLeague] = useState<number | undefined>(selectedLeagueId);
 
   // Group fixtures by league
   const fixturesByLeague = useMemo(() => {
     const grouped = fixtures.reduce((acc, fixture) => {
-      const leagueId = (fixture as any).league?.id;
+      const leagueId = (fixture as { league?: { id: number } }).league?.id;
       if (leagueId) {
         if (!acc[leagueId]) {
           acc[leagueId] = [];
@@ -63,9 +58,7 @@ export function CountryPredictionsClient({
     setExpandedLeagues(newExpanded);
   };
 
-  const getLeagueFixturesCount = (leagueId: number) => {
-    return fixturesByLeague[leagueId]?.length || 0;
-  };
+
 
   const getActiveLeaguesCount = () => {
     return leagues.filter(league => league.active).length;
@@ -121,7 +114,7 @@ export function CountryPredictionsClient({
             <div className="flex items-center gap-3">
               <Target className="h-8 w-8 text-blue-600" />
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Today's Fixtures</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Today&apos;s Fixtures</p>
                 <p className="text-2xl font-bold">{getTotalFixturesCount()}</p>
               </div>
             </div>
@@ -131,7 +124,7 @@ export function CountryPredictionsClient({
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <Users className="h-8 w-8 text-green-600" />
+              <Trophy className="h-8 w-8 text-green-600" />
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Total Leagues</p>
                 <p className="text-2xl font-bold">{leagues.length}</p>

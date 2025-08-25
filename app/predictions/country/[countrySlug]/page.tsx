@@ -1,8 +1,7 @@
 import { notFound } from 'next/navigation';
 import { sportmonks } from '@/lib/sportmonks';
-import { getCountries, searchCountries, getCountryById } from '@/lib/data/countries';
+import { getCountries, getCountryById } from '@/lib/data/countries';
 import { Country } from '@/schemas/country.schema';
-import { League } from '@/schemas/league.schema';
 import { CountryPredictionsClient } from './country-predictions-client';
 import { findCountryBySlug } from '@/lib/utils/country-utils';
 
@@ -48,13 +47,13 @@ export default async function CountryPredictionsPage({
     });
 
     const allLeagues = leaguesResponse?.data || [];
-    const countryLeagues = allLeagues.filter((league: any) => {
+    const countryLeagues = allLeagues.filter((league: { country_id?: number; country?: { id: number } }) => {
       return league.country_id?.toString() === country.id.toString() || 
              league.country?.id?.toString() === country.id.toString();
     });
 
     // Sort leagues by name
-    const sortedLeagues = countryLeagues.sort((a: any, b: any) => {
+    const sortedLeagues = countryLeagues.sort((a: { name?: string }, b: { name?: string }) => {
       const nameA = a.name?.toLowerCase() || '';
       const nameB = b.name?.toLowerCase() || '';
       return nameA.localeCompare(nameB);
@@ -69,13 +68,13 @@ export default async function CountryPredictionsPage({
     });
 
     const allFixtures = fixturesResponse?.data || [];
-    const countryFixtures = allFixtures.filter((fixture: any) => {
+    const countryFixtures = allFixtures.filter((fixture: { league?: { country?: { id: number } } }) => {
       return fixture.league?.country?.id === country.id;
     });
 
     // Filter by specific league if provided
     const filteredFixtures = leagueId 
-      ? countryFixtures.filter((fixture: any) => fixture.league?.id?.toString() === leagueId)
+      ? countryFixtures.filter((fixture: { league?: { id: number } }) => fixture.league?.id?.toString() === leagueId)
       : countryFixtures;
 
     return (

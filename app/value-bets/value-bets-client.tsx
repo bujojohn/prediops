@@ -11,8 +11,6 @@ import {
   Search, 
   Filter, 
   TrendingUp, 
-  DollarSign, 
-  Target,
   SortAsc,
   SortDesc,
   RefreshCw
