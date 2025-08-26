@@ -11,7 +11,6 @@ import {
   Globe, 
   Search,
   Star,
-  TrendingUp,
   Zap,
   Target,
   DollarSign,
@@ -145,12 +144,23 @@ export function Sidebar({ className }: SidebarProps) {
 
   return (
     <SidebarTheme className={cn(isCollapsed ? 'w-16' : 'w-80', className)}>
-      {/* Header */}
+      {/* Header with Search */}
       <SidebarHeader>
-        {!isCollapsed && (
-          <div className="flex items-center gap-2">
-            <Target className="h-5 w-5 text-sidebar-primary" />
-            <span className="font-semibold text-sidebar-foreground">Prediops</span>
+        {!isCollapsed ? (
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-sidebar-foreground/50" />
+              <Input
+                placeholder="Search countries..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-sidebar-accent border-sidebar-border text-sidebar-foreground placeholder:text-sidebar-foreground/50"
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center">
+            <Search className="h-5 w-5 text-sidebar-primary" />
           </div>
         )}
         <Button
@@ -166,21 +176,6 @@ export function Sidebar({ className }: SidebarProps) {
           )}
         </Button>
       </SidebarHeader>
-
-      {/* Search */}
-      {!isCollapsed && (
-        <SidebarSection>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-sidebar-foreground/50" />
-            <Input
-              placeholder="Search countries..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-sidebar-accent border-sidebar-border text-sidebar-foreground placeholder:text-sidebar-foreground/50"
-            />
-          </div>
-        </SidebarSection>
-      )}
 
       {/* Quick Actions */}
       {!isCollapsed && (
@@ -390,31 +385,7 @@ export function Sidebar({ className }: SidebarProps) {
         </SidebarSection>
       </div>
 
-      {/* Performance Stats */}
-      {!isCollapsed && (
-        <SidebarSection>
-          <div className="flex items-center gap-2 mb-3">
-            <TrendingUp className="h-4 w-4 text-sidebar-foreground" />
-                              <span className="text-sm font-medium text-sidebar-foreground">Today&apos;s Stats</span>
-          </div>
-          <div className="space-y-2 text-xs">
-            <div className="flex justify-between">
-              <span className="text-sidebar-foreground/70">Active Predictions</span>
-              <span className="text-sidebar-foreground font-medium">1,247</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sidebar-foreground/70">Success Rate</span>
-              <span className="text-green-500 font-medium">68.5%</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sidebar-foreground/70">Live Matches</span>
-              <span className="text-blue-500 font-medium">23</span>
-            </div>
-          </div>
-        </SidebarSection>
-      )}
 
-      
     </SidebarTheme>
   );
 } 
