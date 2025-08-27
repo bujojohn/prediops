@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
@@ -11,11 +11,13 @@ import {
   Globe, 
   Search,
   Star,
+  TrendingUp,
   Zap,
   Target,
   DollarSign,
   Clock,
-  Trophy
+  Trophy,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getCountries, searchCountries } from '@/lib/data/countries';
@@ -32,6 +34,8 @@ interface SidebarProps {
   className?: string;
 }
 
+const ITEMS_PER_PAGE = 20;
+
 export function Sidebar({ className }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedCountries, setExpandedCountries] = useState<Set<number>>(new Set());
@@ -41,6 +45,13 @@ export function Sidebar({ className }: SidebarProps) {
   const [favoriteCountries, setFavoriteCountries] = useState<Set<number>>(new Set());
   const [countryLeagues, setCountryLeagues] = useState<Record<number, unknown[]>>({});
   const [loadingLeagues, setLoadingLeagues] = useState<Set<number>>(new Set());
+  
+  // Infinite scroll state
+  const [displayedCountries, setDisplayedCountries] = useState<Country[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
   // Load countries data with available leagues
   useEffect(() => {
@@ -50,12 +61,12 @@ export function Sidebar({ className }: SidebarProps) {
         
         if (countriesWithLeagues.length > 0) {
           setAllCountries(countriesWithLeagues);
-          setFilteredCountries(countriesWithLeagues.slice(0, 20)); // Show top 20 initially
+          setFilteredCountries(countriesWithLeagues);
         } else {
           // If no countries with leagues, fall back to all countries
           const countries = getCountries();
           setAllCountries(countries);
-          setFilteredCountries(countries.slice(0, 20));
+          setFilteredCountries(countries);
         }
       } catch (error) {
         console.error('Error loading countries with leagues:', error);
@@ -63,7 +74,7 @@ export function Sidebar({ className }: SidebarProps) {
         try {
           const countries = getCountries();
           setAllCountries(countries);
-          setFilteredCountries(countries.slice(0, 20));
+          setFilteredCountries(countries);
         } catch (fallbackError) {
           console.error('Error loading fallback countries:', fallbackError);
         }
@@ -73,7 +84,7 @@ export function Sidebar({ className }: SidebarProps) {
     // Load immediately with fallback
     const countries = getCountries();
     setAllCountries(countries);
-    setFilteredCountries(countries.slice(0, 20));
+    setFilteredCountries(countries);
     
     // Then try to load countries with leagues
     loadCountriesWithLeagues();
@@ -83,11 +94,44 @@ export function Sidebar({ className }: SidebarProps) {
   useEffect(() => {
     if (searchQuery.trim()) {
       const results = searchCountries(searchQuery);
-      setFilteredCountries(results.slice(0, 15)); // Limit search results
+      setFilteredCountries(results);
     } else {
-      setFilteredCountries(allCountries.slice(0, 20));
+      setFilteredCountries(allCountries);
     }
+    // Reset pagination when search changes
+    setCurrentPage(1);
+    setHasMore(true);
   }, [searchQuery, allCountries]);
+
+  // Update displayed countries when filtered countries or page changes
+  useEffect(() => {
+    const startIndex = 0;
+    const endIndex = currentPage * ITEMS_PER_PAGE;
+    const newDisplayedCountries = filteredCountries.slice(startIndex, endIndex);
+    setDisplayedCountries(newDisplayedCountries);
+    setHasMore(endIndex < filteredCountries.length);
+  }, [filteredCountries, currentPage]);
+
+  // Intersection Observer for infinite scroll
+  const lastElementRef = useCallback((node: HTMLDivElement | null) => {
+    if (isLoadingMore) return;
+    
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+    }
+    
+    observerRef.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        setIsLoadingMore(true);
+        setCurrentPage(prev => prev + 1);
+        setIsLoadingMore(false);
+      }
+    });
+    
+    if (node) {
+      observerRef.current.observe(node);
+    }
+  }, [isLoadingMore, hasMore]);
 
   const toggleCountry = async (countryId: number) => {
     const newExpanded = new Set(expandedCountries);
@@ -134,7 +178,7 @@ export function Sidebar({ className }: SidebarProps) {
   };
 
   // Get favorite countries first
-  const sortedCountries = [...filteredCountries].sort((a, b) => {
+  const sortedCountries = [...displayedCountries].sort((a, b) => {
     const aIsFavorite = favoriteCountries.has(a.id);
     const bIsFavorite = favoriteCountries.has(b.id);
     if (aIsFavorite && !bIsFavorite) return -1;
@@ -235,42 +279,47 @@ export function Sidebar({ className }: SidebarProps) {
                 <span className="text-sm font-medium text-sidebar-foreground">Countries</span>
               </div>
               <span className="text-xs text-sidebar-foreground/60">
-                {filteredCountries.length} of {allCountries.length}
+                {displayedCountries.length} of {filteredCountries.length}
               </span>
             </div>
           )}
           
           <div className="space-y-1">
-            {sortedCountries.map((country) => (
-              <div key={country.id}>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => toggleCountry(country.id)}
-                    className={cn(
-                      "flex-1 justify-start gap-2 text-sm h-8",
-                      "text-sidebar-foreground hover:text-sidebar-primary-foreground hover:bg-sidebar-accent",
-                      isCollapsed && "justify-center px-2"
-                    )}
-                  >
-                    {country.image_path ? (
-                      <img 
-                        src={country.image_path} 
-                        alt={country.name || 'Flag'}
-                        className="w-4 h-4 rounded object-cover"
-                      />
-                    ) : (
-                      <div className="w-4 h-4 rounded-full bg-sidebar-accent flex items-center justify-center">
-                        <span className="text-xs font-bold text-sidebar-foreground">
-                          {country.name?.charAt(0) || '?'}
-                        </span>
-                      </div>
-                    )}
-                                         {!isCollapsed && (
-                       <>
-                         <span className="flex-1 text-left truncate">{country.name || 'Unknown'}</span>
-                                                   {(() => {
+            {sortedCountries.map((country, index) => {
+              const isLastElement = index === sortedCountries.length - 1;
+              return (
+                <div 
+                  key={country.id}
+                  ref={isLastElement ? lastElementRef : null}
+                >
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleCountry(country.id)}
+                      className={cn(
+                        "flex-1 justify-start gap-2 text-sm h-8",
+                        "text-sidebar-foreground hover:text-sidebar-primary-foreground hover:bg-sidebar-accent",
+                        isCollapsed && "justify-center px-2"
+                      )}
+                    >
+                      {country.image_path ? (
+                        <img 
+                          src={country.image_path} 
+                          alt={country.name || 'Flag'}
+                          className="w-4 h-4 rounded object-cover"
+                        />
+                      ) : (
+                        <div className="w-4 h-4 rounded-full bg-sidebar-accent flex items-center justify-center">
+                          <span className="text-xs font-bold text-sidebar-foreground">
+                            {country.name?.charAt(0) || '?'}
+                          </span>
+                        </div>
+                      )}
+                      {!isCollapsed && (
+                        <>
+                          <span className="flex-1 text-left truncate">{country.name || 'Unknown'}</span>
+                          {(() => {
                             const fixtureCount = (country as { fixtureCount?: number }).fixtureCount;
                             return fixtureCount && fixtureCount > 0 ? (
                               <Badge variant="outline" className="ml-2 text-xs px-1 py-0">
@@ -278,100 +327,108 @@ export function Sidebar({ className }: SidebarProps) {
                               </Badge>
                             ) : null;
                           })()}
-                         <ChevronRight 
-                           className={cn(
-                             "h-3 w-3 transition-transform text-sidebar-foreground",
-                             expandedCountries.has(country.id) && "rotate-90"
-                           )} 
-                         />
-                       </>
-                     )}
-                  </Button>
-                  
-                  {!isCollapsed && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleFavorite(country.id)}
-                      className={cn(
-                        "h-8 w-8 p-0",
-                        favoriteCountries.has(country.id)
-                          ? "text-yellow-500 hover:text-yellow-600"
-                          : "text-sidebar-foreground/50 hover:text-sidebar-foreground"
+                          <ChevronRight 
+                            className={cn(
+                              "h-3 w-3 transition-transform text-sidebar-foreground",
+                              expandedCountries.has(country.id) && "rotate-90"
+                            )} 
+                          />
+                        </>
                       )}
-                    >
-                      <Star className="h-3 w-3" />
                     </Button>
-                  )}
-                </div>
-
-                {expandedCountries.has(country.id) && !isCollapsed && (
-                  <div className="ml-6 mt-1 mb-2 space-y-1">
-                    {/* Loading state */}
-                    {loadingLeagues.has(country.id) && (
-                      <div className="text-xs text-sidebar-foreground/60 px-2 py-1">
-                        Loading leagues...
-                      </div>
-                    )}
                     
-                    {/* Leagues list */}
-                    {countryLeagues[country.id] && countryLeagues[country.id].length > 0 && (
-                      <>
-                                                 {(countryLeagues[country.id] as { id: number; name: string; fixtureCount?: number; active?: boolean }[]).slice(0, 5).map((league) => (
-                           <Link 
-                             key={league.id} 
-                             href={`/predictions/league/${league.id}`}
-                           >
-                                                         <Button
-                               variant="ghost"
-                               size="sm"
-                               className="w-full justify-start gap-2 text-xs text-sidebar-foreground hover:text-sidebar-primary-foreground hover:bg-sidebar-accent"
-                             >
-                               <Trophy className="h-3 w-3" />
-                               <span className="truncate">{league.name}</span>
-                               <div className="ml-auto flex gap-1">
-                                                                   {league.fixtureCount && league.fixtureCount > 0 && (
+                    {!isCollapsed && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleFavorite(country.id)}
+                        className={cn(
+                          "h-8 w-8 p-0",
+                          favoriteCountries.has(country.id)
+                            ? "text-yellow-500 hover:text-yellow-600"
+                            : "text-sidebar-foreground/50 hover:text-sidebar-foreground"
+                        )}
+                      >
+                        <Star className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
+
+                  {expandedCountries.has(country.id) && !isCollapsed && (
+                    <div className="ml-6 mt-1 mb-2 space-y-1">
+                      {/* Loading state */}
+                      {loadingLeagues.has(country.id) && (
+                        <div className="text-xs text-sidebar-foreground/60 px-2 py-1">
+                          Loading leagues...
+                        </div>
+                      )}
+                      
+                      {/* Leagues list */}
+                      {countryLeagues[country.id] && countryLeagues[country.id].length > 0 && (
+                        <>
+                          {(countryLeagues[country.id] as { id: number; name: string; fixtureCount?: number; active?: boolean }[]).slice(0, 5).map((league) => (
+                            <Link 
+                              key={league.id} 
+                              href={`/predictions/league/${league.id}`}
+                            >
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="w-full justify-start gap-2 text-xs text-sidebar-foreground hover:text-sidebar-primary-foreground hover:bg-sidebar-accent"
+                              >
+                                <Trophy className="h-3 w-3" />
+                                <span className="truncate">{league.name}</span>
+                                <div className="ml-auto flex gap-1">
+                                  {league.fixtureCount && league.fixtureCount > 0 && (
                                     <Badge variant="outline" className="text-xs px-1 py-0">
                                       {league.fixtureCount}
                                     </Badge>
                                   )}
-                                 {league.active && (
-                                   <Badge variant="outline" className="text-xs px-1 py-0">
-                                     Active
-                                   </Badge>
-                                 )}
-                               </div>
-                             </Button>
-                          </Link>
-                        ))}
-                        
-                        {/* View all leagues link */}
-                        {countryLeagues[country.id].length > 5 && (
-                          <Link href={getCountryPredictionsUrl(country)}>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="w-full justify-start gap-2 text-xs text-sidebar-foreground hover:text-sidebar-primary-foreground hover:bg-sidebar-accent"
-                            >
-                              <ChevronRight className="h-3 w-3" />
-                              <span>View all {countryLeagues[country.id].length} leagues</span>
-                            </Button>
-                          </Link>
-                        )}
-                      </>
-                    )}
-                    
-                    {/* No leagues found */}
-                    {countryLeagues[country.id] && countryLeagues[country.id].length === 0 && (
-                      <div className="text-xs text-sidebar-foreground/60 px-2 py-1">
-                        No leagues found
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
+                                  {league.active && (
+                                    <Badge variant="outline" className="text-xs px-1 py-0">
+                                      Active
+                                    </Badge>
+                                  )}
+                                </div>
+                              </Button>
+                            </Link>
+                          ))}
+                          
+                          {/* View all leagues link */}
+                          {countryLeagues[country.id].length > 5 && (
+                            <Link href={getCountryPredictionsUrl(country)}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="w-full justify-start gap-2 text-xs text-sidebar-foreground hover:text-sidebar-primary-foreground hover:bg-sidebar-accent"
+                              >
+                                <ChevronRight className="h-3 w-3" />
+                                <span>View all {countryLeagues[country.id].length} leagues</span>
+                              </Button>
+                            </Link>
+                          )}
+                        </>
+                      )}
+                      
+                      {/* No leagues found */}
+                      {countryLeagues[country.id] && countryLeagues[country.id].length === 0 && (
+                        <div className="text-xs text-sidebar-foreground/60 px-2 py-1">
+                          No leagues found
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
+
+          {/* Loading indicator for infinite scroll */}
+          {isLoadingMore && (
+            <div className="flex justify-center py-2">
+              <Loader2 className="h-4 w-4 animate-spin text-sidebar-foreground/60" />
+            </div>
+          )}
 
           {!isCollapsed && searchQuery && filteredCountries.length === 0 && (
             <div className="text-center py-4">
@@ -381,6 +438,29 @@ export function Sidebar({ className }: SidebarProps) {
         </SidebarSection>
       </div>
 
+      {/* Performance Stats */}
+      {!isCollapsed && (
+        <SidebarSection>
+          <div className="flex items-center gap-2 mb-3">
+            <TrendingUp className="h-4 w-4 text-sidebar-foreground" />
+            <span className="text-sm font-medium text-sidebar-foreground">Today&apos;s Stats</span>
+          </div>
+          <div className="space-y-2 text-xs">
+            <div className="flex justify-between">
+              <span className="text-sidebar-foreground/70">Active Predictions</span>
+              <span className="text-sidebar-foreground font-medium">1,247</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sidebar-foreground/70">Success Rate</span>
+              <span className="text-green-500 font-medium">68.5%</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sidebar-foreground/70">Live Matches</span>
+              <span className="text-blue-500 font-medium">23</span>
+            </div>
+          </div>
+        </SidebarSection>
+      )}
 
     </SidebarTheme>
   );

@@ -42,7 +42,7 @@ export async function GET(
     // Get today's fixtures to count per league
     const fixturesResponse = await sportmonks.getFixturesByDate(today, {
       include: 'league.country',
-      per_page: 100,
+      per_page: 50,
       page: 1,
     });
 

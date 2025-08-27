@@ -27,7 +27,7 @@ export function Footer() {
             </p>
                          <div className="flex items-center gap-2">
                <Badge variant="secondary" className="text-xs">
-                 v2.2.0
+                 v2.3.0
                </Badge>
                <span className="text-xs text-slate-500">Latest Release</span>
              </div>
