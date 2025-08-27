@@ -146,9 +146,9 @@ export function Sidebar({ className }: SidebarProps) {
     <SidebarTheme className={cn(isCollapsed ? 'w-16' : 'w-80', className)}>
       {/* Header with Search */}
       <SidebarHeader>
-        {!isCollapsed ? (
-          <div className="flex-1">
-            <div className="relative">
+        {!isCollapsed && (
+          <div className="flex items-center gap-2 flex-1">
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-sidebar-foreground/50" />
               <Input
                 placeholder="Search countries..."
@@ -157,10 +157,6 @@ export function Sidebar({ className }: SidebarProps) {
                 className="pl-10 bg-sidebar-accent border-sidebar-border text-sidebar-foreground placeholder:text-sidebar-foreground/50"
               />
             </div>
-          </div>
-        ) : (
-          <div className="flex items-center justify-center">
-            <Search className="h-5 w-5 text-sidebar-primary" />
           </div>
         )}
         <Button
