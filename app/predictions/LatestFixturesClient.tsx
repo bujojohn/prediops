@@ -191,17 +191,24 @@ function PredictionsContent({ initialFixtures }: { initialFixtures: Fixture[] })
             className="mb-4"
           />
           
-          <div className="text-sm text-gray-600">
+          <div className="text-xs sm:text-sm text-gray-600">
             <p><strong>Selected Date:</strong> {new Date(selectedDate).toLocaleDateString('en-US', {
               weekday: 'long',
               year: 'numeric',
               month: 'long',
               day: 'numeric'
             })}</p>
-            {(fixturesLoading || isLoadingDateFixtures) && (
-              <p className="text-blue-600">Loading fixtures...</p>
-            )}
-            {fixturesError && <p className="text-red-600">Error: {fixturesError}</p>}
+            <div className="space-y-1">
+              <p><strong>URL Formats:</strong></p>
+              <div className="space-y-1">
+                <code className="block bg-gray-100 px-2 py-1 rounded text-xs">
+                  /predictions?date={selectedDate}
+                </code>
+                <code className="block bg-gray-100 px-2 py-1 rounded text-xs">
+                  /predictions/{selectedDate}
+                </code>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>

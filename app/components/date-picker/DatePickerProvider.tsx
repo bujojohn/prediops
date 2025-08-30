@@ -18,13 +18,87 @@ type DatePickerAction =
   | { type: 'ADD_PRELOADED_DATE'; payload: string }
   | { type: 'CLEAR_CACHE' };
 
-const initialState: DatePickerState = {
-  selectedDate: new Date().toISOString().split('T')[0], // Today
-  cachedDates: new Set(),
-  isLoading: false,
-  error: null,
-  preloadedDates: new Set(),
-};
+interface DatePickerProviderProps {
+  children: React.ReactNode;
+  initialDate?: string; // Allow passing initial date
+}
+
+const DatePickerContext = createContext<DatePickerContextType | undefined>(undefined);
+
+export function DatePickerProvider({ children, initialDate }: DatePickerProviderProps) {
+  // Initialize with provided date or default to today
+  const getInitialDate = () => {
+    if (initialDate && /^\d{4}-\d{2}-\d{2}$/.test(initialDate)) {
+      return initialDate;
+    }
+    return new Date().toISOString().split('T')[0];
+  };
+
+  const initialState: DatePickerState = {
+    selectedDate: getInitialDate(),
+    cachedDates: new Set(),
+    isLoading: false,
+    error: null,
+    preloadedDates: new Set(),
+  };
+
+  const [state, dispatch] = useReducer(datePickerReducer, initialState);
+
+  const selectDate = useCallback((date: string) => {
+    dispatch({ type: 'SET_SELECTED_DATE', payload: date });
+  }, []);
+
+  const isDateCached = useCallback((date: string) => {
+    return state.cachedDates.has(date);
+  }, [state.cachedDates]);
+
+  const isDatePreloaded = useCallback((date: string) => {
+    return state.preloadedDates.has(date);
+  }, [state.preloadedDates]);
+
+  const addCachedDate = useCallback((date: string) => {
+    dispatch({ type: 'ADD_CACHED_DATE', payload: date });
+  }, []);
+
+  const addPreloadedDate = useCallback((date: string) => {
+    dispatch({ type: 'ADD_PRELOADED_DATE', payload: date });
+  }, []);
+
+  const clearCache = useCallback(() => {
+    dispatch({ type: 'CLEAR_CACHE' });
+  }, []);
+
+  // Initialize with initial date as cached and preloaded
+  useEffect(() => {
+    const dateToCache = getInitialDate();
+    addCachedDate(dateToCache);
+    addPreloadedDate(dateToCache);
+  }, [addCachedDate, addPreloadedDate]);
+
+  const contextValue: DatePickerContextType = {
+    state,
+    selectDate,
+    isDateCached,
+    isDatePreloaded,
+    addCachedDate,
+    addPreloadedDate,
+    clearCache,
+  };
+
+  return (
+    <DatePickerContext.Provider value={contextValue}>
+      {children}
+    </DatePickerContext.Provider>
+  );
+}
+
+export function useDatePicker(): DatePickerContextType {
+  const context = useContext(DatePickerContext);
+  if (context === undefined) {
+    throw new Error('useDatePicker must be used within a DatePickerProvider');
+  }
+  return context;
+}
 
 function datePickerReducer(state: DatePickerState, action: DatePickerAction): DatePickerState {
   switch (action.type) {
@@ -63,65 +137,4 @@ interface DatePickerContextType {
   addCachedDate: (date: string) => void;
   addPreloadedDate: (date: string) => void;
   clearCache: () => void;
-}
-
-const DatePickerContext = createContext<DatePickerContextType | undefined>(undefined);
-
-export function DatePickerProvider({ children }: { children: React.ReactNode }) {
-  const [state, dispatch] = useReducer(datePickerReducer, initialState);
-
-  const selectDate = useCallback((date: string) => {
-    dispatch({ type: 'SET_SELECTED_DATE', payload: date });
-  }, []);
-
-  const isDateCached = useCallback((date: string) => {
-    return state.cachedDates.has(date);
-  }, [state.cachedDates]);
-
-  const isDatePreloaded = useCallback((date: string) => {
-    return state.preloadedDates.has(date);
-  }, [state.preloadedDates]);
-
-  const addCachedDate = useCallback((date: string) => {
-    dispatch({ type: 'ADD_CACHED_DATE', payload: date });
-  }, []);
-
-  const addPreloadedDate = useCallback((date: string) => {
-    dispatch({ type: 'ADD_PRELOADED_DATE', payload: date });
-  }, []);
-
-  const clearCache = useCallback(() => {
-    dispatch({ type: 'CLEAR_CACHE' });
-  }, []);
-
-  // Initialize with today's date as cached and preloaded
-  useEffect(() => {
-    const today = new Date().toISOString().split('T')[0];
-    addCachedDate(today);
-    addPreloadedDate(today);
-  }, [addCachedDate, addPreloadedDate]);
-
-  const value: DatePickerContextType = {
-    state,
-    selectDate,
-    isDateCached,
-    isDatePreloaded,
-    addCachedDate,
-    addPreloadedDate,
-    clearCache,
-  };
-
-  return (
-    <DatePickerContext.Provider value={value}>
-      {children}
-    </DatePickerContext.Provider>
-  );
-}
-
-export function useDatePicker() {
-  const context = useContext(DatePickerContext);
-  if (context === undefined) {
-    throw new Error('useDatePicker must be used within a DatePickerProvider');
-  }
-  return context;
 }
