@@ -58,7 +58,8 @@ function PredictionsContent({ initialFixtures }: { initialFixtures: Fixture[] })
 
   const groups = useMemo(() => groupByDate(fixtures), [fixtures]);
 
-  // Initialize collapsed dates - collapse all except today
+  // Initialize collapsed dates - collapse all except today. 
+  // TODO: Make this collapse all except selected date or current date.
   useEffect(() => {
     if (groups.length > 0) {
       const today = new Date().toISOString().split('T')[0];

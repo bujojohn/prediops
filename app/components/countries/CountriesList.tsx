@@ -73,13 +73,25 @@ export function CountriesList({ onCountrySelect, selectedCountryId }: CountriesL
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch countries');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch countries');
       }
 
       const data = await response.json();
       setCountries(data.data || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load countries');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load countries';
+      
+      // Check if it's a user-friendly message about no fixtures
+      if (errorMessage.includes('No scheduled fixtures found')) {
+        setError('No scheduled fixtures found for today. Please try again later or check your API configuration.');
+      } else if (errorMessage.includes('API authentication failed')) {
+        setError('No scheduled fixtures found - please check your SportMonks API configuration');
+      } else if (errorMessage.includes('Service temporarily unavailable')) {
+        setError('No scheduled fixtures found - please try again later');
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -119,8 +131,11 @@ export function CountriesList({ onCountrySelect, selectedCountryId }: CountriesL
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center text-red-600">
-            <p>Failed to load countries</p>
+          <div className="text-center space-y-3">
+            <div className="text-red-600">
+              <p className="font-medium">No scheduled fixtures found</p>
+              <p className="text-sm text-gray-600 mt-1">{error}</p>
+            </div>
             <Button 
               variant="outline" 
               size="sm" 

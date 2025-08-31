@@ -75,8 +75,14 @@ export function Sidebar({ className }: SidebarProps) {
           const countries = getCountries();
           setAllCountries(countries);
           setFilteredCountries(countries);
+          
+          // Show user-friendly message in console for debugging
+          console.info('Using fallback countries data. No scheduled fixtures found for today.');
         } catch (fallbackError) {
           console.error('Error loading fallback countries:', fallbackError);
+          // Set empty state with user-friendly message
+          setAllCountries([]);
+          setFilteredCountries([]);
         }
       }
     };
