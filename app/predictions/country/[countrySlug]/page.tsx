@@ -36,21 +36,32 @@ export default async function CountryPredictionsPage({
     }
 
     if (!country) {
+      console.error(`Country not found: slug=${countrySlug}, id=${countryId}`);
       notFound();
     }
 
-    // Get leagues for this country
-    const leaguesResponse = await sportmonks.getLeagues({
-      include: 'country;sport;currentseason',
-      per_page: 1000,
-      page: 1
-    });
+    console.log(`Loading data for country: ${country.name} (ID: ${country.id})`);
 
-    const allLeagues = leaguesResponse?.data || [];
-    const countryLeagues = allLeagues.filter((league) => {
-      return (league as { country_id?: number; country?: { id: number } }).country_id?.toString() === country.id.toString() || 
-             (league as { country_id?: number; country?: { id: number } }).country?.id?.toString() === country.id.toString();
-    });
+    // Get leagues for this country with better error handling
+    let countryLeagues: unknown[] = [];
+    try {
+      const leaguesResponse = await sportmonks.getLeagues({
+        include: 'country;sport;currentseason',
+        per_page: 1000,
+        page: 1
+      });
+
+      const allLeagues = leaguesResponse?.data || [];
+      countryLeagues = allLeagues.filter((league) => {
+        return (league as { country_id?: number; country?: { id: number } }).country_id?.toString() === country.id.toString() || 
+               (league as { country_id?: number; country?: { id: number } }).country?.id?.toString() === country.id.toString();
+      });
+
+      console.log(`Found ${countryLeagues.length} leagues for ${country.name}`);
+    } catch (leaguesError) {
+      console.error(`Error loading leagues for ${country.name}:`, leaguesError);
+      // Continue with empty leagues array instead of failing completely
+    }
 
     // Sort leagues by name
     const sortedLeagues = countryLeagues.sort((a, b) => {
@@ -59,18 +70,26 @@ export default async function CountryPredictionsPage({
       return nameA.localeCompare(nameB);
     });
 
-    // Get today's fixtures for this country
-    const today = new Date().toISOString().split('T')[0];
-    const fixturesResponse = await sportmonks.getFixturesByDate(today, {
-      include: 'participants;scores;state;predictions.type;league.country',
-      per_page: 100,
-      page: 1,
-    });
+    // Get today's fixtures for this country with better error handling
+    let countryFixtures: unknown[] = [];
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const fixturesResponse = await sportmonks.getFixturesByDate(today, {
+        include: 'participants;scores;state;predictions.type;league.country',
+        per_page: 100,
+        page: 1,
+      });
 
-    const allFixtures = fixturesResponse?.data || [];
-    const countryFixtures = allFixtures.filter((fixture: unknown) => {
-      return (fixture as { league?: { country?: { id: number } } }).league?.country?.id === country.id;
-    });
+      const allFixtures = fixturesResponse?.data || [];
+      countryFixtures = allFixtures.filter((fixture: unknown) => {
+        return (fixture as { league?: { country?: { id: number } } }).league?.country?.id === country.id;
+      });
+
+      console.log(`Found ${countryFixtures.length} fixtures for ${country.name} today`);
+    } catch (fixturesError) {
+      console.error(`Error loading fixtures for ${country.name}:`, fixturesError);
+      // Continue with empty fixtures array instead of failing completely
+    }
 
     // Filter by specific league if provided
     const filteredFixtures = leagueId 
@@ -85,7 +104,7 @@ export default async function CountryPredictionsPage({
       />
     );
   } catch (error) {
-    console.error('Error loading country predictions:', error);
+    console.error('Critical error loading country predictions:', error);
     notFound();
   }
 }

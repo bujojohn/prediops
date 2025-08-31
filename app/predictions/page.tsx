@@ -34,7 +34,6 @@ export default async function PredictionsPage({
       <Suspense fallback={<div>Loading predictions...</div>}>
         <LatestFixturesClient 
           initialFixtures={initialFixtures} 
-          initialSelectedDate={dateToLoad}
         />
       </Suspense>
     </div>

@@ -12,7 +12,7 @@ export default function Error({ error, reset }: {
           Failed to load predictions
         </h2>
         <p className="text-gray-600 mb-8 max-w-md mx-auto">
-          {error.message || 'An error occurred while loading predictions. Please check your API connection and try again.'}
+          {error.message || 'An error occured. Please check your Internet connection and try again.'}
         </p>
         <button 
           onClick={reset} 

@@ -51,8 +51,6 @@ function PredictionsContent({ initialFixtures }: { initialFixtures: Fixture[] })
   const {
     selectedDate,
     selectDate,
-    isLoading: fixturesLoading,
-    error: fixturesError,
   } = useDatePickerWithFixtures();
 
   const groups = useMemo(() => groupByDate(fixtures), [fixtures]);
@@ -213,8 +211,16 @@ function PredictionsContent({ initialFixtures }: { initialFixtures: Fixture[] })
         </CardContent>
       </Card>
 
-      {/* Fixtures Display */}
-      {fixtures.length > 0 ? (
+                {/* Fixtures Display */}
+      {isLoadingDateFixtures ? (
+        <Card className="p-8">
+          <div className="text-center">
+            <RefreshCw className="w-16 h-16 text-gray-400 mx-auto mb-4 animate-spin" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Loading Fixtures...</h3>
+            <p className="text-gray-600">Loading fixtures for the selected date.</p>
+          </div>
+        </Card>
+      ) : fixtures.length > 0 ? (
         <>
           {/* Group headers with semantic dates */}
           <div className="space-y-4">
