@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type { Fixture } from '@/schemas/fixture.schema';
 import { FixtureList, type FixtureGroup } from '@/app/components/fixtures/FixtureList';
 import { dateKeyUTC, formatDateUTC, formatSemanticDateUTC } from '@/lib/utils';
@@ -40,6 +41,8 @@ function groupByLeague(fixtures: Fixture[]): Array<{ id: string; title: string; 
 
 
 function PredictionsContent({ initialFixtures }: { initialFixtures: Fixture[] }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [fixtures, setFixtures] = useState<Fixture[]>(initialFixtures || []);
   const [page, setPage] = useState<number>(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -120,11 +123,17 @@ function PredictionsContent({ initialFixtures }: { initialFixtures: Fixture[] })
     }
   }, []);
 
-  // Handle date selection
+  // Handle date selection with URL update
   const handleDateSelect = useCallback(async (date: string) => {
     selectDate(date);
+    
+    // Update URL to reflect selected date
+    const params = new URLSearchParams(searchParams);
+    params.set('date', date);
+    router.push(`/predictions?${params.toString()}`);
+    
     await loadFixturesForDate(date);
-  }, [selectDate, loadFixturesForDate]);
+  }, [selectDate, loadFixturesForDate, router, searchParams]);
 
   // Load initial fixtures for today if no fixtures exist
   useEffect(() => {
@@ -315,9 +324,9 @@ function PredictionsContent({ initialFixtures }: { initialFixtures: Fixture[] })
   );
 }
 
-export function LatestFixturesClient({ initialFixtures }: { initialFixtures: Fixture[] }) {
+export function LatestFixturesClient({ initialFixtures, initialDate }: { initialFixtures: Fixture[]; initialDate: string }) {
   return (
-    <DatePickerProvider>
+    <DatePickerProvider initialDate={initialDate}>
       <PredictionsContent initialFixtures={initialFixtures} />
     </DatePickerProvider>
   );

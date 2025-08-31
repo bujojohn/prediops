@@ -33,7 +33,8 @@ export default async function PredictionsPage({
     <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
       <Suspense fallback={<div>Loading predictions...</div>}>
         <LatestFixturesClient 
-          initialFixtures={initialFixtures} 
+          initialFixtures={initialFixtures}
+          initialDate={dateToLoad}
         />
       </Suspense>
     </div>
