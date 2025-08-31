@@ -12,7 +12,13 @@ import {
   ExternalLink,
   Calendar,
   Users,
-  Info
+  Info,
+  Star,
+  StarOff,
+  SortAsc,
+  SortDesc,
+  RefreshCw,
+  Settings
 } from 'lucide-react';
 import { SidebarTheme } from './SidebarTheme';
 import { getCountryPredictionsUrl } from '@/lib/utils/country-utils';
@@ -39,6 +45,14 @@ export default function Sidebar() {
   const [countryLeagues, setCountryLeagues] = useState<Map<number, League[]>>(new Map());
   const [loadingStates, setLoadingStates] = useState<Map<number, boolean>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Favorites and filtering state
+  const [favorites, setFavorites] = useState<Set<number>>(new Set());
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
+  const [sortBy, setSortBy] = useState<'name' | 'fixtures' | 'leagues'>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [showSettings, setShowSettings] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Load countries with leagues using API route
   const loadCountriesWithLeagues = async () => {
@@ -109,27 +123,95 @@ export default function Sidebar() {
     setExpandedCountries(newExpanded);
   };
 
-  // Filter and sort countries based on search term
+  // Filter and sort countries based on search term, favorites, and sort settings
   useEffect(() => {
     let filtered = allCountries;
     
+    // Filter by search term
     if (searchTerm.trim()) {
-      filtered = allCountries.filter(country => 
+      filtered = filtered.filter(country => 
         country.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         country.fifa_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         country.official_name?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     
-    // Sort countries alphabetically by name
-    const sortedCountries = filtered.sort((a, b) => {
-      const nameA = (a.name || a.fifa_name || a.official_name || '').toLowerCase();
-      const nameB = (b.name || b.fifa_name || b.official_name || '').toLowerCase();
-      return nameA.localeCompare(nameB);
-    });
+    // Filter by favorites if enabled
+    if (showOnlyFavorites) {
+      filtered = filtered.filter(country => favorites.has(country.id));
+    }
+    
+    // Sort countries based on current sort settings
+    const sortedCountries = filtered.sort(getSortFunction);
     
     setFilteredCountries(sortedCountries);
-  }, [searchTerm, allCountries]);
+  }, [searchTerm, allCountries, showOnlyFavorites, favorites, sortBy, sortOrder]);
+
+  // Load favorites from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedFavorites = localStorage.getItem('sidebar-favorites');
+      if (savedFavorites) {
+        const favoritesArray = JSON.parse(savedFavorites);
+        setFavorites(new Set(favoritesArray));
+      }
+    } catch (error) {
+      console.error('Error loading favorites from localStorage:', error);
+    }
+  }, []);
+
+  // Save favorites to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('sidebar-favorites', JSON.stringify(Array.from(favorites)));
+    } catch (error) {
+      console.error('Error saving favorites to localStorage:', error);
+    }
+  }, [favorites]);
+
+  // Toggle favorite status
+  const toggleFavorite = (countryId: number, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent triggering country expansion
+    setFavorites(prev => {
+      const newFavorites = new Set(prev);
+      if (newFavorites.has(countryId)) {
+        newFavorites.delete(countryId);
+      } else {
+        newFavorites.add(countryId);
+      }
+      return newFavorites;
+    });
+  };
+
+  // Refresh data
+  const refreshData = async () => {
+    setIsRefreshing(true);
+    setCountryLeagues(new Map()); // Clear cached leagues
+    setExpandedCountries(new Set()); // Collapse all countries
+    await loadCountriesWithLeagues();
+    setIsRefreshing(false);
+  };
+
+  // Get sort function based on current sort settings
+  const getSortFunction = (a: CountryWithLeagues, b: CountryWithLeagues) => {
+    let comparison = 0;
+    
+    switch (sortBy) {
+      case 'name':
+        const nameA = (a.name || a.fifa_name || a.official_name || '').toLowerCase();
+        const nameB = (b.name || b.fifa_name || b.official_name || '').toLowerCase();
+        comparison = nameA.localeCompare(nameB);
+        break;
+      case 'fixtures':
+        comparison = (a.fixtureCount || 0) - (b.fixtureCount || 0);
+        break;
+      case 'leagues':
+        comparison = (a.leaguesCount || 0) - (b.leaguesCount || 0);
+        break;
+    }
+    
+    return sortOrder === 'asc' ? comparison : -comparison;
+  };
 
   // Load countries on mount
   useEffect(() => {
@@ -174,9 +256,78 @@ export default function Sidebar() {
               className="pl-10"
             />
           </div>
+          
+          {/* Controls Row */}
+          <div className="flex items-center gap-2 mb-3">
+            <button
+              onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
+              className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
+                showOnlyFavorites 
+                  ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' 
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+              title={showOnlyFavorites ? 'Show all countries' : 'Show only favorites'}
+            >
+              <Star className="h-3 w-3" />
+              <span>Favorites</span>
+            </button>
+            
+            <button
+              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+              className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:text-foreground transition-colors"
+              title={`Sort ${sortOrder === 'asc' ? 'descending' : 'ascending'}`}
+            >
+              {sortOrder === 'asc' ? <SortAsc className="h-3 w-3" /> : <SortDesc className="h-3 w-3" />}
+            </button>
+            
+            <button
+              onClick={refreshData}
+              disabled={isRefreshing}
+              className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+              title="Refresh data"
+            >
+              <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </button>
+            
+            <button
+              onClick={() => setShowSettings(!showSettings)}
+              className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:text-foreground transition-colors ml-auto"
+              title="Sort options"
+            >
+              <Settings className="h-3 w-3" />
+            </button>
+          </div>
+          
+          {/* Sort Options */}
+          {showSettings && (
+            <div className="mb-3 p-2 bg-muted rounded text-xs">
+              <div className="font-medium mb-2">Sort by:</div>
+              <div className="flex gap-2">
+                {(['name', 'fixtures', 'leagues'] as const).map((option) => (
+                  <button
+                    key={option}
+                    onClick={() => setSortBy(option)}
+                    className={`px-2 py-1 rounded transition-colors ${
+                      sortBy === option 
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'bg-background hover:bg-accent'
+                    }`}
+                  >
+                    {option.charAt(0).toUpperCase() + option.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Globe className="h-4 w-4" />
             <span>{filteredCountries.length} countries</span>
+            {showOnlyFavorites && (
+              <Badge variant="outline" className="text-xs">
+                {favorites.size} favorites
+              </Badge>
+            )}
             <div className="flex items-center gap-1 text-xs opacity-75" title="Only one country can be expanded at a time">
               <Info className="h-3 w-3" />
               <span>accordion</span>
@@ -216,6 +367,23 @@ export default function Sidebar() {
                     </button>
                     
                     <div className="flex items-center gap-2">
+                      {/* Favorite Star */}
+                      <button
+                        onClick={(e) => toggleFavorite(country.id, e)}
+                        className={`transition-colors ${
+                          favorites.has(country.id)
+                            ? 'text-yellow-500 hover:text-yellow-600'
+                            : 'text-muted-foreground hover:text-yellow-500'
+                        }`}
+                        title={favorites.has(country.id) ? 'Remove from favorites' : 'Add to favorites'}
+                      >
+                        {favorites.has(country.id) ? (
+                          <Star className="h-4 w-4 fill-current" />
+                        ) : (
+                          <StarOff className="h-4 w-4" />
+                        )}
+                      </button>
+                      
                       {country.fixtureCount > 0 && (
                         <Badge variant="outline" className="text-xs">
                           <Calendar className="h-3 w-3 mr-1" />
@@ -286,8 +454,14 @@ export default function Sidebar() {
               <Users className="h-3 w-3" />
               <span>Powered by SportMonks API</span>
             </div>
-            <div className="text-xs">
-              Data refreshes every 5 minutes
+            <div className="flex items-center justify-center gap-4 text-xs">
+              <span>Data refreshes every 5 minutes</span>
+              {favorites.size > 0 && (
+                <div className="flex items-center gap-1">
+                  <Star className="h-3 w-3 text-yellow-500" />
+                  <span>{favorites.size} favorites</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
