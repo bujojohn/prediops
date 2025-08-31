@@ -17,7 +17,7 @@ import { Country } from '@/schemas/country.schema';
 import { League } from '@/schemas/league.schema';
 import { Fixture } from '@/schemas/fixture.schema';
 import { FixtureCard } from '@/app/components/fixtures/FixtureCard';
-import { getCountryPredictionsUrl } from '@/lib/utils/country-utils';
+import { getCountryPredictionsUrl, generateCountrySlug } from '@/lib/utils/country-utils';
 
 interface CountryPredictionsClientProps {
   country: Country;
@@ -141,7 +141,7 @@ export function CountryPredictionsClient({
             Leagues & Fixtures
           </h2>
           <Link 
-            href={getCountryPredictionsUrl(country)}
+            href={`/predictions/country/${generateCountrySlug(country)}/all-fixtures?id=${country.id}`}
             className="text-blue-600 hover:text-blue-700 text-sm font-medium"
           >
             View All Fixtures →

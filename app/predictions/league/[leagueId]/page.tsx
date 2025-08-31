@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { sportmonks } from '@/lib/sportmonks';
+import { Fixture } from '@/schemas/fixture.schema';
 
 import { LeaguePredictionsClient } from './league-predictions-client';
 
@@ -32,28 +33,42 @@ export default async function LeaguePredictionsPage({
 
     console.log(`Found league: ${league.name} (ID: ${league.id})`);
 
-    // Get today's fixtures for this league
-    const today = new Date().toISOString().split('T')[0];
+    // Get all fixtures for this league (next 7 days)
+    const today = new Date();
+    const fixturesPromises = [];
     
-    const fixturesResponse = await sportmonks.getFixturesByDate(today, {
-      include: 'participants;scores;state;predictions.type;league.country',
-      per_page: 100,
-      page: 1,
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      const dateString = date.toISOString().split('T')[0];
+      
+      fixturesPromises.push(
+        sportmonks.getFixturesByDate(dateString, {
+          include: 'participants;scores;state;predictions.type;league.country',
+          per_page: 100,
+          page: 1,
+        })
+      );
+    }
+
+    const fixturesResponses = await Promise.all(fixturesPromises);
+    
+    let allFixtures: Fixture[] = [];
+    fixturesResponses.forEach(response => {
+      const fixtures = response?.data || [];
+      const leagueFixtures = fixtures.filter((fixture: Fixture) => {
+        const fixtureLeagueId = fixture.league?.id?.toString();
+        return fixtureLeagueId === leagueId;
+      });
+      allFixtures = [...allFixtures, ...leagueFixtures];
     });
 
-    const allFixtures = fixturesResponse?.data || [];
-    
-    const leagueFixtures = allFixtures.filter((fixture: { league?: { id?: number } }) => {
-      const fixtureLeagueId = fixture.league?.id?.toString();
-      return fixtureLeagueId === leagueId;
-    });
-
-    console.log(`Found ${leagueFixtures.length} fixtures for league ${league.name}`);
+    console.log(`Found ${allFixtures.length} total fixtures for league ${league.name} in next 7 days`);
 
     return (
       <LeaguePredictionsClient 
         league={league}
-        fixtures={leagueFixtures}
+        fixtures={allFixtures}
       />
     );
   } catch (error) {
