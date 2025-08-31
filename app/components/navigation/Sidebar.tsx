@@ -11,7 +11,8 @@ import {
   ChevronRight,
   ExternalLink,
   Calendar,
-  Users
+  Users,
+  Info
 } from 'lucide-react';
 import { SidebarTheme } from './SidebarTheme';
 import { getCountryPredictionsUrl } from '@/lib/utils/country-utils';
@@ -91,31 +92,43 @@ export default function Sidebar() {
     }
   };
 
-  // Toggle country expansion
+  // Toggle country expansion with accordion behavior (only one country expanded at a time)
   const toggleCountry = (countryId: number) => {
-    const newExpanded = new Set(expandedCountries);
-    if (newExpanded.has(countryId)) {
-      newExpanded.delete(countryId);
+    const newExpanded = new Set<number>();
+    
+    if (expandedCountries.has(countryId)) {
+      // If clicking on already expanded country, collapse it
+      // Don't add anything to newExpanded (empty set)
     } else {
+      // If clicking on collapsed country, expand it and collapse others
       newExpanded.add(countryId);
       // Load leagues when expanding
       loadCountryLeagues(countryId);
     }
+    
     setExpandedCountries(newExpanded);
   };
 
-  // Filter countries based on search term
+  // Filter and sort countries based on search term
   useEffect(() => {
-    if (!searchTerm.trim()) {
-      setFilteredCountries(allCountries);
-    } else {
-      const filtered = allCountries.filter(country => 
+    let filtered = allCountries;
+    
+    if (searchTerm.trim()) {
+      filtered = allCountries.filter(country => 
         country.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         country.fifa_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         country.official_name?.toLowerCase().includes(searchTerm.toLowerCase())
       );
-      setFilteredCountries(filtered);
     }
+    
+    // Sort countries alphabetically by name
+    const sortedCountries = filtered.sort((a, b) => {
+      const nameA = (a.name || a.fifa_name || a.official_name || '').toLowerCase();
+      const nameB = (b.name || b.fifa_name || b.official_name || '').toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
+    
+    setFilteredCountries(sortedCountries);
   }, [searchTerm, allCountries]);
 
   // Load countries on mount
@@ -164,6 +177,10 @@ export default function Sidebar() {
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Globe className="h-4 w-4" />
             <span>{filteredCountries.length} countries</span>
+            <div className="flex items-center gap-1 text-xs opacity-75" title="Only one country can be expanded at a time">
+              <Info className="h-3 w-3" />
+              <span>accordion</span>
+            </div>
             {allCountries.length > 0 && (
               <Badge variant="secondary" className="ml-auto">
                 {allCountries.filter(c => c.fixtureCount > 0).length} active
