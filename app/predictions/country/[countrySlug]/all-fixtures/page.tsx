@@ -77,13 +77,13 @@ export default async function AllFixturesPage({
         date.setDate(today.getDate() + i);
         const dateString = date.toISOString().split('T')[0];
         
-        fixturesPromises.push(
-          sportmonks.getFixturesByDate(dateString, {
-            include: 'participants;scores;state;predictions.type;league.country',
-            per_page: 100,
-            page: 1,
-          })
-        );
+                 fixturesPromises.push(
+           sportmonks.getFixturesByDate(dateString, {
+             include: 'participants;scores;state;predictions.type;league.country',
+             per_page: 50,
+             page: 1,
+           })
+         );
       }
 
       const fixturesResponses = await Promise.all(fixturesPromises);

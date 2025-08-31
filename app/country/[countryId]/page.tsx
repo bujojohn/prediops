@@ -29,7 +29,7 @@ export default async function CountryPage({ params }: CountryPageProps) {
     // Load today's fixtures for this country
     const fixturesResponse = await sportmonks.getFixturesByDate(new Date().toISOString().split('T')[0], {
       include: 'participants;scores;state;league;league.country',
-      per_page: 100,
+      per_page: 50,
       page: 1,
     });
 
