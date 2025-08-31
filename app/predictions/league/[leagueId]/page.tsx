@@ -14,20 +14,23 @@ export default async function LeaguePredictionsPage({
 }: LeaguePredictionsPageProps) {
   const { leagueId } = await params;
 
+  console.log(`=== League Predictions Page Debug ===`);
+  console.log(`League ID:`, leagueId);
+
   try {
-    // Get league details
-    const leagueResponse = await sportmonks.getLeagues({
-      include: 'country;sport;currentseason',
-      per_page: 50,
-      page: 1
+    // Use the new dedicated endpoint for getting league by ID
+    const leagueResponse = await sportmonks.getLeaguesById(leagueId, {
+      include: 'country;sport;stages;seasons;currentseason'
     });
 
-    const allLeagues = leagueResponse?.data || [];
-    const league = allLeagues.find((l: { id?: number }) => l.id?.toString() === leagueId);
+    const league = leagueResponse?.data?.[0]; // getLeaguesById returns an array with one item
 
     if (!league) {
+      console.error(`League not found: ID=${leagueId}`);
       notFound();
     }
+
+    console.log(`Found league: ${league.name} (ID: ${league.id})`);
 
     // Get today's fixtures for this league
     const today = new Date().toISOString().split('T')[0];
@@ -45,13 +48,16 @@ export default async function LeaguePredictionsPage({
       return fixtureLeagueId === leagueId;
     });
 
+    console.log(`Found ${leagueFixtures.length} fixtures for league ${league.name}`);
+
     return (
       <LeaguePredictionsClient 
         league={league}
         fixtures={leagueFixtures}
       />
     );
-  } catch {
+  } catch (error) {
+    console.error('Error loading league data:', error);
     notFound();
   }
 }
@@ -61,14 +67,12 @@ export async function generateMetadata({ params }: { params: Promise<{ leagueId:
   const { leagueId } = await params;
   
   try {
-    const leagueResponse = await sportmonks.getLeagues({
-      include: 'country;sport',
-      per_page: 50,
-      page: 1
+    // Use the new dedicated endpoint for getting league by ID
+    const leagueResponse = await sportmonks.getLeaguesById(leagueId, {
+      include: 'country;sport'
     });
 
-    const allLeagues = leagueResponse?.data || [];
-    const league = allLeagues.find((l: { id?: number }) => l.id?.toString() === leagueId);
+    const league = leagueResponse?.data?.[0]; // getLeaguesById returns an array with one item
 
     if (!league) {
       return {
@@ -85,7 +89,8 @@ export async function generateMetadata({ params }: { params: Promise<{ leagueId:
       description: `Get AI-powered predictions, live scores, and fixtures for ${leagueName}${countryName ? ` in ${countryName}` : ''}. View matches and betting opportunities.`,
       keywords: `${leagueName}, ${countryName}, football predictions, live scores, fixtures, betting, ${league.short_code || ''}`,
     };
-  } catch {
+  } catch (error) {
+    console.error('Error generating metadata for league:', error);
     return {
       title: 'League Predictions | Prediops',
       description: 'Get AI-powered predictions and live scores for football leagues.'

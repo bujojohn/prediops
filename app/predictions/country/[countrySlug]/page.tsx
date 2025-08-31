@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation';
 import { sportmonks } from '@/lib/sportmonks';
 import { getCountries, getCountryById } from '@/lib/data/countries';
 import { Country } from '@/schemas/country.schema';
+import { League } from '@/schemas/league.schema';
+import { Fixture } from '@/schemas/fixture.schema';
 import { CountryPredictionsClient } from './country-predictions-client';
 import { findCountryBySlug } from '@/lib/utils/country-utils';
 
@@ -47,14 +49,16 @@ export default async function CountryPredictionsPage({
     try {
       const leaguesResponse = await sportmonks.getLeagues({
         include: 'country;sport;currentseason',
-        per_page: 1000,
+        per_page: 50,
         page: 1
       });
 
       const allLeagues = leaguesResponse?.data || [];
       countryLeagues = allLeagues.filter((league) => {
-        return (league as { country_id?: number; country?: { id: number } }).country_id?.toString() === country.id.toString() || 
-               (league as { country_id?: number; country?: { id: number } }).country?.id?.toString() === country.id.toString();
+        const leagueData = league as { country_id?: number; country?: { id: number }; active?: boolean };
+        return (leagueData.country_id?.toString() === country.id.toString() || 
+                leagueData.country?.id?.toString() === country.id.toString()) &&
+               leagueData.active === true;
       });
 
       console.log(`Found ${countryLeagues.length} leagues for ${country.name}`);
@@ -99,8 +103,8 @@ export default async function CountryPredictionsPage({
     return (
       <CountryPredictionsClient 
         country={country}
-        leagues={sortedLeagues}
-        fixtures={filteredFixtures}
+        leagues={sortedLeagues as League[]}
+        fixtures={filteredFixtures as Fixture[]}
       />
     );
   } catch (error) {

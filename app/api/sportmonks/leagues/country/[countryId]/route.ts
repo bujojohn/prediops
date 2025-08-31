@@ -31,9 +31,10 @@ export async function GET(
       currentPage++;
     }
     
-    // Filter leagues by country ID
+    // Filter leagues by country ID and active status
     const countryLeagues = allLeagues.filter((league: League) => 
-      league.country_id?.toString() === countryId || league.country?.id?.toString() === countryId
+      (league.country_id?.toString() === countryId || league.country?.id?.toString() === countryId) &&
+      league.active === true
     );
 
     // Get today's date for fixture counting
@@ -81,11 +82,49 @@ export async function GET(
     
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     
+    // Check for specific error types
+    if (errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'API authentication failed',
+          message: 'Invalid or missing SportMonks API token',
+          details: 'Please check your SPORTMONKS_API_TOKEN environment variable'
+        },
+        { status: 401 }
+      );
+    }
+    
+    if (errorMessage.includes('429') || errorMessage.includes('Rate limit')) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'API rate limit exceeded',
+          message: 'Too many requests to SportMonks API',
+          details: 'Please wait before trying again'
+        },
+        { status: 429 }
+      );
+    }
+    
+    if (errorMessage.includes('Network Error') || errorMessage.includes('ENOTFOUND')) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Network error',
+          message: 'Cannot connect to SportMonks API',
+          details: 'Please check your internet connection and API endpoint'
+        },
+        { status: 503 }
+      );
+    }
+    
     return NextResponse.json(
       { 
         success: false,
         error: 'Failed to fetch leagues for country',
-        message: errorMessage
+        message: errorMessage,
+        details: 'An unexpected error occurred while fetching league data'
       },
       { status: 500 }
     );

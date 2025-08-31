@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { Navbar } from './Navbar';
-import { Sidebar } from './Sidebar';
+import Sidebar  from './Sidebar';
 
 interface SidebarWrapperProps {
   children: React.ReactNode;
