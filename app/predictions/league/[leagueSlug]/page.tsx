@@ -42,21 +42,60 @@ export async function generateMetadata({ params }: { params: Promise<{ leagueSlu
 // Find league by slug
 async function findLeagueBySlug(slug: string): Promise<League | null> {
   try {
-    // Get all leagues and find the one matching the slug
-    const leaguesResponse = await sportmonks.getLeagues({
-      include: 'country;sport;currentSeason',
-      per_page: 50,
-      page: 1,
-    });
+    console.log(`Searching for league with slug: ${slug}`);
+    
+    // Search through multiple pages to find the league
+    let currentPage = 1;
+    const maxPages = 10; // Search up to 500 leagues
+    
+          while (currentPage <= maxPages) {
+        console.log(`Searching page ${currentPage} for league: ${slug}`);
+        
+        const leaguesResponse = await sportmonks.getLeagues({
+          include: 'country;sport;currentSeason',
+          per_page: 50,
+          page: currentPage,
+        });
 
-    if (leaguesResponse?.data) {
-      const league = leaguesResponse.data.find((league: League) => {
-        const leagueSlug = generateLeagueSlug(league);
-        return leagueSlug === slug.toLowerCase();
-      });
+        // Add small delay to avoid rate limiting
+        if (currentPage > 1) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
 
-      return league || null;
+              if (leaguesResponse?.data && leaguesResponse.data.length > 0) {
+          console.log(`Page ${currentPage}: Found ${leaguesResponse.data.length} leagues`);
+          
+          // Debug: Show first few league names and their slugs
+          if (currentPage === 1) {
+            console.log('Sample leagues from first page:');
+            leaguesResponse.data.slice(0, 5).forEach((league: League) => {
+              const leagueSlug = generateLeagueSlug(league);
+              console.log(`  - "${league.name}" -> slug: "${leagueSlug}"`);
+            });
+          }
+          
+          // Check if any league matches the slug
+          const league = leaguesResponse.data.find((league: League) => {
+            const leagueSlug = generateLeagueSlug(league);
+            const matches = leagueSlug === slug.toLowerCase();
+            if (matches) {
+              console.log(`Found matching league: ${league.name} (ID: ${league.id}) with slug: ${leagueSlug}`);
+            }
+            return matches;
+          });
+
+        if (league) {
+          return league;
+        }
+        
+        currentPage++;
+      } else {
+        // No more data, break
+        break;
+      }
     }
+    
+    console.log(`League not found after searching ${maxPages} pages`);
   } catch (error) {
     console.error('Error finding league by slug:', error);
   }
@@ -68,9 +107,27 @@ async function findLeagueBySlug(slug: string): Promise<League | null> {
 function generateLeagueSlug(league: League): string {
   const name = league.name || 'unknown';
   
-  return name
-    .toLowerCase()
-    .trim()
+  // Handle special cases
+  const specialCases: Record<string, string> = {
+    'fa cup': 'fa-cup',
+    'premier league': 'premier-league',
+    'champions league': 'champions-league',
+    'europa league': 'europa-league',
+    'la liga': 'la-liga',
+    'bundesliga': 'bundesliga',
+    'serie a': 'serie-a',
+    'ligue 1': 'ligue-1'
+  };
+  
+  const lowerName = name.toLowerCase().trim();
+  
+  // Check if it's a special case first
+  if (specialCases[lowerName]) {
+    return specialCases[lowerName];
+  }
+  
+  // Generate slug for other cases
+  return lowerName
     .replace(/[\s\-_]+/g, '-')
     .replace(/[^a-z0-9\-]/g, '')
     .replace(/-+/g, '-')
