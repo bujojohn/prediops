@@ -246,7 +246,7 @@ export default function Sidebar() {
     <SidebarTheme>
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="p-4 border-b">
+        <div className="p-3 border-b">
           <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
@@ -342,31 +342,31 @@ export default function Sidebar() {
 
         {/* Countries List */}
         <div className="flex-1 overflow-y-auto">
-          <div className="p-2 space-y-1">
+          <div className="p-1 space-y-0.5">
             {filteredCountries.map((country) => {
               const isExpanded = expandedCountries.has(country.id);
               const leagues = countryLeagues.get(country.id) || [];
               const isLoadingLeagues = loadingStates.get(country.id) || false;
 
-              return (
-                <div key={country.id} className="space-y-1">
+                             return (
+                 <div key={country.id} className="space-y-0.5">
                   {/* Country Header */}
-                  <div className="flex items-center justify-between p-2 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors">
+                  <div className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
                     <button
                       onClick={() => toggleCountry(country.id)}
-                      className="flex items-center gap-2 flex-1 text-left"
+                      className="flex items-center gap-1.5 flex-1 text-left"
                     >
                       {isExpanded ? (
-                        <ChevronDown className="h-4 w-4" />
+                        <ChevronDown className="h-3.5 w-3.5" />
                       ) : (
-                        <ChevronRight className="h-4 w-4" />
+                        <ChevronRight className="h-3.5 w-3.5" />
                       )}
-                      <span className="font-medium truncate">
+                      <span className="font-medium truncate text-sm">
                         {country.name || country.fifa_name || country.official_name}
                       </span>
                     </button>
                     
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       {/* Favorite Star */}
                       <button
                         onClick={(e) => toggleFavorite(country.id, e)}
@@ -378,21 +378,21 @@ export default function Sidebar() {
                         title={favorites.has(country.id) ? 'Remove from favorites' : 'Add to favorites'}
                       >
                         {favorites.has(country.id) ? (
-                          <Star className="h-4 w-4 fill-current" />
+                          <Star className="h-3.5 w-3.5 fill-current" />
                         ) : (
-                          <StarOff className="h-4 w-4" />
+                          <StarOff className="h-3.5 w-3.5" />
                         )}
                       </button>
                       
                       {country.fixtureCount > 0 && (
-                        <Badge variant="outline" className="text-xs">
-                          <Calendar className="h-3 w-3 mr-1" />
+                        <Badge variant="outline" className="text-xs px-1.5 py-0.5">
+                          <Calendar className="h-2.5 w-2.5 mr-0.5" />
                           {country.fixtureCount}
                         </Badge>
                       )}
                       {country.leaguesCount > 0 && (
-                        <Badge variant="outline" className="text-xs">
-                          <Trophy className="h-3 w-3 mr-1" />
+                        <Badge variant="outline" className="text-xs px-1.5 py-0.5">
+                          <Trophy className="h-2.5 w-2.5 mr-0.5" />
                           {country.leaguesCount}
                         </Badge>
                       )}
@@ -401,32 +401,32 @@ export default function Sidebar() {
                         className="text-muted-foreground hover:text-foreground transition-colors"
                         title="View all leagues"
                       >
-                        <ExternalLink className="h-4 w-4" />
+                        <ExternalLink className="h-3.5 w-3.5" />
                       </a>
                     </div>
                   </div>
 
                   {/* Leagues List */}
                   {isExpanded && (
-                    <div className="ml-6 space-y-1">
+                    <div className="ml-4 space-y-0.5">
                       {isLoadingLeagues ? (
-                        <div className="p-2 text-sm text-muted-foreground">
+                        <div className="p-1.5 text-xs text-muted-foreground">
                           Loading leagues...
                         </div>
                       ) : leagues.length > 0 ? (
                         leagues.map((league) => {
                           console.log(`Sidebar: League ${league.name} (ID: ${league.id}, Active: ${league.active})`);
                           return (
-                            <div key={league.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors">
+                            <div key={league.id} className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
                               <a
                                 href={`${getCountryPredictionsUrl(country)}&league=${league.id}`}
-                                className="flex items-center gap-2 flex-1 text-sm"
+                                className="flex items-center gap-1.5 flex-1 text-xs"
                                 title={`League ID: ${league.id}`}
                               >
-                                <Trophy className="h-3 w-3 text-muted-foreground" />
+                                <Trophy className="h-2.5 w-2.5 text-muted-foreground" />
                                 <span className="truncate">{league.name}</span>
                                 {league.short_code && (
-                                  <Badge variant="outline" className="text-xs">
+                                  <Badge variant="outline" className="text-xs px-1 py-0.5">
                                     {league.short_code}
                                   </Badge>
                                 )}
@@ -435,7 +435,7 @@ export default function Sidebar() {
                           );
                         })
                       ) : (
-                        <div className="p-2 text-sm text-muted-foreground">
+                        <div className="p-1.5 text-xs text-muted-foreground">
                           No active leagues found
                         </div>
                       )}
@@ -448,7 +448,7 @@ export default function Sidebar() {
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t">
+        <div className="p-3 border-t">
           <div className="text-xs text-muted-foreground text-center">
             <div className="flex items-center justify-center gap-2 mb-2">
               <Users className="h-3 w-3" />
