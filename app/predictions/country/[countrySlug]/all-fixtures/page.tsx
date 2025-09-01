@@ -66,42 +66,41 @@ export default async function AllFixturesPage({
       console.error(`Error loading leagues for ${country.name}:`, leaguesError);
     }
 
-    // Get all fixtures for this country (not just today)
-    let allFixtures: Fixture[] = [];
-    try {
-      // Get fixtures for the next 7 days to show upcoming matches
-      const today = new Date();
-      const fixturesPromises = [];
-      //TODO: 
-      for (let i = 0; i < 7; i++) {
-        const date = new Date(today);
-        date.setDate(today.getDate() + i);
-        const dateString = date.toISOString().split('T')[0];
-        
-        fixturesPromises.push(
-          sportmonks.getLeaguesByFixtureDate(dateString, {
-            include: 'country;fixtures',
-            per_page: 50,
-            page: 1,
-          })
-        );
-      }
+         // Get all fixtures for this country (not just today)
+     let allFixtures: Fixture[] = [];
+     try {
+       // Get fixtures for the next 7 days to show upcoming matches
+       const today = new Date();
+       const fixturesPromises = [];
+       for (let i = 0; i < 7; i++) {
+         const date = new Date(today);
+         date.setDate(today.getDate() + i);
+         const dateString = date.toISOString().split('T')[0];
+         
+         fixturesPromises.push(
+           sportmonks.getFixturesByDate(dateString, {
+             include: 'participants;scores;state;predictions.type;league.country',
+             per_page: 50,
+             page: 1,
+           })
+         );
+       }
 
-      const fixturesResponses = await Promise.all(fixturesPromises);
-      
-      fixturesResponses.forEach(response => {
-        const leagues = response?.data || [];
-        leagues.forEach((league: League) => {
-          if (league.country?.id === country.id && (league as any).fixtures) {
-            allFixtures = [...allFixtures, ...(league as any).fixtures];
-          }
-        });
-      });
+       const fixturesResponses = await Promise.all(fixturesPromises);
+       
+       // Extract fixtures from all responses
+       fixturesResponses.forEach(response => {
+         const fixtures = response?.data || [];
+         const countryFixtures = fixtures.filter((fixture: Fixture) => 
+           fixture.league?.country?.id === country.id
+         );
+         allFixtures = [...allFixtures, ...countryFixtures];
+       });
 
-      console.log(`Found ${allFixtures.length} total fixtures for ${country.name} in next 7 days`);
-    } catch (fixturesError) {
-      console.error(`Error loading fixtures for ${country.name}:`, fixturesError);
-    }
+       console.log(`Found ${allFixtures.length} total fixtures for ${country.name} in next 7 days`);
+     } catch (fixturesError) {
+       console.error(`Error loading fixtures for ${country.name}:`, fixturesError);
+     }
 
     return (
       <AllFixturesClient 

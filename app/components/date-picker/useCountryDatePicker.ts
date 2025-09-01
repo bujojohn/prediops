@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useDatePicker } from './DatePickerProvider';
-import { sportmonks } from '@/lib/sportmonks';
 import type { Fixture } from '@/schemas/fixture.schema';
 import type { Country } from '@/schemas/country.schema';
 
@@ -65,43 +64,21 @@ export function useCountryDatePicker({
       // Try the new endpoint first, fall back to the old one if it fails
       let countryFixtures: Fixture[] = [];
       
-      try {
-        // Use the more efficient getLeaguesByFixtureDate endpoint
-        const leaguesResponse = await sportmonks.getLeaguesByFixtureDate(date, {
-          include: 'country;fixtures',
-          per_page: 50,
-          page: 1,
-        });
-
-        const allLeagues = leaguesResponse?.data || [];
-        
-        // Find leagues for this specific country and extract their fixtures
-        allLeagues.forEach((league: any) => {
-          if (league.country?.id === country.id && league.fixtures) {
-            countryFixtures.push(...league.fixtures);
-          }
-        });
-
-        console.log(`Found ${countryFixtures.length} fixtures for ${country.name} on ${date} using new endpoint`);
-      } catch (newEndpointError) {
-        console.log(`New endpoint failed, falling back to getFixturesByDate:`, newEndpointError);
-        
-        // Fall back to the original method
-        const fixturesResponse = await sportmonks.getFixturesByDate(date, {
-          include: 'participants;scores;state;predictions.type;league.country',
-          per_page: 50,
-          page: 1,
-        });
-
-        const allFixtures = fixturesResponse?.data || [];
-        
-        // Filter fixtures for this specific country
-        countryFixtures = allFixtures.filter((fixture: Fixture) => {
-          return fixture.league?.country?.id === country.id;
-        });
-
-        console.log(`Found ${countryFixtures.length} fixtures for ${country.name} on ${date} using fallback method`);
-      }
+             // Use internal API route to avoid CORS issues
+       const response = await fetch(`/api/sportmonks/fixtures/date-country?date=${date}&countryId=${country.id}`);
+       
+       if (!response.ok) {
+         throw new Error(`Failed to fetch fixtures: ${response.statusText}`);
+       }
+       
+       const result = await response.json();
+       
+       if (result.success) {
+         countryFixtures = result.data;
+         console.log(`Found ${countryFixtures.length} fixtures for ${country.name} on ${date} using internal API`);
+       } else {
+         throw new Error(result.error || 'Failed to fetch fixtures');
+       }
       
       setFixtures(countryFixtures);
       addCachedDate(date);
@@ -128,11 +105,11 @@ export function useCountryDatePicker({
 
   // Load fixtures on mount and when country changes
   useEffect(() => {
-    // Only load fixtures if we don't have any yet or if the date changes
-    if (country?.id && selectedDate && fixtures.length === 0 && initialFixtures.length === 0) {
+    // Only load fixtures if we don't have any yet
+    if (country?.id && selectedDate && fixtures.length === 0) {
       loadFixturesForDate(selectedDate);
     }
-  }, [country?.id, selectedDate, loadFixturesForDate, fixtures.length, initialFixtures.length]);
+  }, [country?.id, selectedDate, loadFixturesForDate, fixtures.length]);
 
   return {
     selectedDate,

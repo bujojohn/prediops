@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Trophy, Globe, ArrowRight } from 'lucide-react';
+import { generateLeagueSlug } from '@/lib/utils/country-utils';
 
 export default function TestNewFeatures() {
   // Test with Poland (ID: 2) and Premier League (ID: 8)
@@ -75,7 +76,7 @@ export default function TestNewFeatures() {
             </div>
             
             <div className="space-y-2">
-              <Link href={`/predictions/league/${testLeague.id}`}>
+              <Link href={`/predictions/league/${generateLeagueSlug(testLeague)}`}>
                 <Button className="w-full">
                   View All Fixtures for {testLeague.name}
                   <ArrowRight className="h-4 w-4 ml-2" />
@@ -110,7 +111,7 @@ export default function TestNewFeatures() {
                 </Button>
               </Link>
               
-              <Link href="/predictions/league/8">
+              <Link href="/predictions/league/premier-league">
                 <Button variant="outline" className="w-full">
                   Premier League Page
                 </Button>

@@ -8,7 +8,7 @@ import {
   Globe, 
   Trophy, 
   ChevronDown, 
-  ChevronRight,
+  ChevronRight, 
   ExternalLink,
   Calendar,
   Users,
@@ -21,7 +21,7 @@ import {
   Settings
 } from 'lucide-react';
 import { SidebarTheme } from './SidebarTheme';
-import { getCountryPredictionsUrl } from '@/lib/utils/country-utils';
+import { getCountryPredictionsUrl, generateLeagueSlug } from '@/lib/utils/country-utils';
 import type { Country } from '@/schemas/country.schema';
 
 interface CountryWithLeagues extends Country {
@@ -55,8 +55,8 @@ export default function Sidebar() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Load countries with leagues using API route
-  const loadCountriesWithLeagues = async () => {
-    try {
+    const loadCountriesWithLeagues = async () => {
+      try {
       setIsLoading(true);
       const response = await fetch('/api/sportmonks/countries/with-leagues');
       const data = await response.json();
@@ -72,18 +72,18 @@ export default function Sidebar() {
             fixtureCount: c.fixtureCount
           }))
         });
-        setAllCountries(countries);
-        setFilteredCountries(countries);
+          setAllCountries(countries);
+          setFilteredCountries(countries);
         console.log(`Loaded ${countries.length} countries with leagues`);
       } else {
         console.error('Failed to load countries:', data.error);
         setAllCountries([]);
         setFilteredCountries([]);
-      }
-    } catch (error) {
-      console.error('Error loading countries with leagues:', error);
-      setAllCountries([]);
-      setFilteredCountries([]);
+        }
+      } catch (error) {
+        console.error('Error loading countries with leagues:', error);
+          setAllCountries([]);
+          setFilteredCountries([]);
     } finally {
       setIsLoading(false);
     }
@@ -178,8 +178,8 @@ export default function Sidebar() {
       if (savedFavorites) {
         const favoritesArray = JSON.parse(savedFavorites);
         setFavorites(new Set(favoritesArray));
-      }
-    } catch (error) {
+          }
+        } catch (error) {
       console.error('Error loading favorites from localStorage:', error);
     }
   }, []);
@@ -198,11 +198,11 @@ export default function Sidebar() {
     event.stopPropagation(); // Prevent triggering country expansion
     setFavorites(prev => {
       const newFavorites = new Set(prev);
-      if (newFavorites.has(countryId)) {
-        newFavorites.delete(countryId);
-      } else {
-        newFavorites.add(countryId);
-      }
+    if (newFavorites.has(countryId)) {
+      newFavorites.delete(countryId);
+    } else {
+      newFavorites.add(countryId);
+    }
       return newFavorites;
     });
   };
@@ -273,13 +273,13 @@ export default function Sidebar() {
         <div className="p-3 border-b">
           <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Search countries..."
+              <Input
+                placeholder="Search countries..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
-            />
-          </div>
+              />
+            </div>
           
           {/* Controls Row */}
           <div className="flex items-center gap-2 mb-3">
@@ -375,7 +375,7 @@ export default function Sidebar() {
               const leagues = countryLeagues.get(country.id) || [];
               const isLoadingLeagues = loadingStates.get(country.id) || false;
 
-                             return (
+              return (
                  <div key={country.id} className="space-y-0.5">
                   {/* Country Header */}
                   <div className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
@@ -417,7 +417,7 @@ export default function Sidebar() {
                          <Badge variant="outline" className="text-xs px-1.5 py-0.5">
                            <Calendar className="h-2.5 w-2.5 mr-0.5" />
                            {country.fixtureCount || 0}
-                         </Badge>
+                              </Badge>
                        )}
                        {(country.leaguesCount || 0) > 0 && (
                          <Badge variant="outline" className="text-xs px-1.5 py-0.5">
@@ -448,7 +448,7 @@ export default function Sidebar() {
                           return (
                             <div key={league.id} className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
                               <a
-                                href={`${getCountryPredictionsUrl(country)}&league=${league.id}`}
+                                href={`/predictions/league/${generateLeagueSlug(league)}`}
                                 className="flex items-center gap-1.5 flex-1 text-xs"
                                 title={`League ID: ${league.id}`}
                               >
@@ -457,10 +457,10 @@ export default function Sidebar() {
                                 {league.short_code && (
                                   <Badge variant="outline" className="text-xs px-1 py-0.5">
                                     {league.short_code}
-                                  </Badge>
-                                )}
+                                    </Badge>
+                                  )}
                               </a>
-                            </div>
+                                </div>
                           );
                         })
                       ) : (
@@ -474,7 +474,7 @@ export default function Sidebar() {
               );
             })}
           </div>
-        </div>
+          </div>
 
         {/* Footer */}
         <div className="p-3 border-t">
@@ -489,12 +489,12 @@ export default function Sidebar() {
                 <div className="flex items-center gap-1">
                   <Star className="h-3 w-3 text-yellow-500" />
                   <span>{favorites.size} favorites</span>
-                </div>
-              )}
+            </div>
+          )}
+            </div>
+            </div>
             </div>
           </div>
-        </div>
-      </div>
     </SidebarTheme>
   );
 } 

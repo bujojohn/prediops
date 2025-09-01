@@ -91,20 +91,29 @@ const countryFixtures = allFixtures.filter(fixture =>
 
 **✅ Optimized:**
 ```typescript
-// Direct country-specific fixture fetching
+// Get leagues for specific date, then fetch fixtures separately
 const leaguesResponse = await sportmonks.getLeaguesByFixtureDate(date, {
-  include: 'country;fixtures.participants;fixtures.scores;fixtures.state;fixtures.predictions.type',
+  include: 'country',  // Valid includes: sport, country, stages, latest, upcoming, inplay, today, currentSeason, seasons
   per_page: 50,
   page: 1,
 });
 
-// Extract fixtures from country-specific leagues
-const countryFixtures = [];
-leaguesResponse.data.forEach(league => {
-  if (league.country?.id === country.id && league.fixtures) {
-    countryFixtures.push(...league.fixtures);
-  }
+// Get country-specific leagues
+const countryLeagues = leaguesResponse.data.filter(league => 
+  league.country?.id === country.id
+);
+
+// Fetch fixtures for these leagues using getFixturesByDate
+const fixturesResponse = await sportmonks.getFixturesByDate(date, {
+  include: 'participants;scores;state;predictions.type;league.country',
+  per_page: 50,
+  page: 1,
 });
+
+// Filter fixtures by country
+const countryFixtures = fixturesResponse.data.filter(fixture => 
+  fixture.league?.country?.id === country.id
+);
 ```
 
 **Benefits:**
@@ -184,9 +193,10 @@ const fixturesResponse = await sportmonks.getFixturesByDateRange(
 ## 🚨 Important Notes
 
 1. **Rate Limiting**: The new endpoints may have different rate limits
-2. **Data Structure**: `getLeaguesByFixtureDate` returns leagues with nested fixtures
-3. **Fallback Strategy**: Always implement fallback to original methods
-4. **Testing**: Test all endpoints with actual data before deployment
+2. **Data Structure**: `getLeaguesByFixtureDate` returns leagues (NOT fixtures)
+3. **Valid Includes**: For `getLeaguesByFixtureDate`, valid includes are: `sport`, `country`, `stages`, `latest`, `upcoming`, `inplay`, `today`, `currentSeason`, `seasons`
+4. **Fallback Strategy**: Always implement fallback to original methods
+5. **Testing**: Test all endpoints with actual data before deployment
 
 ## 📚 Additional Endpoints to Consider
 

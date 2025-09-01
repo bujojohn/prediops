@@ -1,4 +1,5 @@
 import { Country } from "@/schemas/country.schema";
+import { League } from "@/schemas/league.schema";
 import { getCountries } from "@/lib/data/countries";
 import { sportmonks } from "@/lib/sportmonks";
 
@@ -31,6 +32,29 @@ export function generateCountrySlug(country: Country): string {
   console.log(`Generated slug for ${name} (ID: ${country.id}): ${slug}`);
 
   return slug;
+}
+
+/**
+ * Generate a SEO-friendly slug from a league name
+ */
+export function generateLeagueSlug(league: League): string {
+  const name = league.name || 'unknown';
+  
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[\s\-_]+/g, '-')
+    .replace(/[^a-z0-9\-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/**
+ * Generate the full URL for a league's predictions page
+ */
+export function getLeaguePredictionsUrl(league: League): string {
+  const slug = generateLeagueSlug(league);
+  return `/predictions/league/${slug}`;
 }
 
 /**
@@ -100,11 +124,10 @@ export async function getCountriesWithLeagues(): Promise<
   }
 
   try {
-    // Use the new leagues by fixture date endpoint to get only countries with active leagues today
-    const today = new Date().toISOString().split("T")[0];
-    const leaguesResponse = await sportmonks.getLeaguesByFixtureDate(today, {
-      include: "country",
-      per_page: 50, // SportMonks max per_page is 50
+    // Get all leagues and filter by active ones
+    const leaguesResponse = await sportmonks.getLeagues({
+      include: "country;sport;currentseason",
+      per_page: 50,
       page: 1,
     });
 
@@ -112,16 +135,16 @@ export async function getCountriesWithLeagues(): Promise<
       // Group leagues by country and count them
       const countryLeaguesMap = new Map<
         number,
-        { country: any; leaguesCount: number; fixtureCount: number }
+        { country: { id: number; name: string }; leaguesCount: number; fixtureCount: number }
       >();
 
-      leaguesResponse.data.forEach((league: any) => {
+      leaguesResponse.data.forEach((league: League) => {
         const countryId = league.country_id || league.country?.id;
         if (countryId && league.active) {
           // Only count active leagues
           if (!countryLeaguesMap.has(countryId)) {
             countryLeaguesMap.set(countryId, {
-              country: league.country,
+              country: league.country || { id: countryId, name: 'Unknown' },
               leaguesCount: 0,
               fixtureCount: 0,
             });
@@ -135,18 +158,20 @@ export async function getCountriesWithLeagues(): Promise<
       // Get all countries from local data
       const allCountries = getCountries();
 
-      // Map countries with their league data
-      const countriesWithLeagues = allCountries
-        .filter((country) => countryLeaguesMap.has(country.id))
-        .map((country) => {
-          const leagueData = countryLeaguesMap.get(country.id)!;
-          return {
-            ...country,
-            fixtureCount: leagueData.fixtureCount,
-            leaguesCount: leagueData.leaguesCount,
-          };
-        })
-        .sort((a, b) => (b.fixtureCount || 0) - (a.fixtureCount || 0)); // Sort by fixture count
+      // Map ALL countries with their league data (including those with 0 leagues)
+      const countriesWithLeagues = allCountries.map((country) => {
+        const leagueData = countryLeaguesMap.get(country.id);
+        return {
+          ...country,
+          fixtureCount: leagueData?.fixtureCount || 0,
+          leaguesCount: leagueData?.leaguesCount || 0,
+        };
+      }).sort((a, b) => {
+        // Sort by: countries with leagues first, then alphabetically
+        if (a.leaguesCount > 0 && b.leaguesCount === 0) return -1;
+        if (a.leaguesCount === 0 && b.leaguesCount > 0) return 1;
+        return a.name.localeCompare(b.name);
+      });
 
       // Update cache
       countriesWithLeaguesCache = {
@@ -155,7 +180,7 @@ export async function getCountriesWithLeagues(): Promise<
       };
 
       console.log(
-        `Found ${countriesWithLeagues.length} countries with leagues for today`
+        `Found ${countriesWithLeagues.length} total countries, ${countriesWithLeagues.filter(c => c.leaguesCount > 0).length} with active leagues`
       );
       return countriesWithLeagues;
     }

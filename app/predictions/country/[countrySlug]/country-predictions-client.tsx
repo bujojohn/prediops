@@ -19,7 +19,7 @@ import { Country } from '@/schemas/country.schema';
 import { League } from '@/schemas/league.schema';
 import { Fixture } from '@/schemas/fixture.schema';
 import { FixtureCard } from '@/app/components/fixtures/FixtureCard';
-import { getCountryPredictionsUrl, generateCountrySlug } from '@/lib/utils/country-utils';
+import { getCountryPredictionsUrl, generateCountrySlug, generateLeagueSlug } from '@/lib/utils/country-utils';
 import { 
   DatePickerProvider, 
   EnhancedDatePicker, 
@@ -37,9 +37,17 @@ function CountryPredictionsContent({
   leagues, 
   initialFixtures
 }: CountryPredictionsClientProps) {
+  // All hooks must be called unconditionally at the top level
   const [expandedLeagues, setExpandedLeagues] = useState<Set<number>>(new Set());
   
-  // Use the enhanced date picker hook
+  // Use the enhanced date picker hook - ALWAYS call this
+  const datePickerResult = useCountryDatePicker({ 
+    country, 
+    initialDate: new Date().toISOString().split('T')[0],
+    initialFixtures
+  });
+
+  // Destructure after the hook call to ensure consistent order
   const {
     selectedDate,
     fixtures,
@@ -50,15 +58,17 @@ function CountryPredictionsContent({
     fixturesByLeague,
     totalFixtures,
     hasFixtures
-  } = useCountryDatePicker({ 
-    country, 
-    initialDate: new Date().toISOString().split('T')[0],
-    initialFixtures
-  });
+  } = datePickerResult;
 
   // Use date-specific fixtures if available, otherwise use initial fixtures
   const currentFixtures = fixtures.length > 0 ? fixtures : initialFixtures;
+  
+  // Memoize the fixtures grouping - ALWAYS call this
   const currentFixturesByLeague = useMemo(() => {
+    if (!currentFixtures || currentFixtures.length === 0) {
+      return {} as Record<number, Fixture[]>;
+    }
+    
     const grouped = currentFixtures.reduce((acc, fixture) => {
       const leagueId = (fixture as { league?: { id: number } }).league?.id;
       if (leagueId) {
@@ -287,7 +297,7 @@ function CountryPredictionsContent({
                         )}
                         
                                                  <Link 
-                           href={`/predictions/league/${league.id}`}
+                           href={`/predictions/league/${generateLeagueSlug(league)}`}
                          >
                           <Button variant="outline" size="sm">
                             View League
