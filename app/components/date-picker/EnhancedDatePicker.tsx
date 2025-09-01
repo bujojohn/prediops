@@ -19,6 +19,7 @@ interface EnhancedDatePickerProps {
   compact?: boolean;
   title?: string;
   subtitle?: string;
+  variant?: "default" | "compact" | "minimal";
 }
 
 export function EnhancedDatePicker({ 
@@ -31,7 +32,8 @@ export function EnhancedDatePicker({
   showQuickActions = true,
   compact = false,
   title = "Select Date",
-  subtitle = "Choose a date to view fixtures and predictions"
+  subtitle = "Choose a date to view fixtures and predictions",
+  variant = "default"
 }: EnhancedDatePickerProps) {
   const { state, selectDate, isDateCached, isDatePreloaded, addPreloadedDate } = useDatePicker();
   
@@ -164,39 +166,9 @@ export function EnhancedDatePicker({
     });
   }, [state.selectedDate]);
 
-  if (compact) {
+  if (compact || variant === "minimal") {
     return (
       <div className={`flex items-center gap-2 ${className}`}>
-        {/* Quick Actions */}
-        {showQuickActions && (
-          <div className="flex gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={goToYesterday}
-              className="text-xs px-2"
-            >
-              Yesterday
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={goToToday}
-              className="text-xs px-2"
-            >
-              Today
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={goToTomorrow}
-              className="text-xs px-2"
-            >
-              Tomorrow
-            </Button>
-          </div>
-        )}
-
         {/* Date Picker */}
         <div className="flex items-center gap-2">
           {showNavigation && visibleRange.start > 0 && (

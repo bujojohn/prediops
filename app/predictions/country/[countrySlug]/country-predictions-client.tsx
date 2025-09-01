@@ -52,10 +52,11 @@ function CountryPredictionsContent({
     hasFixtures
   } = useCountryDatePicker({ 
     country, 
-    initialDate: new Date().toISOString().split('T')[0] 
+    initialDate: new Date().toISOString().split('T')[0],
+    initialFixtures
   });
 
-  // Use initial fixtures if no date-specific fixtures are loaded yet
+  // Use date-specific fixtures if available, otherwise use initial fixtures
   const currentFixtures = fixtures.length > 0 ? fixtures : initialFixtures;
   const currentFixturesByLeague = useMemo(() => {
     const grouped = currentFixtures.reduce((acc, fixture) => {
@@ -119,18 +120,18 @@ function CountryPredictionsContent({
         </div>
       </div>
 
-      {/* Enhanced Date Picker */}
-      <div className="mb-8">
-        <EnhancedDatePicker
-          onDateSelect={selectDate}
-          title={`${country.name} Fixtures`}
-          subtitle={`Select a date to view fixtures and predictions for ${country.name}`}
-          showStats={true}
-          showQuickActions={true}
-          maxPastDays={7}
-          maxFutureDays={14}
-        />
-      </div>
+             {/* Enhanced Date Picker */}
+       <div className="mb-6">
+         <EnhancedDatePicker
+           onDateSelect={selectDate}
+           variant="minimal"
+           showStats={false}
+           showQuickActions={false}
+           maxPastDays={7}
+           maxFutureDays={14}
+           className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg"
+         />
+       </div>
 
       {/* Loading State */}
       {isLoading && (
@@ -164,60 +165,60 @@ function CountryPredictionsContent({
         </Card>
       )}
 
-      {/* Stats Cards */}
-      <div className="grid md:grid-cols-3 gap-6 mb-8">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <Trophy className="h-8 w-8 text-yellow-600" />
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Active Leagues</p>
-                <p className="text-2xl font-bold">{getActiveLeaguesCount()}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+             {/* Stats Cards */}
+       <div className="grid md:grid-cols-3 gap-4 mb-6">
+         <Card>
+           <CardContent className="p-4">
+             <div className="flex items-center gap-2">
+               <Trophy className="h-6 w-6 text-yellow-600" />
+               <div>
+                 <p className="text-xs text-gray-600 dark:text-gray-400">Active Leagues</p>
+                 <p className="text-lg font-bold">{getActiveLeaguesCount()}</p>
+               </div>
+             </div>
+           </CardContent>
+         </Card>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <Calendar className="h-8 w-8 text-blue-600" />
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {selectedDate === new Date().toISOString().split('T')[0] ? "Today's" : "Selected Date's"} Fixtures
-                </p>
-                <p className="text-2xl font-bold">{getTotalFixturesCount()}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+         <Card>
+           <CardContent className="p-4">
+             <div className="flex items-center gap-2">
+               <Calendar className="h-6 w-6 text-blue-600" />
+               <div>
+                 <p className="text-xs text-gray-600 dark:text-gray-400">
+                   {selectedDate === new Date().toISOString().split('T')[0] ? "Today's" : "Selected Date's"} Fixtures
+                 </p>
+                 <p className="text-lg font-bold">{getTotalFixturesCount()}</p>
+               </div>
+             </div>
+           </CardContent>
+         </Card>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <Target className="h-8 w-8 text-green-600" />
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Total Leagues</p>
-                <p className="text-2xl font-bold">{leagues.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+         <Card>
+           <CardContent className="p-4">
+             <div className="flex items-center gap-2">
+               <Target className="h-6 w-6 text-green-600" />
+               <div>
+                 <p className="text-xs text-gray-600 dark:text-gray-400">Total Leagues</p>
+                 <p className="text-lg font-bold">{leagues.length}</p>
+               </div>
+             </div>
+           </CardContent>
+         </Card>
+       </div>
 
-      {/* Leagues Section */}
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            Leagues & Fixtures
-          </h2>
-          <Link 
-            href={`/predictions/country/${generateCountrySlug(country)}/all-fixtures?id=${country.id}&date=${selectedDate}`}
-            className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-          >
-            View All Fixtures →
-          </Link>
-        </div>
+             {/* Leagues Section */}
+       <div className="space-y-4">
+         <div className="flex items-center justify-between">
+           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+             Leagues & Fixtures
+           </h2>
+           <Link 
+             href={`/predictions/country/${generateCountrySlug(country)}/all-fixtures?id=${country.id}&date=${selectedDate}`}
+             className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+           >
+             View All Fixtures →
+           </Link>
+         </div>
 
         {leagues.length === 0 ? (
           <Card className="p-8">
@@ -231,8 +232,8 @@ function CountryPredictionsContent({
               </p>
             </div>
           </Card>
-        ) : (
-          <div className="space-y-4">
+                 ) : (
+           <div className="space-y-3">
             {leagues.map((league) => {
               const leagueFixtures = currentFixturesByLeague[league.id] || [];
               const isExpanded = expandedLeagues.has(league.id);

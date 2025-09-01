@@ -9,6 +9,7 @@ import type { Country } from '@/schemas/country.schema';
 interface UseCountryDatePickerProps {
   country: Country;
   initialDate?: string;
+  initialFixtures?: Fixture[];
 }
 
 interface UseCountryDatePickerReturn {
@@ -25,10 +26,11 @@ interface UseCountryDatePickerReturn {
 
 export function useCountryDatePicker({ 
   country, 
-  initialDate 
+  initialDate,
+  initialFixtures = []
 }: UseCountryDatePickerProps): UseCountryDatePickerReturn {
   const { state, selectDate: selectDateGlobal, addCachedDate } = useDatePicker();
-  const [fixtures, setFixtures] = useState<Fixture[]>([]);
+  const [fixtures, setFixtures] = useState<Fixture[]>(initialFixtures);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -100,10 +102,11 @@ export function useCountryDatePicker({
 
   // Load fixtures on mount and when country changes
   useEffect(() => {
-    if (country?.id && selectedDate) {
+    // Only load fixtures if we don't have any yet or if the date changes
+    if (country?.id && selectedDate && fixtures.length === 0 && initialFixtures.length === 0) {
       loadFixturesForDate(selectedDate);
     }
-  }, [country?.id, selectedDate, loadFixturesForDate]);
+  }, [country?.id, selectedDate, loadFixturesForDate, fixtures.length, initialFixtures.length]);
 
   return {
     selectedDate,
