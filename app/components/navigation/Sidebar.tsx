@@ -49,7 +49,7 @@ export default function Sidebar() {
   // Favorites and filtering state
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
-  const [hideUnavailable, setHideUnavailable] = useState(true); // Hide unavailable countries by default
+  const [hideUnavailable, setHideUnavailable] = useState(false); // Show all countries by default to debug
   const [sortBy, setSortBy] = useState<'name' | 'fixtures' | 'leagues'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [showSettings, setShowSettings] = useState(false);
@@ -64,6 +64,15 @@ export default function Sidebar() {
       
       if (data.success) {
         const countries = data.data || [];
+        console.log('Loaded countries data:', {
+          count: countries.length,
+          sample: countries.slice(0, 3).map((c: CountryWithLeagues) => ({
+            id: c.id,
+            name: c.name,
+            leaguesCount: c.leaguesCount,
+            fixtureCount: c.fixtureCount
+          }))
+        });
         setAllCountries(countries);
         setFilteredCountries(countries);
         console.log(`Loaded ${countries.length} countries with leagues`);
@@ -128,6 +137,14 @@ export default function Sidebar() {
   useEffect(() => {
     let filtered = allCountries;
     
+    console.log('Filtering countries:', {
+      total: allCountries.length,
+      searchTerm,
+      showOnlyFavorites,
+      hideUnavailable,
+      favoritesSize: favorites.size
+    });
+    
     // Filter by search term
     if (searchTerm.trim()) {
       filtered = filtered.filter(country => 
@@ -144,8 +161,14 @@ export default function Sidebar() {
     
     // Filter out unavailable countries if hideUnavailable is enabled
     if (hideUnavailable) {
-      filtered = filtered.filter(country => country.leaguesCount > 0);
+      filtered = filtered.filter(country => (country.leaguesCount || 0) > 0);
     }
+    
+    console.log('After filtering:', {
+      filtered: filtered.length,
+      available: filtered.filter(c => (c.leaguesCount || 0) > 0).length,
+      unavailable: filtered.filter(c => (c.leaguesCount || 0) === 0).length
+    });
     
     // Sort countries based on current sort settings
     const sortedCountries = filtered.sort(getSortFunction);
@@ -349,7 +372,7 @@ export default function Sidebar() {
             )}
             {!hideUnavailable && (
               <Badge variant="outline" className="text-xs bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-                {allCountries.filter(c => c.leaguesCount === 0).length} unavailable
+                {allCountries.filter(c => (c.leaguesCount || 0) === 0).length} unavailable
               </Badge>
             )}
             <div className="flex items-center gap-1 text-xs opacity-75" title="Only one country can be expanded at a time">
@@ -358,7 +381,7 @@ export default function Sidebar() {
             </div>
             {allCountries.length > 0 && (
               <Badge variant="secondary" className="ml-auto">
-                {allCountries.filter(c => c.fixtureCount > 0).length} active
+                {allCountries.filter(c => (c.fixtureCount || 0) > 0).length} active
               </Badge>
             )}
           </div>
@@ -377,21 +400,21 @@ export default function Sidebar() {
                   {/* Country Header */}
                   <div 
                     className={`flex items-center justify-between p-1.5 rounded-md transition-colors ${
-                      country.leaguesCount === 0 
+                      (country.leaguesCount || 0) === 0 
                         ? 'opacity-50 bg-muted/30 hover:bg-muted/50' 
                         : 'hover:bg-accent hover:text-accent-foreground'
                     }`}
-                    title={country.leaguesCount === 0 
+                    title={(country.leaguesCount || 0) === 0 
                       ? 'This country is not available in your current SportMonks API subscription' 
-                      : `View ${country.leaguesCount} leagues for ${country.name || country.fifa_name || country.official_name}`
+                      : `View ${country.leaguesCount || 0} leagues for ${country.name || country.fifa_name || country.official_name}`
                     }
                   >
                     <button
                       onClick={() => toggleCountry(country.id)}
                       className="flex items-center gap-1.5 flex-1 text-left"
-                      disabled={country.leaguesCount === 0}
+                      disabled={(country.leaguesCount || 0) === 0}
                     >
-                      {country.leaguesCount === 0 ? (
+                      {(country.leaguesCount || 0) === 0 ? (
                         <div className="h-3.5 w-3.5 flex items-center justify-center">
                           <div className="w-1 h-1 bg-muted-foreground rounded-full"></div>
                         </div>
@@ -401,11 +424,11 @@ export default function Sidebar() {
                         <ChevronRight className="h-3.5 w-3.5" />
                       )}
                       <span className={`font-medium truncate text-sm ${
-                        country.leaguesCount === 0 ? 'text-muted-foreground' : ''
+                        (country.leaguesCount || 0) === 0 ? 'text-muted-foreground' : ''
                       }`}>
                         {country.name || country.fifa_name || country.official_name}
                       </span>
-                      {country.leaguesCount === 0 && (
+                      {(country.leaguesCount || 0) === 0 && (
                         <span className="text-xs text-muted-foreground ml-1">(no data)</span>
                       )}
                     </button>
@@ -428,23 +451,23 @@ export default function Sidebar() {
                         )}
                       </button>
                       
-                      {country.leaguesCount === 0 ? (
+                      {(country.leaguesCount || 0) === 0 ? (
                         <Badge variant="secondary" className="text-xs px-1.5 py-0.5 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
                           <div className="w-1.5 h-1.5 bg-red-500 rounded-full mr-1"></div>
                           Unavailable
                         </Badge>
                       ) : (
                         <>
-                          {country.fixtureCount > 0 && (
+                          {(country.fixtureCount || 0) > 0 && (
                             <Badge variant="outline" className="text-xs px-1.5 py-0.5">
                               <Calendar className="h-2.5 w-2.5 mr-0.5" />
-                              {country.fixtureCount}
+                              {country.fixtureCount || 0}
                             </Badge>
                           )}
-                          {country.leaguesCount > 0 && (
+                          {(country.leaguesCount || 0) > 0 && (
                             <Badge variant="outline" className="text-xs px-1.5 py-0.5">
                               <Trophy className="h-2.5 w-2.5 mr-0.5" />
-                              {country.leaguesCount}
+                              {country.leaguesCount || 0}
                             </Badge>
                           )}
                           <a
