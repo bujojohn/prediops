@@ -9,7 +9,9 @@ import {
   ChevronRight, 
   ChevronDown,
   Globe,
-  Target
+  Target,
+  Calendar,
+  RefreshCw
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -18,6 +20,11 @@ import { League } from '@/schemas/league.schema';
 import { Fixture } from '@/schemas/fixture.schema';
 import { FixtureCard } from '@/app/components/fixtures/FixtureCard';
 import { getCountryPredictionsUrl, generateCountrySlug } from '@/lib/utils/country-utils';
+import { 
+  DatePickerProvider, 
+  EnhancedDatePicker, 
+  useCountryDatePicker 
+} from '@/app/components/date-picker';
 
 interface CountryPredictionsClientProps {
   country: Country;
@@ -25,16 +32,33 @@ interface CountryPredictionsClientProps {
   fixtures: Fixture[];
 }
 
-export function CountryPredictionsClient({ 
+function CountryPredictionsContent({ 
   country, 
   leagues, 
-  fixtures
+  initialFixtures
 }: CountryPredictionsClientProps) {
   const [expandedLeagues, setExpandedLeagues] = useState<Set<number>>(new Set());
+  
+  // Use the enhanced date picker hook
+  const {
+    selectedDate,
+    fixtures,
+    isLoading,
+    error,
+    selectDate,
+    refreshFixtures,
+    fixturesByLeague,
+    totalFixtures,
+    hasFixtures
+  } = useCountryDatePicker({ 
+    country, 
+    initialDate: new Date().toISOString().split('T')[0] 
+  });
 
-  // Group fixtures by league
-  const fixturesByLeague = useMemo(() => {
-    const grouped = fixtures.reduce((acc, fixture) => {
+  // Use initial fixtures if no date-specific fixtures are loaded yet
+  const currentFixtures = fixtures.length > 0 ? fixtures : initialFixtures;
+  const currentFixturesByLeague = useMemo(() => {
+    const grouped = currentFixtures.reduce((acc, fixture) => {
       const leagueId = (fixture as { league?: { id: number } }).league?.id;
       if (leagueId) {
         if (!acc[leagueId]) {
@@ -46,7 +70,7 @@ export function CountryPredictionsClient({
     }, {} as Record<number, Fixture[]>);
 
     return grouped;
-  }, [fixtures]);
+  }, [currentFixtures]);
 
   const toggleLeagueExpansion = (leagueId: number) => {
     const newExpanded = new Set(expandedLeagues);
@@ -65,7 +89,7 @@ export function CountryPredictionsClient({
   };
 
   const getTotalFixturesCount = () => {
-    return Object.values(fixturesByLeague).reduce((total, leagueFixtures) => total + leagueFixtures.length, 0);
+    return Object.values(currentFixturesByLeague).reduce((total, leagueFixtures) => total + leagueFixtures.length, 0);
   };
 
   return (
@@ -95,6 +119,51 @@ export function CountryPredictionsClient({
         </div>
       </div>
 
+      {/* Enhanced Date Picker */}
+      <div className="mb-8">
+        <EnhancedDatePicker
+          onDateSelect={selectDate}
+          title={`${country.name} Fixtures`}
+          subtitle={`Select a date to view fixtures and predictions for ${country.name}`}
+          showStats={true}
+          showQuickActions={true}
+          maxPastDays={7}
+          maxFutureDays={14}
+        />
+      </div>
+
+      {/* Loading State */}
+      {isLoading && (
+        <Card className="mb-8 p-8">
+          <div className="text-center">
+            <RefreshCw className="w-16 h-16 text-gray-400 mx-auto mb-4 animate-spin" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+              Loading Fixtures...
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400">
+              Loading fixtures for {country.name} on {selectedDate}
+            </p>
+          </div>
+        </Card>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <Card className="mb-8 p-8">
+          <div className="text-center">
+            <div className="w-16 h-16 text-red-400 mx-auto mb-4">⚠️</div>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+              Error Loading Fixtures
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
+            <Button onClick={refreshFixtures} variant="outline">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Retry
+            </Button>
+          </div>
+        </Card>
+      )}
+
       {/* Stats Cards */}
       <div className="grid md:grid-cols-3 gap-6 mb-8">
         <Card>
@@ -112,9 +181,11 @@ export function CountryPredictionsClient({
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <Target className="h-8 w-8 text-blue-600" />
+              <Calendar className="h-8 w-8 text-blue-600" />
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Today&apos;s Fixtures</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {selectedDate === new Date().toISOString().split('T')[0] ? "Today's" : "Selected Date's"} Fixtures
+                </p>
                 <p className="text-2xl font-bold">{getTotalFixturesCount()}</p>
               </div>
             </div>
@@ -124,7 +195,7 @@ export function CountryPredictionsClient({
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <Trophy className="h-8 w-8 text-green-600" />
+              <Target className="h-8 w-8 text-green-600" />
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Total Leagues</p>
                 <p className="text-2xl font-bold">{leagues.length}</p>
@@ -141,7 +212,7 @@ export function CountryPredictionsClient({
             Leagues & Fixtures
           </h2>
           <Link 
-            href={`/predictions/country/${generateCountrySlug(country)}/all-fixtures?id=${country.id}`}
+            href={`/predictions/country/${generateCountrySlug(country)}/all-fixtures?id=${country.id}&date=${selectedDate}`}
             className="text-blue-600 hover:text-blue-700 text-sm font-medium"
           >
             View All Fixtures →
@@ -163,7 +234,7 @@ export function CountryPredictionsClient({
         ) : (
           <div className="space-y-4">
             {leagues.map((league) => {
-              const leagueFixtures = fixturesByLeague[league.id] || [];
+              const leagueFixtures = currentFixturesByLeague[league.id] || [];
               const isExpanded = expandedLeagues.has(league.id);
               const hasFixtures = leagueFixtures.length > 0;
 
@@ -191,7 +262,7 @@ export function CountryPredictionsClient({
                             </Badge>
                             {hasFixtures && (
                               <Badge variant="outline">
-                                {leagueFixtures.length} fixtures today
+                                {leagueFixtures.length} fixture{leagueFixtures.length !== 1 ? 's' : ''} {selectedDate === new Date().toISOString().split('T')[0] ? 'today' : 'on selected date'}
                               </Badge>
                             )}
                           </div>
@@ -241,5 +312,22 @@ export function CountryPredictionsClient({
         )}
       </div>
     </div>
+  );
+}
+
+// Wrapper component that provides the DatePickerProvider
+export function CountryPredictionsClient({ 
+  country, 
+  leagues, 
+  fixtures 
+}: CountryPredictionsClientProps) {
+  return (
+    <DatePickerProvider initialDate={new Date().toISOString().split('T')[0]}>
+      <CountryPredictionsContent 
+        country={country} 
+        leagues={leagues} 
+        initialFixtures={fixtures} 
+      />
+    </DatePickerProvider>
   );
 }
