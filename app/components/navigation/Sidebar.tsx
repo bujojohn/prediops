@@ -49,7 +49,6 @@ export default function Sidebar() {
   // Favorites and filtering state
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
-  const [hideUnavailable, setHideUnavailable] = useState(false); // Show all countries by default to debug
   const [sortBy, setSortBy] = useState<'name' | 'fixtures' | 'leagues'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [showSettings, setShowSettings] = useState(false);
@@ -141,7 +140,6 @@ export default function Sidebar() {
       total: allCountries.length,
       searchTerm,
       showOnlyFavorites,
-      hideUnavailable,
       favoritesSize: favorites.size
     });
     
@@ -159,10 +157,7 @@ export default function Sidebar() {
       filtered = filtered.filter(country => favorites.has(country.id));
     }
     
-    // Filter out unavailable countries if hideUnavailable is enabled
-    if (hideUnavailable) {
-      filtered = filtered.filter(country => (country.leaguesCount || 0) > 0);
-    }
+
     
     console.log('After filtering:', {
       filtered: filtered.length,
@@ -174,7 +169,7 @@ export default function Sidebar() {
     const sortedCountries = filtered.sort(getSortFunction);
     
     setFilteredCountries(sortedCountries);
-  }, [searchTerm, allCountries, showOnlyFavorites, favorites, hideUnavailable, sortBy, sortOrder]);
+  }, [searchTerm, allCountries, showOnlyFavorites, favorites, sortBy, sortOrder]);
 
   // Load favorites from localStorage on mount
   useEffect(() => {
@@ -301,18 +296,7 @@ export default function Sidebar() {
               <span>Favorites</span>
             </button>
             
-            <button
-              onClick={() => setHideUnavailable(!hideUnavailable)}
-              className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
-                hideUnavailable 
-                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-              title={hideUnavailable ? 'Show all countries including unavailable' : 'Hide unavailable countries'}
-            >
-              <div className="w-1.5 h-1.5 bg-current rounded-full"></div>
-              <span>Available</span>
-            </button>
+
             
             <button
               onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
@@ -370,11 +354,7 @@ export default function Sidebar() {
                 {favorites.size} favorites
               </Badge>
             )}
-            {!hideUnavailable && (
-              <Badge variant="outline" className="text-xs bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-                {allCountries.filter(c => (c.leaguesCount || 0) === 0).length} unavailable
-              </Badge>
-            )}
+
             <div className="flex items-center gap-1 text-xs opacity-75" title="Only one country can be expanded at a time">
               <Info className="h-3 w-3" />
               <span>accordion</span>
@@ -398,88 +378,61 @@ export default function Sidebar() {
                              return (
                  <div key={country.id} className="space-y-0.5">
                   {/* Country Header */}
-                  <div 
-                    className={`flex items-center justify-between p-1.5 rounded-md transition-colors ${
-                      (country.leaguesCount || 0) === 0 
-                        ? 'opacity-50 bg-muted/30 hover:bg-muted/50' 
-                        : 'hover:bg-accent hover:text-accent-foreground'
-                    }`}
-                    title={(country.leaguesCount || 0) === 0 
-                      ? 'This country is not available in your current SportMonks API subscription' 
-                      : `View ${country.leaguesCount || 0} leagues for ${country.name || country.fifa_name || country.official_name}`
-                    }
-                  >
+                  <div className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
                     <button
                       onClick={() => toggleCountry(country.id)}
                       className="flex items-center gap-1.5 flex-1 text-left"
-                      disabled={(country.leaguesCount || 0) === 0}
                     >
-                      {(country.leaguesCount || 0) === 0 ? (
-                        <div className="h-3.5 w-3.5 flex items-center justify-center">
-                          <div className="w-1 h-1 bg-muted-foreground rounded-full"></div>
-                        </div>
-                      ) : isExpanded ? (
+                      {isExpanded ? (
                         <ChevronDown className="h-3.5 w-3.5" />
                       ) : (
                         <ChevronRight className="h-3.5 w-3.5" />
                       )}
                       <span className={`font-medium truncate text-sm ${
-                        (country.leaguesCount || 0) === 0 ? 'text-muted-foreground' : ''
+                        (country.leaguesCount || 0) === 0 ? 'text-muted-foreground italic' : ''
                       }`}>
                         {country.name || country.fifa_name || country.official_name}
                       </span>
-                      {(country.leaguesCount || 0) === 0 && (
-                        <span className="text-xs text-muted-foreground ml-1">(no data)</span>
-                      )}
                     </button>
                     
-                    <div className="flex items-center gap-1.5">
-                      {/* Favorite Star */}
-                      <button
-                        onClick={(e) => toggleFavorite(country.id, e)}
-                        className={`transition-colors ${
-                          favorites.has(country.id)
-                            ? 'text-yellow-500 hover:text-yellow-600'
-                            : 'text-muted-foreground hover:text-yellow-500'
-                        }`}
-                        title={favorites.has(country.id) ? 'Remove from favorites' : 'Add to favorites'}
-                      >
-                        {favorites.has(country.id) ? (
-                          <Star className="h-3.5 w-3.5 fill-current" />
-                        ) : (
-                          <StarOff className="h-3.5 w-3.5" />
-                        )}
-                      </button>
-                      
-                      {(country.leaguesCount || 0) === 0 ? (
-                        <Badge variant="secondary" className="text-xs px-1.5 py-0.5 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-                          <div className="w-1.5 h-1.5 bg-red-500 rounded-full mr-1"></div>
-                          Unavailable
-                        </Badge>
-                      ) : (
-                        <>
-                          {(country.fixtureCount || 0) > 0 && (
-                            <Badge variant="outline" className="text-xs px-1.5 py-0.5">
-                              <Calendar className="h-2.5 w-2.5 mr-0.5" />
-                              {country.fixtureCount || 0}
-                            </Badge>
-                          )}
-                          {(country.leaguesCount || 0) > 0 && (
-                            <Badge variant="outline" className="text-xs px-1.5 py-0.5">
-                              <Trophy className="h-2.5 w-2.5 mr-0.5" />
-                              {country.leaguesCount || 0}
-                            </Badge>
-                          )}
-                          <a
-                            href={getCountryPredictionsUrl(country)}
-                            className="text-muted-foreground hover:text-foreground transition-colors"
-                            title="View all leagues"
-                          >
-                            <ExternalLink className="h-3.5 w-3.5" />
-                          </a>
-                        </>
-                      )}
-                    </div>
+                                         <div className="flex items-center gap-1.5">
+                       {/* Favorite Star */}
+                       <button
+                         onClick={(e) => toggleFavorite(country.id, e)}
+                         className={`transition-colors ${
+                           favorites.has(country.id)
+                             ? 'text-yellow-500 hover:text-yellow-600'
+                             : 'text-muted-foreground hover:text-yellow-500'
+                         }`}
+                         title={favorites.has(country.id) ? 'Remove from favorites' : 'Add to favorites'}
+                       >
+                         {favorites.has(country.id) ? (
+                           <Star className="h-3.5 w-3.5 fill-current" />
+                         ) : (
+                           <StarOff className="h-3.5 w-3.5" />
+                         )}
+                       </button>
+                       
+                       {(country.fixtureCount || 0) > 0 && (
+                         <Badge variant="outline" className="text-xs px-1.5 py-0.5">
+                           <Calendar className="h-2.5 w-2.5 mr-0.5" />
+                           {country.fixtureCount || 0}
+                         </Badge>
+                       )}
+                       {(country.leaguesCount || 0) > 0 && (
+                         <Badge variant="outline" className="text-xs px-1.5 py-0.5">
+                           <Trophy className="h-2.5 w-2.5 mr-0.5" />
+                           {country.leaguesCount || 0}
+                         </Badge>
+                       )}
+                       <a
+                         href={getCountryPredictionsUrl(country)}
+                         className="text-muted-foreground hover:text-foreground transition-colors"
+                         title="View all leagues"
+                       >
+                         <ExternalLink className="h-3.5 w-3.5" />
+                       </a>
+                     </div>
                   </div>
 
                   {/* Leagues List */}
