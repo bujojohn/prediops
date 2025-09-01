@@ -75,21 +75,48 @@ export default async function CountryPredictionsPage({
     });
 
     // Get today's fixtures for this country with better error handling
-    let countryFixtures: unknown[] = [];
+    const countryFixtures: unknown[] = [];
     try {
       const today = new Date().toISOString().split('T')[0];
-      const fixturesResponse = await sportmonks.getFixturesByDate(today, {
-        include: 'participants;scores;state;predictions.type;league.country',
-        per_page: 50,
-        page: 1,
-      });
+      console.log(`Attempting to fetch fixtures for ${country.name} on ${today}`);
+      
+      // Try the new endpoint first, fall back to the old one if it fails
+      try {
+        const leaguesResponse = await sportmonks.getLeaguesByFixtureDate(today, {
+          include: 'country;fixtures',
+          per_page: 50,
+          page: 1,
+        });
 
-      const allFixtures = fixturesResponse?.data || [];
-      countryFixtures = allFixtures.filter((fixture: unknown) => {
-        return (fixture as { league?: { country?: { id: number } } }).league?.country?.id === country.id;
-      });
+        const allLeagues = leaguesResponse?.data || [];
+        console.log(`Received ${allLeagues.length} leagues from API`);
+        
+        // Find leagues for this specific country and extract their fixtures
+        allLeagues.forEach((league: League) => {
+          if (league.country?.id === country.id && (league as any).fixtures) {
+            countryFixtures.push(...(league as any).fixtures);
+          }
+        });
 
-      console.log(`Found ${countryFixtures.length} fixtures for ${country.name} today`);
+        console.log(`Found ${countryFixtures.length} fixtures for ${country.name} today using new endpoint`);
+      } catch (newEndpointError) {
+        console.log(`New endpoint failed, falling back to getFixturesByDate:`, newEndpointError);
+        
+        // Fall back to the original method
+        const fixturesResponse = await sportmonks.getFixturesByDate(today, {
+          include: 'participants;scores;state;predictions.type;league.country',
+          per_page: 50,
+          page: 1,
+        });
+
+        const allFixtures = fixturesResponse?.data || [];
+        const filteredFixtures = allFixtures.filter((fixture: unknown) => {
+          return (fixture as { league?: { country?: { id: number } } }).league?.country?.id === country.id;
+        });
+        
+        countryFixtures.push(...filteredFixtures);
+        console.log(`Found ${countryFixtures.length} fixtures for ${country.name} today using fallback method`);
+      }
     } catch (fixturesError) {
       console.error(`Error loading fixtures for ${country.name}:`, fixturesError);
       // Continue with empty fixtures array instead of failing completely

@@ -62,20 +62,46 @@ export function useCountryDatePicker({
     try {
       console.log(`Loading fixtures for ${country.name} on ${date}`);
 
-      const fixturesResponse = await sportmonks.getFixturesByDate(date, {
-        include: 'participants;scores;state;predictions.type;league.country',
-        per_page: 50,
-        page: 1,
-      });
-
-      const allFixtures = fixturesResponse?.data || [];
+      // Try the new endpoint first, fall back to the old one if it fails
+      let countryFixtures: Fixture[] = [];
       
-      // Filter fixtures for this specific country
-      const countryFixtures = allFixtures.filter((fixture: Fixture) => {
-        return fixture.league?.country?.id === country.id;
-      });
+      try {
+        // Use the more efficient getLeaguesByFixtureDate endpoint
+        const leaguesResponse = await sportmonks.getLeaguesByFixtureDate(date, {
+          include: 'country;fixtures',
+          per_page: 50,
+          page: 1,
+        });
 
-      console.log(`Found ${countryFixtures.length} fixtures for ${country.name} on ${date}`);
+        const allLeagues = leaguesResponse?.data || [];
+        
+        // Find leagues for this specific country and extract their fixtures
+        allLeagues.forEach((league: any) => {
+          if (league.country?.id === country.id && league.fixtures) {
+            countryFixtures.push(...league.fixtures);
+          }
+        });
+
+        console.log(`Found ${countryFixtures.length} fixtures for ${country.name} on ${date} using new endpoint`);
+      } catch (newEndpointError) {
+        console.log(`New endpoint failed, falling back to getFixturesByDate:`, newEndpointError);
+        
+        // Fall back to the original method
+        const fixturesResponse = await sportmonks.getFixturesByDate(date, {
+          include: 'participants;scores;state;predictions.type;league.country',
+          per_page: 50,
+          page: 1,
+        });
+
+        const allFixtures = fixturesResponse?.data || [];
+        
+        // Filter fixtures for this specific country
+        countryFixtures = allFixtures.filter((fixture: Fixture) => {
+          return fixture.league?.country?.id === country.id;
+        });
+
+        console.log(`Found ${countryFixtures.length} fixtures for ${country.name} on ${date} using fallback method`);
+      }
       
       setFixtures(countryFixtures);
       addCachedDate(date);

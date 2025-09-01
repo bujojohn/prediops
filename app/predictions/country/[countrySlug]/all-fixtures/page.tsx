@@ -28,7 +28,8 @@ export default async function AllFixturesPage({
     let country: Country | undefined;
     
     if (countryId) {
-      // If ID is provided, use it directly
+      // If ID is provided, use it directly. 
+      // TODO: will it not be better to use string here instead of integer conversion?
       country = getCountryById(parseInt(countryId));
     } else {
       // Otherwise, search by slug using utility function
@@ -46,7 +47,7 @@ export default async function AllFixturesPage({
     // Get all active leagues for this country
     let activeLeagues: League[] = [];
     try {
-      const leaguesResponse = await sportmonks.getLeagues({
+      const leaguesResponse = await sportmonks.getLeaguesById( country.id.toString(),{
         include: 'country;sport;currentseason',
         per_page: 50,
         page: 1
@@ -71,29 +72,30 @@ export default async function AllFixturesPage({
       // Get fixtures for the next 7 days to show upcoming matches
       const today = new Date();
       const fixturesPromises = [];
-      
+      //TODO: 
       for (let i = 0; i < 7; i++) {
         const date = new Date(today);
         date.setDate(today.getDate() + i);
         const dateString = date.toISOString().split('T')[0];
         
-                 fixturesPromises.push(
-           sportmonks.getFixturesByDate(dateString, {
-             include: 'participants;scores;state;predictions.type;league.country',
-             per_page: 50,
-             page: 1,
-           })
-         );
+        fixturesPromises.push(
+          sportmonks.getLeaguesByFixtureDate(dateString, {
+            include: 'country;fixtures',
+            per_page: 50,
+            page: 1,
+          })
+        );
       }
 
       const fixturesResponses = await Promise.all(fixturesPromises);
       
       fixturesResponses.forEach(response => {
-        const fixtures = response?.data || [];
-        const countryFixtures = fixtures.filter((fixture: Fixture) => {
-          return fixture.league?.country?.id === country.id;
+        const leagues = response?.data || [];
+        leagues.forEach((league: League) => {
+          if (league.country?.id === country.id && (league as any).fixtures) {
+            allFixtures = [...allFixtures, ...(league as any).fixtures];
+          }
         });
-        allFixtures = [...allFixtures, ...countryFixtures];
       });
 
       console.log(`Found ${allFixtures.length} total fixtures for ${country.name} in next 7 days`);
