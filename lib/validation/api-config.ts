@@ -105,6 +105,24 @@ export const fixturesConfigSchema = apiConfigSchema.extend({
   }).optional(),
 });
 
+// Fixtures by date range allow larger pagination windows at Sportmonks
+export const fixturesByDateRangeConfigSchema = apiConfigSchema.extend({
+  include: z.string().optional(), // e.g. 'participants;scores;state;predictions;league.country;venue;stage;round'
+  // Allow higher page size for range endpoints
+  per_page: z.number().min(1).max(100).optional(),
+  filters: z.object({
+    leagues: z.union([z.number(), z.array(z.number())]).optional(),
+    seasons: z.union([z.number(), z.array(z.number())]).optional(),
+    teams: z.union([z.number(), z.array(z.number())]).optional(),
+  }).optional(),
+});
+
+// Team-specific fixtures by date range share the same pagination allowance
+export const fixturesByDateRangeForTeamConfigSchema = apiConfigSchema.extend({
+  include: z.string().optional(),
+  per_page: z.number().min(1).max(100).optional(),
+});
+
 export const teamsConfigSchema = apiConfigSchema.extend({
   include: z.string().optional(), // e.g. 'country;league;statistics;venue'
   filters: z.object({
@@ -192,6 +210,14 @@ export const validateFixturesConfig = (config: unknown) => {
   return fixturesConfigSchema.parse(config);
 };
 
+export const validateFixturesByDateRangeConfig = (config: unknown) => {
+  return fixturesByDateRangeConfigSchema.parse(config);
+};
+
+export const validateFixturesByDateRangeForTeamConfig = (config: unknown) => {
+  return fixturesByDateRangeForTeamConfigSchema.parse(config);
+};
+
 export const validateTeamsConfig = (config: unknown) => {
   return teamsConfigSchema.parse(config);
 };
@@ -224,6 +250,8 @@ export type LeaguesByTeamConfig = z.infer<typeof leaguesByTeamConfigSchema>;
 export type LeaguesByFixtureDateConfig = z.infer<typeof leaguesByFixtureDateConfigSchema>;
 export type PredictionsConfig = z.infer<typeof predictionsConfigSchema>;
 export type FixturesConfig = z.infer<typeof fixturesConfigSchema>;
+export type FixturesByDateRangeConfig = z.infer<typeof fixturesByDateRangeConfigSchema>;
+export type FixturesByDateRangeForTeamConfig = z.infer<typeof fixturesByDateRangeForTeamConfigSchema>;
 export type TeamsConfig = z.infer<typeof teamsConfigSchema>;
 export type PlayersConfig = z.infer<typeof playersConfigSchema>;
 export type StandingsConfig = z.infer<typeof standingsConfigSchema>;
