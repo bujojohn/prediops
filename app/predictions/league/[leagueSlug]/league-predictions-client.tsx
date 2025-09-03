@@ -5,17 +5,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Fixture, League } from '@/schemas';
-import { TeamLogo } from '@/components/ui/TeamLogo';
-import { formatDate, formatTime } from '@/lib/utils';
+import { Fixture, League, Standing, Team } from '@/schemas';
+import { TeamLogo } from '@/app/components/ui/optimized-image';
+import { formatDateUTC, formatTimeUTC } from '@/lib/utils';
 
 interface LeaguePredictionsClientProps {
   league: League;
   fixtures: Fixture[];
   predictions: unknown[];
+  standings?: Standing[];
+  teams?: Team[];
 }
 
-export function LeaguePredictionsClient({ league, fixtures }: LeaguePredictionsClientProps) {
+export function LeaguePredictionsClient({ league, fixtures, standings = [], teams = [] }: LeaguePredictionsClientProps) {
   const [selectedMarket, setSelectedMarket] = useState<string>('all');
 
   // Extract available markets from fixtures
@@ -119,15 +121,7 @@ export function LeaguePredictionsClient({ league, fixtures }: LeaguePredictionsC
                 {league.country?.name} • {league.short_code}
               </p>
             </div>
-            {league.logo && (
-              <div className="w-16 h-16 rounded-full overflow-hidden bg-muted flex items-center justify-center">
-                <img 
-                  src={league.logo} 
-                  alt={`${league.name} logo`}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
+
           </div>
         </CardHeader>
       </Card>
@@ -227,7 +221,7 @@ export function LeaguePredictionsClient({ league, fixtures }: LeaguePredictionsC
                       </Badge>
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {formatDate(fixture.starting_at)} • {formatTime(fixture.starting_at)}
+                      {fixture.starting_at ? formatDateUTC(fixture.starting_at) : 'Unknown Date'} • {fixture.starting_at ? formatTimeUTC(fixture.starting_at) : 'Unknown Time'}
                     </div>
                   </div>
                 </CardHeader>
@@ -237,12 +231,12 @@ export function LeaguePredictionsClient({ league, fixtures }: LeaguePredictionsC
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 flex-1">
                       <TeamLogo 
-                        team={fixture.participants?.[0]?.meta?.name || 'Home Team'}
-                        logo={fixture.participants?.[0]?.image_path}
-                        size="sm"
+                        src={fixture.participants?.[0]?.image_path}
+                        alt={fixture.participants?.[0]?.name || 'Home Team'}
+                        className="h-8 w-8"
                       />
                       <span className="font-medium">
-                        {fixture.participants?.[0]?.meta?.name || 'Home Team'}
+                        {fixture.participants?.[0]?.name || 'Home Team'}
                       </span>
                     </div>
                     
@@ -255,12 +249,12 @@ export function LeaguePredictionsClient({ league, fixtures }: LeaguePredictionsC
                     
                     <div className="flex items-center gap-3 flex-1 justify-end">
                       <span className="text-sm font-medium">
-                        {fixture.participants?.[1]?.meta?.name || 'Away Team'}
+                        {fixture.participants?.[1]?.name || 'Away Team'}
                       </span>
                       <TeamLogo 
-                        team={fixture.participants?.[1]?.meta?.name || 'Away Team'}
-                        logo={fixture.participants?.[1]?.image_path}
-                        size="sm"
+                        src={fixture.participants?.[1]?.image_path}
+                        alt={fixture.participants?.[1]?.name || 'Away Team'}
+                        className="h-8 w-8"
                       />
                     </div>
                   </div>
@@ -286,20 +280,61 @@ export function LeaguePredictionsClient({ league, fixtures }: LeaguePredictionsC
 
         <TabsContent value="standings">
           <Card>
-            <CardContent className="pt-6">
-              <p className="text-center text-muted-foreground">
-                Standings data will be implemented here.
-              </p>
+            <CardHeader>
+              <CardTitle className="text-lg">Standings</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-2">
+              {standings.length === 0 ? (
+                <p className="text-center text-muted-foreground">Standings not available.</p>
+              ) : (
+                <div className="space-y-2">
+                  {standings
+                    .slice()
+                    .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+                    .map((row) => (
+                      <div key={`${row.participant_id}-${row.position}`} className="grid grid-cols-12 items-center text-sm border rounded px-2 py-1">
+                        <div className="col-span-1 text-center font-mono">{row.position ?? '-'}</div>
+                        <div className="col-span-5 flex items-center gap-2">
+                          <TeamLogo src={row.participant?.image_path} alt={row.participant?.name || 'Team'} className="h-5 w-5" />
+                          <span className="truncate">{row.participant?.name || 'Team'}</span>
+                        </div>
+                        <div className="col-span-1 text-center">{row.games_played ?? '-'}</div>
+                        <div className="col-span-1 text-center">{row.wins ?? '-'}</div>
+                        <div className="col-span-1 text-center">{row.draws ?? '-'}</div>
+                        <div className="col-span-1 text-center">{row.losses ?? '-'}</div>
+                        <div className="col-span-1 text-center">{row.goal_difference ?? '-'}</div>
+                        <div className="col-span-1 text-center font-semibold">{row.points ?? '-'}</div>
+                      </div>
+                    ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="teams">
           <Card>
-            <CardContent className="pt-6">
-              <p className="text-center text-muted-foreground">
-                Teams information will be implemented here.
-              </p>
+            <CardHeader>
+              <CardTitle className="text-lg">Teams</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-2">
+              {teams.length === 0 ? (
+                <p className="text-center text-muted-foreground">No teams available.</p>
+              ) : (
+                <div className="grid sm:grid-cols-2 gap-3">
+                  {teams.map((team) => (
+                    <div key={team.id} className="flex items-center gap-3 p-2 border rounded">
+                      <TeamLogo src={team.image_path} alt={team.name || 'Team'} className="h-6 w-6" />
+                      <div className="min-w-0">
+                        <div className="truncate font-medium">{team.name || 'Team'}</div>
+                        {team.short_code && (
+                          <div className="text-xs text-muted-foreground">{team.short_code}</div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

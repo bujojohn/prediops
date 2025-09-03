@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { sportmonks } from "@/lib/sportmonks";
 import { League } from "@/schemas/league.schema";
 import { Fixture } from "@/schemas/fixture.schema";
+import { Standing } from "@/schemas/standing.schema";
+import { Team } from "@/schemas/team.schema";
 import { LeaguePredictionsClient } from "./league-predictions-client";
 
 interface LeaguePredictionsPageProps {
@@ -188,6 +190,33 @@ export default async function LeaguePredictionsPage({
 
     console.log(`Found league: ${league.name} (ID: ${league.id})`);
 
+    // Fetch league standings (by season)
+    let standings: Standing[] = [];
+    let teams: Team[] = [];
+    const seasonId = (league as League & { currentseason?: { id?: number } | null; currentSeason?: { id?: number } | null })?.currentseason?.id
+      || (league as League & { currentseason?: { id?: number } | null; currentSeason?: { id?: number } | null })?.currentSeason?.id;
+    if (seasonId) {
+      try {
+        const standingsResp = await sportmonks.getLeagueStandings(String(seasonId), { include: 'participant' });
+        standings = (standingsResp as { data?: Standing[] })?.data ?? [];
+        // Derive teams from standings participants (unique by participant.id)
+        const seen = new Set<number>();
+        teams = (standings || [])
+          .map((s: Standing) => s?.participant)
+          .filter((p): p is Team => {
+            const team = p as unknown as Team | null | undefined;
+            return Boolean(team && typeof team.id === 'number');
+          })
+          .filter((team: Team) => {
+            if (seen.has(team.id!)) return false;
+            seen.add(team.id!);
+            return true;
+          });
+      } catch (err) {
+        console.warn('Failed to fetch standings for season', seasonId, err);
+      }
+    }
+
     // Get fixtures for the next 7 days for this league using date range (more efficient)
     const today = new Date();
     const endDate = new Date(today);
@@ -202,7 +231,7 @@ export default async function LeaguePredictionsPage({
     let allFixtures: Fixture[] = [];
     
     try {
-      const fixturesResponse = await sportmonks.getFixturesByDateRange(dateRange, {
+      const fixturesResponse = await sportmonks.getFixturesByDateRange(startDateString, endDateString, {
         include:
           "participants;scores;state;predictions;predictions.market;predictions.outcomes;league.country;venue;stage;round",
         per_page: 100, // Increased per_page since we're getting more days
@@ -230,6 +259,8 @@ export default async function LeaguePredictionsPage({
             league={league}
             fixtures={allFixtures}
             predictions={[]}
+            standings={standings}
+            teams={teams}
           />
         ) : (
           <div className="text-center py-12">
