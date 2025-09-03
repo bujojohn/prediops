@@ -6,12 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Search, 
   Globe, 
-  Trophy, 
   ChevronDown, 
   ChevronRight, 
   ExternalLink,
-  Calendar,
-  Users,
   Info,
   Star,
   StarOff,
@@ -127,6 +124,11 @@ export default function Sidebar() {
       newExpanded.add(countryId);
       // Load leagues when expanding
       loadCountryLeagues(countryId);
+      // Smooth scroll into view
+      setTimeout(() => {
+        const el = document.getElementById(`country-${countryId}`);
+        el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 0);
     }
     
     setExpandedCountries(newExpanded);
@@ -376,7 +378,7 @@ export default function Sidebar() {
               const isLoadingLeagues = loadingStates.get(country.id) || false;
 
               return (
-                 <div key={country.id} className="space-y-0.5">
+                 <div key={country.id} className="space-y-0.5" id={`country-${country.id}`}>
                   {/* Country Header */}
                   <div className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
                     <button
@@ -395,44 +397,31 @@ export default function Sidebar() {
                       </span>
                     </button>
                     
-                                         <div className="flex items-center gap-1.5">
-                       {/* Favorite Star */}
-                       <button
-                         onClick={(e) => toggleFavorite(country.id, e)}
-                         className={`transition-colors ${
-                           favorites.has(country.id)
-                             ? 'text-yellow-500 hover:text-yellow-600'
-                             : 'text-muted-foreground hover:text-yellow-500'
-                         }`}
-                         title={favorites.has(country.id) ? 'Remove from favorites' : 'Add to favorites'}
-                       >
-                         {favorites.has(country.id) ? (
-                           <Star className="h-3.5 w-3.5 fill-current" />
-                         ) : (
-                           <StarOff className="h-3.5 w-3.5" />
-                         )}
-                       </button>
-                       
-                       {(country.fixtureCount || 0) > 0 && (
-                         <Badge variant="outline" className="text-xs px-1.5 py-0.5">
-                           <Calendar className="h-2.5 w-2.5 mr-0.5" />
-                           {country.fixtureCount || 0}
-                              </Badge>
-                       )}
-                       {(country.leaguesCount || 0) > 0 && (
-                         <Badge variant="outline" className="text-xs px-1.5 py-0.5">
-                           <Trophy className="h-2.5 w-2.5 mr-0.5" />
-                           {country.leaguesCount || 0}
-                         </Badge>
-                       )}
-                       <a
-                         href={getCountryPredictionsUrl(country)}
-                         className="text-muted-foreground hover:text-foreground transition-colors"
-                         title="View all leagues"
-                       >
-                         <ExternalLink className="h-3.5 w-3.5" />
-                       </a>
-                     </div>
+                    <div className="flex items-center gap-1.5">
+                      {/* Favorite Star */}
+                      <button
+                        onClick={(e) => toggleFavorite(country.id, e)}
+                        className={`transition-colors ${
+                          favorites.has(country.id)
+                            ? 'text-yellow-500 hover:text-yellow-600'
+                            : 'text-muted-foreground hover:text-yellow-500'
+                        }`}
+                        title={favorites.has(country.id) ? 'Remove from favorites' : 'Add to favorites'}
+                      >
+                        {favorites.has(country.id) ? (
+                          <Star className="h-3.5 w-3.5 fill-current" />
+                        ) : (
+                          <StarOff className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+                      <a
+                        href={getCountryPredictionsUrl(country)}
+                        className="text-muted-foreground hover:text-foreground transition-colors"
+                        title="View all leagues"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </a>
+                    </div>
                   </div>
 
                   {/* Leagues List */}
@@ -448,19 +437,18 @@ export default function Sidebar() {
                           return (
                             <div key={league.id} className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
                               <a
-                                href={`/predictions/league/${generateLeagueSlug(league)}`}
+                                href={`/predictions/league/${generateLeagueSlug(league)}?id=${league.id}`}
                                 className="flex items-center gap-1.5 flex-1 text-xs"
                                 title={`League ID: ${league.id}`}
                               >
-                                <Trophy className="h-2.5 w-2.5 text-muted-foreground" />
                                 <span className="truncate">{league.name}</span>
                                 {league.short_code && (
                                   <Badge variant="outline" className="text-xs px-1 py-0.5">
                                     {league.short_code}
-                                    </Badge>
-                                  )}
+                                  </Badge>
+                                )}
                               </a>
-                                </div>
+                            </div>
                           );
                         })
                       ) : (
@@ -476,25 +464,8 @@ export default function Sidebar() {
           </div>
           </div>
 
-        {/* Footer */}
-        <div className="p-3 border-t">
-          <div className="text-xs text-muted-foreground text-center">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Users className="h-3 w-3" />
-              <span>Powered by SportMonks API</span>
-            </div>
-            <div className="flex items-center justify-center gap-4 text-xs">
-              <span>Data refreshes every 5 minutes</span>
-              {favorites.size > 0 && (
-                <div className="flex items-center gap-1">
-                  <Star className="h-3 w-3 text-yellow-500" />
-                  <span>{favorites.size} favorites</span>
-            </div>
-          )}
-            </div>
-            </div>
-            </div>
-          </div>
+        {/* Footer removed */}
+      </div>
     </SidebarTheme>
   );
 } 
