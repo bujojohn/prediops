@@ -17,6 +17,7 @@ import {
   RefreshCw,
   Settings
 } from 'lucide-react';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { SidebarTheme } from './SidebarTheme';
 import { getCountryPredictionsUrl, generateLeagueSlug } from '@/lib/utils/country-utils';
 import type { Country } from '@/schemas/country.schema';
@@ -42,6 +43,8 @@ export default function Sidebar() {
   const [countryLeagues, setCountryLeagues] = useState<Map<number, League[]>>(new Map());
   const [loadingStates, setLoadingStates] = useState<Map<number, boolean>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   
   // Favorites and filtering state
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
@@ -51,6 +54,13 @@ export default function Sidebar() {
   const [showSettings, setShowSettings] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Debounced search input
+  const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchTerm), 200);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
+  
   // Load countries with leagues using API route
     const loadCountriesWithLeagues = async () => {
       try {
@@ -117,13 +127,16 @@ export default function Sidebar() {
     const newExpanded = new Set<number>();
     
     if (expandedCountries.has(countryId)) {
-      // If clicking on already expanded country, collapse it
+      // collapse
       // Don't add anything to newExpanded (empty set)
+      try { localStorage.removeItem('sidebar-expanded-country'); } catch {}
     } else {
-      // If clicking on collapsed country, expand it and collapse others
+      // expand selected and collapse others
       newExpanded.add(countryId);
       // Load leagues when expanding
       loadCountryLeagues(countryId);
+      // Persist expanded country
+      try { localStorage.setItem('sidebar-expanded-country', String(countryId)); } catch {}
       // Smooth scroll into view
       setTimeout(() => {
         const el = document.getElementById(`country-${countryId}`);
@@ -140,17 +153,17 @@ export default function Sidebar() {
     
     console.log('Filtering countries:', {
       total: allCountries.length,
-      searchTerm,
+      searchTerm: debouncedSearch,
       showOnlyFavorites,
       favoritesSize: favorites.size
     });
     
     // Filter by search term
-    if (searchTerm.trim()) {
+    if (debouncedSearch.trim()) {
       filtered = filtered.filter(country => 
-        country.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        country.fifa_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        country.official_name?.toLowerCase().includes(searchTerm.toLowerCase())
+        country.name?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        country.fifa_name?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        country.official_name?.toLowerCase().includes(debouncedSearch.toLowerCase())
       );
     }
     
@@ -171,7 +184,7 @@ export default function Sidebar() {
     const sortedCountries = filtered.sort(getSortFunction);
     
     setFilteredCountries(sortedCountries);
-  }, [searchTerm, allCountries, showOnlyFavorites, favorites, sortBy, sortOrder]);
+  }, [debouncedSearch, allCountries, showOnlyFavorites, favorites, sortBy, sortOrder]);
 
   // Load favorites from localStorage on mount
   useEffect(() => {
@@ -180,9 +193,24 @@ export default function Sidebar() {
       if (savedFavorites) {
         const favoritesArray = JSON.parse(savedFavorites);
         setFavorites(new Set(favoritesArray));
-          }
-        } catch (error) {
-      console.error('Error loading favorites from localStorage:', error);
+      }
+      // Restore expanded country if present
+      const savedExpanded = localStorage.getItem('sidebar-expanded-country');
+      if (savedExpanded) {
+        const id = Number(savedExpanded);
+        if (!Number.isNaN(id)) {
+          setExpandedCountries(new Set([id]));
+          // Preload leagues
+          loadCountryLeagues(id);
+          // Scroll into view after render
+          setTimeout(() => {
+            const el = document.getElementById(`country-${id}`);
+            el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }, 0);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading favorites/expanded from localStorage:', error);
     }
   }, []);
 
@@ -243,6 +271,13 @@ export default function Sidebar() {
   useEffect(() => {
     loadCountriesWithLeagues();
   }, []);
+
+  // Auto-collapse when navigating to a league page
+  useEffect(() => {
+    if (pathname?.startsWith('/predictions/league')) {
+      setExpandedCountries(new Set());
+    }
+  }, [pathname]);
 
   if (isLoading) {
     return (
@@ -433,17 +468,17 @@ export default function Sidebar() {
                         </div>
                       ) : leagues.length > 0 ? (
                         leagues.map((league) => {
-                          console.log(`Sidebar: League ${league.name} (ID: ${league.id}, Active: ${league.active})`);
+                          const active = pathname?.startsWith('/predictions/league') && searchParams?.get('id') === String(league.id);
                           return (
-                            <div key={league.id} className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
+                            <div key={league.id} className={`flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors ${active ? 'bg-accent/60' : ''}`}>
                               <a
                                 href={`/predictions/league/${generateLeagueSlug(league)}?id=${league.id}`}
-                                className="flex items-center gap-1.5 flex-1 text-xs"
+                                className={`flex items-center gap-1.5 flex-1 text-xs ${active ? 'text-primary font-medium' : ''}`}
                                 title={`League ID: ${league.id}`}
                               >
                                 <span className="truncate">{league.name}</span>
                                 {league.short_code && (
-                                  <Badge variant="outline" className="text-xs px-1 py-0.5">
+                                  <Badge variant="outline" className={`text-xs px-1 py-0.5 ${active ? 'border-primary text-primary' : ''}`}>
                                     {league.short_code}
                                   </Badge>
                                 )}
