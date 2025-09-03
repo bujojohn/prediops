@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useState, useRef, useContext } from 'react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import type { Fixture } from '@/schemas/fixture.schema';
 import type { Prediction as FixturePrediction } from '@/schemas/predictions.schema';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronUp, Clock, Trophy } from 'lucide-react';
+import { Info } from 'lucide-react';
 import { TeamLogo } from '@/app/components/ui/optimized-image';
 import { cn, formatDateUTC, formatTimeUTC } from '@/lib/utils';
 import { useDisplaySettings } from '@/app/contexts/DisplaySettingsContext';
@@ -13,6 +15,7 @@ import { useLiveScores } from '@/app/hooks/useLiveScores';
 // import { useLiveMatches } from '@/lib/hooks/use-live-matches'; // Temporarily disabled
 import { LoadingIndicator } from '@/app/components/ui/loading-indicator';
 import { FixturesContext } from '@/app/contexts/FixturesContext';
+import { useQuery } from '@tanstack/react-query';
 
 type MarketKey = string;
 
@@ -197,6 +200,119 @@ export function FixtureCard({ fixture: propFixture, compact = false }: { fixture
   const [showMorePopover, setShowMorePopover] = useState(false);
   const moreBtnRef = useRef<HTMLButtonElement | null>(null);
   const popoverRef = useRef<HTMLDivElement | null>(null);
+  const [showOdds, setShowOdds] = useState(false);
+  // Odds modal UI state
+  const [selectedOddsMarket, setSelectedOddsMarket] = useState<string | null>(null);
+  const [oddsSearch, setOddsSearch] = useState<string>('');
+
+  // Reusable renderer for odds modal content with tabs
+  const renderOddsBody = () => {
+    if (oddsLoading) {
+      return <div className="py-8 text-center text-gray-600">Loading odds…</div>;
+    }
+    if (oddsError) {
+      return <div className="py-8 text-center text-red-600">{oddsError instanceof Error ? oddsError.message : String(oddsError)}</div>;
+    }
+    if (!odds || odds.length === 0) {
+      return <div className="py-8 text-center text-gray-600">No odds available for this fixture.</div>;
+    }
+
+    const grouped = (odds || []).reduce((acc: Record<string, any[]>, odd: any) => {
+      const marketKey = odd?.market?.name || odd?.label || 'Unknown Market';
+      if (!acc[marketKey]) acc[marketKey] = [];
+      acc[marketKey].push(odd);
+      return acc;
+    }, {} as Record<string, any[]>);
+
+    const allMarkets = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
+    const filteredMarkets = oddsSearch
+      ? allMarkets.filter(m => m.toLowerCase().includes(oddsSearch.toLowerCase()))
+      : allMarkets;
+
+    const active = selectedOddsMarket && filteredMarkets.includes(selectedOddsMarket)
+      ? selectedOddsMarket
+      : (filteredMarkets[0] || '');
+
+    return (
+      <Tabs value={active} onValueChange={setSelectedOddsMarket as unknown as (v: string) => void}>
+        <div className="sticky top-0 z-10 bg-white dark:bg-gray-900">
+          <div className="p-2 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
+            <input
+              type="text"
+              value={oddsSearch}
+              onChange={e => setOddsSearch(e.target.value)}
+              placeholder="Search markets"
+              className="flex-1 px-2 py-1 text-xs rounded bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700"
+            />
+          </div>
+          <TabsList className="w-full overflow-x-auto no-scrollbar flex justify-start gap-1 p-2">
+            {filteredMarkets.map(market => (
+              <TabsTrigger key={market} value={market} className="whitespace-nowrap text-xs">
+                {market}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
+
+        <div className="max-h-[60vh] overflow-auto">
+          {filteredMarkets.map(market => {
+            const sorted = [...(grouped[market] || [])].sort((a: any, b: any) => {
+              const aValue = parseFloat(String(a.value || 0));
+              const bValue = parseFloat(String(b.value || 0));
+              return aValue - bValue;
+            });
+            return (
+              <TabsContent key={market} value={market} className="m-0">
+                <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                  {sorted.map((odd: any, idx: number) => {
+                    const value = parseFloat(String(odd.value || 0));
+                    const isBest = idx === 0;
+                    return (
+                      <div key={`${odd.bookmaker?.name}-${odd.label}-${idx}`} className={`px-4 py-3 flex items-center justify-between ${isBest ? 'bg-green-50 dark:bg-green-900/20' : ''}`}>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">{odd.label || 'Selection'}</span>
+                            {isBest && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Best</span>
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">{odd.bookmaker?.name || 'Unknown Bookmaker'}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className={`text-lg font-bold ${isBest ? 'text-green-600 dark:text-green-400' : 'text-blue-600 dark:text-blue-400'}`}>{odd.value || '-'}</div>
+                          {value > 0 && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400">{((1 / value) * 100).toFixed(1)}%</div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </TabsContent>
+            );
+          })}
+        </div>
+      </Tabs>
+    );
+  };
+
+  // Use React Query for odds fetching
+  const { data: odds, isLoading: oddsLoading, error: oddsError } = useQuery({
+    queryKey: ['odds', fixture.id],
+    queryFn: async () => {
+      console.log('Fetching odds from:', `/api/sportmonks/odds/fixtures/${fixture.id}`);
+      const res = await fetch(`/api/sportmonks/odds/fixtures/${fixture.id}`);
+      console.log('Odds API response status:', res.status);
+      const data = await res.json();
+      console.log('Odds API response data:', data);
+      if (!data?.success) throw new Error(data?.message || 'Failed to load odds');
+      return data.data || [];
+    },
+    enabled: showOdds, // Only fetch when modal is open
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    retry: 2,
+    retryDelay: 1000,
+  });
 
   // Close popover on outside click
   useEffect(() => {
@@ -214,6 +330,8 @@ export function FixtureCard({ fixture: propFixture, compact = false }: { fixture
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showMorePopover]);
+
+  // React Query automatically handles odds fetching when showOdds is true
 
   const participantsArray = useMemo(() => (
     Array.isArray(fixture.participants) ? fixture.participants : []
@@ -515,6 +633,7 @@ export function FixtureCard({ fixture: propFixture, compact = false }: { fixture
   // Desktop layout (≥640px) - matches the image design
   if (!compact) {
            return (
+      <>
            <Card className="w-full dark:bg-gray-800 dark:border-gray-700">
         <CardContent className="p-3">
           <div className="grid grid-cols-4 gap-4 items-center group" style={{ minHeight: '60px' }}>
@@ -523,16 +642,6 @@ export function FixtureCard({ fixture: propFixture, compact = false }: { fixture
               {(() => {
                 const phase = getMatchPhase(fixture);
                 
-                // Debug logging for display logic (commented out for production)
-                // console.log('Display logic for fixture', fixture.id, ':', {
-                //   phase,
-                //   status: fixture.state?.short_name,
-                //   statusName: fixture.state?.name,
-                //   isLive: isLiveMatch(fixture),
-                //   starting_at: fixture.starting_at,
-                //   liveScore: liveScore ? { currentMinute: liveScore.currentMinute } : null
-                // });
-                
                 if (phase === 'live') {
                   return (
                     <div className="flex items-center gap-2">
@@ -540,10 +649,8 @@ export function FixtureCard({ fixture: propFixture, compact = false }: { fixture
                       <span className="text-xs font-medium text-red-600 dark:text-red-400">
                         {(() => {
                           try {
-                            // Pass the currentMinute from liveScore if available
                             const liveScoreData = liveScore ? { currentMinute: liveScore.currentMinute } : null;
                             const status = getMatchStatusDisplay(fixture, liveScoreData);
-                            // console.log('Live match status for fixture', fixture.id, ':', status);
                             return status;
                           } catch (error) {
                             console.error('Error in getMatchStatusDisplay:', error);
@@ -561,7 +668,6 @@ export function FixtureCard({ fixture: propFixture, compact = false }: { fixture
                     </div>
                   );
                 }
-                // For finished/other states, show short name if available
                 if (fixture.state?.short_name) {
                   return (
                     <div className="flex items-center gap-1" title={fixture.state.name || fixture.state.short_name}>
@@ -569,10 +675,8 @@ export function FixtureCard({ fixture: propFixture, compact = false }: { fixture
                     </div>
                   );
                 }
-                // If finished, show nothing (or status if desired)
                 return null;
               })()}
-              {/* Removed redundant full status display - now shown on hover via title attribute */}
             </div>
 
             {/* Column 2: Teams */}
@@ -605,25 +709,27 @@ export function FixtureCard({ fixture: propFixture, compact = false }: { fixture
                          </div>
                 </>
           )}
+                <div className="mt-1">
+                  <Button variant="outline" size="sm" className="h-6 px-2 text-[11px]" onClick={() => setShowOdds(true)}>
+                    <Info className="h-3 w-3 mr-1" /> Odds
+                  </Button>
+                </div>
         </div>
 
                                {/* Column 4: Prediction Probabilities */}
                    <div className="flex flex-col justify-center">
                      {marketsMap && selectedMarketKey && (
                 <div className="space-y-1">
-                                           {/* Market description */}
                          <div className="text-[12px] text-gray-700 dark:text-gray-300 truncate">
                            {marketsMap?.[selectedMarketKey!]?.label || 'No predictions available'}
                          </div>
                   
-                  {/* Prediction buttons with market selector */}
                   <div className="flex items-center gap-1">
                     <div className="flex gap-1 flex-1 relative">
                       {(() => {
                         const market = (selectedMarketKey && marketsMap) ? marketsMap[selectedMarketKey] : null;
                         const options = market?.options || [];
                         
-                        // For markets with many options (like Correct Score), show top 3 + expand option
                         if (options.length > 6) {
                           const topOptions = options
                             .filter(opt => opt.value !== null)
@@ -662,7 +768,7 @@ export function FixtureCard({ fixture: propFixture, compact = false }: { fixture
                               {showMorePopover && (
                                 <div
                                   ref={popoverRef}
-                                  className="absolute top-full right-0 z-50 w-56 max-h-60 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg p-2 overflow-y-auto"
+                                    className="absolute top-full right-0 z-50 w-56 max-h-60 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-lg p-2 overflow-y-auto"
                                 >
                                   <div className="grid grid-cols-3 gap-1">
                                     {restOptions.map((opt) => (
@@ -686,7 +792,6 @@ export function FixtureCard({ fixture: propFixture, compact = false }: { fixture
                           );
                         }
                         
-                        // For markets with 6 or fewer options, show all
                         return options.map((opt) => (
                           <Button
                             key={opt.code}
@@ -704,40 +809,8 @@ export function FixtureCard({ fixture: propFixture, compact = false }: { fixture
                       })()}
                                          </div>
 
-                     {/* Expanded options view for markets with many options */}
-                     {expanded && (() => {
-                       const market = (selectedMarketKey && marketsMap) ? marketsMap[selectedMarketKey] : null;
-                       const options = market?.options || [];
-                       
-                       if (options.length > 6) {
-                         return (
-                           <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-md">
-                             <div className="grid grid-cols-3 gap-1">
-                               {options.map((opt) => (
-                                 <Button
-                                   key={opt.code}
-                                   variant="outline"
-                                   size="sm"
-                                   className="h-6 px-1 text-[10px]"
-                                   aria-label={`${opt.code} prediction: ${opt.value != null ? `${Number(opt.value).toFixed(0)}%` : 'No data'}`}
-                                 >
-                                   <span className="font-medium">{opt.code}</span>
-                                   <span className="ml-1 text-blue-600">
-                                     {opt.value != null ? `${Number(opt.value).toFixed(0)}%` : '-'}
-                                   </span>
-                                 </Button>
-                               ))}
-                             </div>
-                           </div>
-                         );
-                       }
-                       return null;
-                     })()}
-
-                                                 {/* Market selector dropdown */}
                            {(() => {
                              const marketCount = marketsMap ? Object.keys(marketsMap).length : 0;
-                             console.log('Desktop dropdown condition check:', { marketsMap: !!marketsMap, marketCount, shouldShow: marketCount > 1 });
                              return marketsMap && marketCount > 1;
                            })() && (
                       <div className="relative">
@@ -785,11 +858,28 @@ export function FixtureCard({ fixture: propFixture, compact = false }: { fixture
           </div>
         </CardContent>
       </Card>
+        
+        {/* Odds Modal */}
+        {showOdds && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowOdds(false)}>
+            <div className="bg-white dark:bg-gray-900 rounded-md shadow-xl w-full max-w-2xl" onClick={(e) => e.stopPropagation()}>
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700 font-semibold flex items-center justify-between">
+                <span>Pre-match Odds</span>
+                <Button variant="ghost" size="sm" onClick={() => setShowOdds(false)}>Close</Button>
+              </div>
+              <div className="p-4 text-sm">
+                {renderOddsBody()}
+              </div>
+            </div>
+          </div>
+        )}
+      </>
     );
   }
 
   // Mobile layout (compact) - existing design
   return (
+    <>
     <Card className="w-full">
       <CardContent className="py-2"> 
         {/* Header: state/time on left, date on right (mobile spec simplified) */}
@@ -960,6 +1050,20 @@ export function FixtureCard({ fixture: propFixture, compact = false }: { fixture
         </div>
       )}
     </Card>
+    {showOdds && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowOdds(false)}>
+        <div className="bg-white dark:bg-gray-900 rounded-md shadow-xl w-full max-w-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700 font-semibold flex items-center justify-between">
+            <span>Pre-match Odds</span>
+            <Button variant="ghost" size="sm" onClick={() => setShowOdds(false)}>Close</Button>
+          </div>
+          <div className="p-4 text-sm">
+            {renderOddsBody()}
+          </div>
+        </div>
+      </div>
+    )}
+  </>
   );
 }
 

@@ -17,7 +17,10 @@ export function SidebarWrapper({ children }: SidebarWrapperProps) {
       {/* Desktop Sidebar - Hidden on home page */}
       {!isHomePage && (
         <div className="hidden md:block">
-          <Sidebar />
+          {/* <Sidebar /> */}
+          <div className="w-64 bg-gray-800 text-white p-4">
+            <p>Sidebar temporarily disabled for build testing</p>
+          </div>
         </div>
       )}
       

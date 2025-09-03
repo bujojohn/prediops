@@ -297,7 +297,7 @@ function CountryPredictionsContent({
                         )}
                         
                                                  <Link 
-                           href={`/predictions/league/${generateLeagueSlug(league)}`}
+                           href={`/predictions/league/${generateLeagueSlug(league)}?id=${league.id}`}
                          >
                           <Button variant="outline" size="sm">
                             View League

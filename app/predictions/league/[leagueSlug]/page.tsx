@@ -234,7 +234,7 @@ export default async function LeaguePredictionsPage({
       const fixturesResponse = await sportmonks.getFixturesByDateRange(startDateString, endDateString, {
         include:
           "participants;scores;state;predictions;predictions.market;predictions.outcomes;league.country;venue;stage;round",
-        per_page: 100, // Increased per_page since we're getting more days
+        per_page: 50, //TODO cosider clientside asycn fetch on demamand for more than limit 50
         page: 1,
       });
 

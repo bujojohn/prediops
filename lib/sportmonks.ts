@@ -156,7 +156,7 @@ export const sportmonks = {
     const response = await api.get(url, { params: makeParams(config) });
     return response.data;
   },
-    
+
     // Deprecated: Use getFixturesById instead.
     async getFixture(fixtureId: string, config?: ApiConfig) {
       return this.getFixturesById(fixtureId, config);
@@ -189,11 +189,11 @@ export const sportmonks = {
    * 
    * Doc: https://docs.sportmonks.com/football/endpoints-and-entities/endpoints/fixtures/get-fixtures-by-date
    */
-  async getFixturesByDate(fixturesDate: string, config?: ApiConfig) {
-    const url = `/fixtures/date/${fixturesDate}`;
-    const response = await api.get(url, { params: makeParams(config) });
-    return response.data;
-  },
+    async getFixturesByDate(fixturesDate: string, config?: ApiConfig) {
+      const url = `/fixtures/date/${fixturesDate}`;
+      const response = await api.get(url, { params: makeParams(config) });
+      return response.data;
+    },
   /*
   Deprecated v2.3: Use getAllFixtures instead.
   */
@@ -219,14 +219,15 @@ export const sportmonks = {
    * Returns fixtures from a date range (maximum 100 days).
    * This is more efficient than multiple getFixturesByDate() calls.
    * 
-   * @param fixturesDateRange - Date range in 'YYYY-MM-DD,YYYY-MM-DD' format (e.g., '2024-01-01,2024-01-10')
+   * @param startDate - Start date in 'YYYY-MM-DD' format (e.g., '2024-01-01')
+   * @param endDate - End date in 'YYYY-MM-DD' format (e.g., '2024-01-10')
    * @param config - ApiConfig with include options like 'participants;scores;state;predictions.type;league.country'
    * @returns ApiListResponse<Fixture> for the date range
    * 
    * Doc: https://docs.sportmonks.com/football/endpoints-and-entities/endpoints/fixtures/get-fixtures-by-date-range
    */
-  async getFixturesByDateRange(fixturesDateRange: string, config?: ApiConfig) {
-    const url = `/fixtures/date-range/${fixturesDateRange}`;
+  async getFixturesByDateRange(startDate: string, endDate: string, config?: ApiConfig) {
+    const url = `/fixtures/between/${startDate}/${endDate}`;
     const response = await api.get(url, { params: makeParams(config) });
     return response.data;
   },
@@ -430,13 +431,13 @@ export const sportmonks = {
     const response = await api.get(url, { params: makeParams(config) });
     return response.data;
   },
-  
-    // Get league standings with configurable options
-    async getLeagueStandings(seasonId: string, config?: ApiConfig) {
-      const url = `/standings/seasons/${seasonId}`;
-      const response = await api.get(url, { params: makeParams(config) });
-      return response.data;
-    },
+
+  // Get league standings with configurable options
+  async getLeagueStandings(seasonId: string, config?: ApiConfig) {
+    const url = `/standings/seasons/${seasonId}`;
+    const response = await api.get(url, { params: makeParams(config) });
+    return response.data;
+  },
 
   // Get seasons with configurable options
   async getSeasons(config?: ApiConfig): Promise<ApiListResponse<unknown>> {
@@ -552,7 +553,7 @@ export const sportmonks = {
    * @returns ApiListResponse<ValueBet>
    */
   async getOddsByFixtureId(fixtureId: string, config?: ApiConfig) {
-    const url = `/odds/fixtures/${fixtureId}`;
+    const url = `/odds/pre-match/fixtures/${fixtureId}`;
     const response = await api.get(url, { params: makeParams(config) });
     return response.data;
   },

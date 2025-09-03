@@ -214,7 +214,7 @@ export async function getCountryLeagues(countryId: number): Promise<any[]> {
     if (leaguesResponse?.data) {
       // Sort leagues by name and filter active ones
       const sortedLeagues = leaguesResponse.data
-        .filter((league: any) => league.active)
+        .filter((league: League) => league.active)
         .sort((a: any, b: any) => {
           const nameA = a.name?.toLowerCase() || "";
           const nameB = b.name?.toLowerCase() || "";

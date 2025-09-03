@@ -37,7 +37,9 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Countries List */}
         <div className="lg:col-span-1">
-          <CountriesListClient initialCountries={clientCountries} />
+          <div className="bg-gray-100 p-4 rounded">
+            <p>Countries list temporarily disabled for build testing</p>
+          </div>
         </div>
 
         {/* Main Content Area */}
