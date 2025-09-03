@@ -636,9 +636,9 @@ export function FixtureCard({ fixture: propFixture, compact = false }: { fixture
       <>
            <Card className="w-full dark:bg-gray-800 dark:border-gray-700">
         <CardContent className="p-3">
-          <div className="grid grid-cols-4 gap-4 items-center group" style={{ minHeight: '60px' }}>
-            {/* Column 1: Status/Time */}
-            <div className="flex flex-col justify-center">
+                      <div className="grid grid-cols-12 gap-2 items-center group" style={{ minHeight: '60px' }}>
+                          {/* Column 1: Status/Time */}
+              <div className="col-span-2 flex flex-col justify-center">
               {(() => {
                 const phase = getMatchPhase(fixture);
                 
@@ -679,8 +679,8 @@ export function FixtureCard({ fixture: propFixture, compact = false }: { fixture
               })()}
             </div>
 
-            {/* Column 2: Teams */}
-            <div className="flex flex-col justify-center gap-1">
+                          {/* Column 2: Teams */}
+              <div className="col-span-5 flex flex-col justify-center gap-1">
               <div className="flex items-center gap-2">
                 {settings.showTeamImages && (
                   <TeamLogo src={home?.image_path ?? undefined} alt={home?.name || 'Home'} className="rounded h-4 w-4" />
@@ -695,8 +695,8 @@ export function FixtureCard({ fixture: propFixture, compact = false }: { fixture
               </div>
             </div>
 
-            {/* Column 3: Scores */}
-            <div className="flex flex-col justify-center gap-1">
+                          {/* Column 3: Scores */}
+              <div className="col-span-2 flex flex-col justify-center gap-1">
               {isLive && isUpdating ? (
                 <LoadingIndicator size="sm" text="Updating..." />
               ) : (
@@ -708,16 +708,18 @@ export function FixtureCard({ fixture: propFixture, compact = false }: { fixture
                            {scoreAway !== null ? scoreAway : '-'}
                          </div>
                 </>
-          )}
-                <div className="mt-1">
-                  <Button variant="outline" size="sm" className="h-6 px-2 text-[11px]" onClick={() => setShowOdds(true)}>
-                    <Info className="h-3 w-3 mr-1" /> Odds
-                  </Button>
-                </div>
-        </div>
+                          )}
+              </div>
+              
+              {/* Odds button positioned below scores */}
+              <div className="col-span-12 mt-2 flex justify-center">
+                <Button variant="outline" size="sm" className="h-6 px-3 text-[11px]" onClick={() => setShowOdds(true)}>
+                  <Info className="h-3 w-3 mr-1" /> Odds
+                </Button>
+              </div>
 
-                               {/* Column 4: Prediction Probabilities */}
-                   <div className="flex flex-col justify-center">
+                                             {/* Column 4: Prediction Probabilities */}
+              <div className="col-span-3 flex flex-col justify-center">
                      {marketsMap && selectedMarketKey && (
                 <div className="space-y-1">
                          <div className="text-[12px] text-gray-700 dark:text-gray-300 truncate">
