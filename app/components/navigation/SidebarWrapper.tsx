@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { Suspense } from 'react';
 import { Navbar } from './Navbar';
 import Sidebar  from './Sidebar';
 
@@ -17,10 +18,9 @@ export function SidebarWrapper({ children }: SidebarWrapperProps) {
       {/* Desktop Sidebar - Hidden on home page */}
       {!isHomePage && (
         <div className="hidden md:block">
-          {/* <Sidebar /> */}
-          <div className="w-64 bg-gray-800 text-white p-4">
-            <p>Sidebar temporarily disabled for build testing</p>
-          </div>
+          <Suspense fallback={<div>Loading Sidebar...</div>}>
+            <Sidebar />
+          </Suspense>
         </div>
       )}
       
