@@ -6,7 +6,7 @@ export default async function LiveMatchesPage() {
   try {
     // Fetch data on the server with required includes per spec
     const liveFixturesResponse = await sportmonks.getLiveFixtures(
-      {include: 'participants;scores;state;predictions.type;league.country;events',
+      {include: 'participants;scores;state;predictions.type;league.country',
         sortBy: 'starting_at',
         order: 'desc',
         per_page:50,
