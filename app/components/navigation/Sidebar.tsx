@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Search, 
   Globe, 
@@ -500,11 +501,24 @@ export default function Sidebar() {
                         {country.name || country.fifa_name || country.official_name}
                       </span>
                       {countsLoadingCountries.has(country.id) ? (
-                        <span className="ml-1 inline-block h-3 w-6 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+                        <Skeleton title="Fetching..." className="ml-1 inline-block h-3 w-6" />
                       ) : (
-                        <Badge variant="outline" className="text-[10px] ml-1">
-                          {countryTodayCounts.get(country.id) ?? 0}
-                        </Badge>
+                        (() => {
+                          const c = countryTodayCounts.get(country.id) ?? 0;
+                          return (
+                            <Badge
+                              variant="outline"
+                              className={`text-[10px] ml-1 ${
+                                c > 0
+                                  ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
+                                  : 'bg-muted text-muted-foreground'
+                              }`}
+                              title={c > 0 ? `${c} fixtures today` : 'No fixtures today'}
+                            >
+                              {c}
+                            </Badge>
+                          );
+                        })()
                       )}
                     </button>
                     
@@ -559,11 +573,24 @@ export default function Sidebar() {
                                   </Badge>
                                 )}
                                 {isLoadingLeagues || countsLoadingCountries.has(country.id) ? (
-                                  <span className="ml-1 inline-block h-3 w-5 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+                                  <Skeleton title="Fetching..." className="ml-1 inline-block h-3 w-5" />
                                 ) : (
-                                  <Badge variant="secondary" className="text-[10px]">
-                                    {leagueTodayCounts.get(league.id) ?? 0}
-                                  </Badge>
+                                  (() => {
+                                    const lc = leagueTodayCounts.get(league.id) ?? 0;
+                                    return (
+                                      <Badge
+                                        variant="outline"
+                                        className={`text-[10px] ${
+                                          lc > 0
+                                            ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
+                                            : 'bg-muted text-muted-foreground'
+                                        }`}
+                                        title={lc > 0 ? `${lc} fixtures today` : 'No fixtures today'}
+                                      >
+                                        {lc}
+                                      </Badge>
+                                    );
+                                  })()
                                 )}
                               </a>
                             </div>
