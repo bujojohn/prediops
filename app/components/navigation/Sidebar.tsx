@@ -61,6 +61,7 @@ export default function Sidebar() {
   // Today fixture counts
   const [countryTodayCounts, setCountryTodayCounts] = useState<Map<number, number>>(new Map());
   const [leagueTodayCounts, setLeagueTodayCounts] = useState<Map<number, number>>(new Map());
+  const [countsLoadingCountries, setCountsLoadingCountries] = useState<Set<number>>(new Set());
   const today = React.useMemo(() => new Date().toISOString().split('T')[0], []);
 
   // Debounced search input
@@ -147,6 +148,7 @@ export default function Sidebar() {
   const fetchCountryTodayCounts = React.useCallback(async (countryId: number) => {
     if (countryTodayCounts.has(countryId)) return;
     try {
+      setCountsLoadingCountries(prev => new Set(prev).add(countryId));
       const url = `/api/sportmonks/fixtures/date-country?date=${today}&countryId=${countryId}`;
       const res = await fetch(url);
       const data = await res.json();
@@ -175,6 +177,12 @@ export default function Sidebar() {
     } catch (e) {
       // Non-fatal: leave counts absent
       console.error('Failed fetching today\'s fixtures for country', countryId, e);
+    } finally {
+      setCountsLoadingCountries(prev => {
+        const next = new Set(prev);
+        next.delete(countryId);
+        return next;
+      });
     }
   }, [countryTodayCounts, today]);
 
@@ -491,9 +499,13 @@ export default function Sidebar() {
                       }`}>
                         {country.name || country.fifa_name || country.official_name}
                       </span>
-                      <Badge variant="outline" className="text-[10px] ml-1">
-                        {countryTodayCounts.get(country.id) ?? 0}
-                      </Badge>
+                      {countsLoadingCountries.has(country.id) ? (
+                        <span className="ml-1 inline-block h-3 w-6 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+                      ) : (
+                        <Badge variant="outline" className="text-[10px] ml-1">
+                          {countryTodayCounts.get(country.id) ?? 0}
+                        </Badge>
+                      )}
                     </button>
                     
                     <div className="flex items-center gap-1.5">
@@ -546,9 +558,13 @@ export default function Sidebar() {
                                     {league.short_code}
                                   </Badge>
                                 )}
-                                <Badge variant="secondary" className="text-[10px]">
-                                  {leagueTodayCounts.get(league.id) ?? 0}
-                                </Badge>
+                                {isLoadingLeagues || countsLoadingCountries.has(country.id) ? (
+                                  <span className="ml-1 inline-block h-3 w-5 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+                                ) : (
+                                  <Badge variant="secondary" className="text-[10px]">
+                                    {leagueTodayCounts.get(league.id) ?? 0}
+                                  </Badge>
+                                )}
                               </a>
                             </div>
                           );
