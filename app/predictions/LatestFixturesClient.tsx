@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { Fixture } from '@/schemas/fixture.schema';
 import { FixtureList, type FixtureGroup } from '@/app/components/fixtures/FixtureList';
-import { dateKeyUTC, formatDateUTC, formatSemanticDateUTC } from '@/lib/utils';
+import { dateKeyUTC, formatDateLocal, formatSemanticDateUTC } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, RefreshCw, ChevronDown, ChevronRight } from 'lucide-react';
 import { 
@@ -17,7 +17,7 @@ function groupByDate(fixtures: Fixture[]): FixtureGroup[] {
   const map = new Map<string, { title: string; fixtures: Fixture[] }>();
   for (const fixture of fixtures) {
     const key = fixture.starting_at ? dateKeyUTC(fixture.starting_at) : 'unknown';
-    const title = fixture.starting_at ? formatDateUTC(fixture.starting_at) : 'Unknown Date';
+    const title = fixture.starting_at ? formatDateLocal(fixture.starting_at) : 'Unknown Date';
     const entry = map.get(key) || { title, fixtures: [] };
     entry.fixtures.push(fixture);
     map.set(key, entry);

@@ -1,3 +1,4 @@
+import { formatTimeLocal } from '@/lib/utils';
 'use client';
 
 import { useState } from 'react';
@@ -184,10 +185,7 @@ export function CountryPageClient({ country, initialFixtures }: CountryPageClien
                                                    <div className="flex-1">
                            <div className="font-medium">{fixture.name || 'Unknown Fixture'}</div>
                            <div className="text-sm text-gray-600">
-                             {fixture.starting_at ? new Date(fixture.starting_at).toLocaleTimeString([], {
-                               hour: '2-digit',
-                               minute: '2-digit'
-                             }) : 'Time TBD'}
+                             {fixture.starting_at ? formatTimeLocal(fixture.starting_at) : 'Time TBD'}
                            </div>
                          </div>
                                                      <div className="flex items-center gap-2">

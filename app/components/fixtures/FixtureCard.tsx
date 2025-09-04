@@ -9,13 +9,14 @@ import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, Clock, Trophy } from "lucide-react";
 import { Info } from "lucide-react";
 import { TeamLogo } from "@/app/components/ui/optimized-image";
-import { cn, formatDateUTC, formatTimeUTC } from "@/lib/utils";
+import { cn, formatDateLocal, formatTimeLocal } from "@/lib/utils";
 import { useDisplaySettings } from "@/app/contexts/DisplaySettingsContext";
 import { useLiveScores } from "@/app/hooks/useLiveScores";
 // import { useLiveMatches } from '@/lib/hooks/use-live-matches'; // Temporarily disabled
 import { LoadingIndicator } from "@/app/components/ui/loading-indicator";
 import { FixturesContext } from "@/app/contexts/FixturesContext";
 import { useQuery } from "@tanstack/react-query";
+import type { Odd } from "@/schemas/odds.schema";
 
 type MarketKey = string;
 
@@ -261,13 +262,13 @@ export function FixtureCard({
     }
 
     const grouped = (odds || []).reduce(
-      (acc: Record<string, any[]>, odd: any) => {
+      (acc: Record<string, Odd[]>, odd: Odd) => {
         const marketKey = odd?.market?.name || odd?.label || "Unknown Market";
         if (!acc[marketKey]) acc[marketKey] = [];
         acc[marketKey].push(odd);
         return acc;
       },
-      {} as Record<string, any[]>
+      {} as Record<string, Odd[]>
     );
 
     const allMarkets = Object.keys(grouped).sort((a, b) => a.localeCompare(b));
@@ -313,7 +314,7 @@ export function FixtureCard({
         <div className="max-h-[60vh] overflow-auto">
           {filteredMarkets.map((market) => {
             const sorted = [...(grouped[market] || [])].sort(
-              (a: any, b: any) => {
+              (a: Odd, b: Odd) => {
                 const aValue = parseFloat(String(a.value || 0));
                 const bValue = parseFloat(String(b.value || 0));
                 return aValue - bValue;
@@ -322,7 +323,7 @@ export function FixtureCard({
             return (
               <TabsContent key={market} value={market} className="m-0">
                 <div className="divide-y divide-gray-100 dark:divide-gray-700">
-                  {sorted.map((odd: any, idx: number) => {
+                  {sorted.map((odd: Odd, idx: number) => {
                     const value = parseFloat(String(odd.value || 0));
                     const isBest = idx === 0;
                     return (
@@ -863,7 +864,7 @@ export function FixtureCard({
                   if (phase === "scheduled" && fixture.starting_at) {
                     return (
                       <div className="flex items-center gap-1">
-                        <span>{formatTimeUTC(fixture.starting_at || "")}</span>
+                        <span>{formatTimeLocal(fixture.starting_at || "")}</span>
                       </div>
                     );
                   }
@@ -1172,12 +1173,12 @@ export function FixtureCard({
             <div className="flex items-center gap-1.5">
               <Clock className="h-3 w-3" />
               <span className="tabular-nums">
-                {formatTimeUTC(fixture.starting_at || "")}
+                {formatTimeLocal(fixture.starting_at || "")}
               </span>
             </div>
             {fixture.starting_at && (
               <span className="hidden sm:inline">
-                {formatDateUTC(fixture.starting_at || "")}
+                {formatDateLocal(fixture.starting_at || "")}
               </span>
             )}
           </div>
@@ -1215,7 +1216,7 @@ export function FixtureCard({
                 </>
               ) : (
                 <div className="text-sm font-medium text-gray-700 tabular-nums">
-                  {formatTimeUTC(fixture.starting_at || "")}
+                  {formatTimeLocal(fixture.starting_at || "")}
                 </div>
               )}
             </div>
