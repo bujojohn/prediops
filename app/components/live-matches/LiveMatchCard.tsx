@@ -5,7 +5,7 @@ import type { Fixture } from '@/schemas/fixture.schema';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronUp, Clock, MapPin, Trophy } from 'lucide-react';
-import { cn, formatTimeUTC } from '@/lib/utils';
+import { cn, formatTimeLocal } from '@/lib/utils';
 
 export function LiveMatchCard({ liveMatch }: { liveMatch: Fixture }) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -162,7 +162,7 @@ export function LiveMatchCard({ liveMatch }: { liveMatch: Fixture }) {
                 liveMatch.starting_at && (
                   <div className="flex items-center justify-center text-xs text-gray-700">
                     <Clock className="w-4 h-4 mr-1" />
-                    {formatTimeUTC(liveMatch.starting_at)}
+                    {formatTimeLocal(liveMatch.starting_at)}
                   </div>
                 )
               )
@@ -223,7 +223,7 @@ export function LiveMatchCard({ liveMatch }: { liveMatch: Fixture }) {
                     <Clock className="w-4 h-4 mr-2" />
                     Started:
                   </div>
-                  <span className="font-medium">{formatTimeUTC(liveMatch.starting_at)}</span>
+                  <span className="font-medium">{formatTimeLocal(liveMatch.starting_at)}</span>
                 </div>
               )}
               {liveMatch.referee && (
@@ -239,7 +239,7 @@ export function LiveMatchCard({ liveMatch }: { liveMatch: Fixture }) {
         {/* Match Start Time */}
         {liveMatch.starting_at && (
           <div className="text-center pt-2 border-t">
-            <span className="text-xs text-gray-700">Started: {formatTimeUTC(liveMatch.starting_at)}</span>
+            <span className="text-xs text-gray-700">Started: {formatTimeLocal(liveMatch.starting_at)}</span>
           </div>
         )}
       </CardContent>

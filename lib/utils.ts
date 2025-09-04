@@ -80,3 +80,46 @@ export function formatSemanticDateUTC(dateInput: string | number | Date, nowInpu
     return String(dateInput ?? '');
   }
 }
+
+// Parse strings like "YYYY-MM-DD HH:mm:ss" or ISO without timezone as UTC, then convert
+function parseToDateAssumingUTC(input: string | number | Date): Date {
+  if (typeof input === 'string') {
+    const hasTZ = /[zZ]|[+-]\d{2}:?\d{2}$/.test(input);
+    const hasTime = /\d{2}:\d{2}/.test(input);
+    if (!hasTZ && hasTime) {
+      const normalized = input.replace(' ', 'T');
+      return new Date(normalized + 'Z');
+    }
+  }
+  return new Date(input);
+}
+
+export function formatDateLocal(dateInput: string | number | Date): string {
+  try {
+    const date = parseToDateAssumingUTC(dateInput);
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return new Intl.DateTimeFormat('en-GB', {
+      timeZone,
+      year: 'numeric',
+      month: 'short',
+      day: '2-digit',
+    }).format(date);
+  } catch {
+    return String(dateInput ?? '');
+  }
+}
+
+export function formatTimeLocal(dateInput: string | number | Date): string {
+  try {
+    const date = parseToDateAssumingUTC(dateInput);
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return new Intl.DateTimeFormat('en-GB', {
+      timeZone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).format(date);
+  } catch {
+    return String(dateInput ?? '');
+  }
+}

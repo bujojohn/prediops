@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Fixture, League, Standing, Team } from '@/schemas';
 import { TeamLogo } from '@/app/components/ui/optimized-image';
-import { formatDateUTC, formatTimeUTC } from '@/lib/utils';
+import { formatDateLocal, formatTimeLocal } from '@/lib/utils';
 
 interface LeaguePredictionsClientProps {
   league: League;
@@ -221,7 +221,7 @@ export function LeaguePredictionsClient({ league, fixtures, standings = [], team
                       </Badge>
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {fixture.starting_at ? formatDateUTC(fixture.starting_at) : 'Unknown Date'} • {fixture.starting_at ? formatTimeUTC(fixture.starting_at) : 'Unknown Time'}
+                      {fixture.starting_at ? formatDateLocal(fixture.starting_at) : 'Unknown Date'} • {fixture.starting_at ? formatTimeLocal(fixture.starting_at) : 'Unknown Time'}
                     </div>
                   </div>
                 </CardHeader>
