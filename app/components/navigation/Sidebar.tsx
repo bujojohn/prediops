@@ -370,9 +370,22 @@ export default function Sidebar() {
   // Refresh data
   const refreshData = async () => {
     setIsRefreshing(true);
-    setCountryLeagues(new Map()); // Clear cached leagues
-    setExpandedCountries(new Set()); // Collapse all countries
+    // Clear cached leagues
+    setCountryLeagues(new Map());
+    // Optionally keep expanded state, but clear counts cache for today
+    try { localStorage.removeItem(storageKey); } catch {}
+    setCountryTodayCounts(new Map());
+    setLeagueTodayCounts(new Map());
+    setVisibleCountryBadges(new Set());
+    setVisibleLeagueBadges(new Set());
     await loadCountriesWithLeagues();
+    // If a country is expanded, refetch counts for it
+    const expanded = Array.from(expandedCountries.values());
+    if (expanded.length > 0) {
+      for (const cid of expanded) {
+        fetchCountryTodayCounts(cid);
+      }
+    }
     setIsRefreshing(false);
   };
 
@@ -505,7 +518,6 @@ export default function Sidebar() {
 
             <div className="flex items-center gap-1 text-xs opacity-75" title="Only one country can be expanded at a time">
               <Info className="h-3 w-3" />
-              <span>accordion</span>
             </div>
             {allCountries.length > 0 && (
               <Badge variant="secondary" className="ml-auto">
