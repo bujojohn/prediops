@@ -19,7 +19,7 @@ import { Country } from '@/schemas/country.schema';
 import { League } from '@/schemas/league.schema';
 import { Fixture } from '@/schemas/fixture.schema';
 import { FixtureCard } from '@/app/components/fixtures/FixtureCard';
-import { getCountryPredictionsUrl, generateCountrySlug, generateLeagueSlug } from '@/lib/utils/country-utils';
+import { generateCountrySlug, generateLeagueSlug } from '@/lib/utils/country-utils';
 import { 
   DatePickerProvider, 
   EnhancedDatePicker, 
@@ -55,9 +55,6 @@ function CountryPredictionsContent({
     error,
     selectDate,
     refreshFixtures,
-    fixturesByLeague,
-    totalFixtures,
-    hasFixtures
   } = datePickerResult;
 
   // Use date-specific fixtures if available, otherwise use initial fixtures

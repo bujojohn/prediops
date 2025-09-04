@@ -27,12 +27,12 @@ const DatePickerContext = createContext<DatePickerContextType | undefined>(undef
 
 export function DatePickerProvider({ children, initialDate }: DatePickerProviderProps) {
   // Initialize with provided date or default to today
-  const getInitialDate = () => {
+  const getInitialDate = useCallback(() => {
     if (initialDate && /^\d{4}-\d{2}-\d{2}$/.test(initialDate)) {
       return initialDate;
     }
     return new Date().toISOString().split('T')[0];
-  };
+  }, [initialDate]);
 
   const initialState: DatePickerState = {
     selectedDate: getInitialDate(),
@@ -73,7 +73,7 @@ export function DatePickerProvider({ children, initialDate }: DatePickerProvider
     const dateToCache = getInitialDate();
     addCachedDate(dateToCache);
     addPreloadedDate(dateToCache);
-  }, [addCachedDate, addPreloadedDate]);
+  }, [addCachedDate, addPreloadedDate, getInitialDate]);
 
   const contextValue: DatePickerContextType = {
     state,

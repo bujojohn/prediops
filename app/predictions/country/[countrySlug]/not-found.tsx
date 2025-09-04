@@ -13,7 +13,7 @@ export default function CountryNotFound() {
         </h1>
         
         <p className="text-gray-600 mb-8">
-          The country you're looking for could not be found. This might be due to:
+          The country you&apos;re looking for could not be found. This might be due to:
         </p>
         
         <div className="text-left text-sm text-gray-600 mb-8 space-y-2">
@@ -49,7 +49,7 @@ export default function CountryNotFound() {
         
         <div className="mt-8 p-4 bg-gray-50 rounded-lg text-xs text-gray-500">
           <p className="font-semibold mb-2">Debug Information:</p>
-          <p>If you're seeing this page frequently, check:</p>
+          <p>If you&apos;re seeing this page frequently, check:</p>
           <ul className="list-disc list-inside mt-1 space-y-1">
             <li>Browser console for error messages</li>
             <li>Network tab for failed API requests</li>

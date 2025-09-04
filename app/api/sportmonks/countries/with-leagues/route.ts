@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getCountriesWithLeagues } from '@/lib/utils/country-utils';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     console.log('API: Fetching countries with leagues...');
     

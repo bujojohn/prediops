@@ -1,31 +1,22 @@
-import { getCountries } from '@/lib/data/countries';
-import { CountriesListClient } from '@/app/components/countries/CountriesListClient';
-import type { Country } from '@/schemas/country.schema';
+// import { getCountries } from '@/lib/data/countries';
+// import { CountriesListClient } from '@/app/components/countries/CountriesListClient';
+// import type { Country } from '@/schemas/country.schema';
 
 export default async function DashboardPage() {
-  // Use local countries data
-  let countries: Country[] = [];
-  
-  try {
-    countries = getCountries();
-  } catch (error) {
-    console.error('Failed to load countries:', error);
-    // Fallback to empty array - client component will handle this gracefully
-  }
 
-  const clientCountries: Parameters<typeof CountriesListClient>[0]["initialCountries"] = countries.map((c) => ({
-    id: c.id,
-    name: c.name ?? '',
-    official_name: c.official_name ?? '',
-    fifa_name: c.fifa_name ?? '',
-    iso2: c.iso2 ?? '',
-    iso3: c.iso3 ?? '',
-    image_path: c.image_path ?? undefined,
-    continent: c.continent
-      ? { id: c.continent.id, name: c.continent.name ?? '', code: c.continent.code ?? '' }
-      : undefined,
-    leagues: c.leagues?.map((l) => ({ id: l.id, name: l.name ?? '', type: l.type ?? '' })) ?? [],
-  }));
+  // const clientCountries: Parameters<typeof CountriesListClient>[0]["initialCountries"] = countries.map((c) => ({
+  //   id: c.id,
+  //   name: c.name ?? '',
+  //   official_name: c.official_name ?? '',
+  //   fifa_name: c.fifa_name ?? '',
+  //   iso2: c.iso2 ?? '',
+  //   iso3: c.iso3 ?? '',
+  //   image_path: c.image_path ?? undefined,
+  //   continent: c.continent
+  //     ? { id: c.continent.id, name: c.continent.name ?? '', code: c.continent.code ?? '' }
+  //     : undefined,
+  //   leagues: c.leagues?.map((l) => ({ id: l.id, name: l.name ?? '', type: l.type ?? '' })) ?? [],
+  // }));
 
   return (
     <div className="container mx-auto px-6 py-8">

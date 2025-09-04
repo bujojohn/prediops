@@ -14,7 +14,7 @@ export default function PredictionsDateNotFound() {
         </h1>
         
         <p className="text-gray-600 dark:text-gray-300 mb-6">
-          The date you're looking for doesn't exist or is invalid. 
+          The date you&apos;re looking for doesn&apos;t exist or is invalid. 
           Please check the format (YYYY-MM-DD) and try again.
         </p>
         

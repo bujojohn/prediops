@@ -97,7 +97,7 @@ export default function Sidebar() {
   };
 
   // Load leagues for a specific country using API route
-  const loadCountryLeagues = async (countryId: number) => {
+  const loadCountryLeagues = React.useCallback(async (countryId: number) => {
     if (countryLeagues.has(countryId)) {
       return; // Already loaded
     }
@@ -120,7 +120,7 @@ export default function Sidebar() {
     } finally {
       setLoadingStates(prev => new Map(prev).set(countryId, false));
     }
-  };
+  }, [countryLeagues]);
 
   // Toggle country expansion with accordion behavior (only one country expanded at a time)
   const toggleCountry = (countryId: number) => {
@@ -184,7 +184,7 @@ export default function Sidebar() {
     const sortedCountries = filtered.sort(getSortFunction);
     
     setFilteredCountries(sortedCountries);
-  }, [debouncedSearch, allCountries, showOnlyFavorites, favorites, sortBy, sortOrder]);
+  }, [debouncedSearch, allCountries, showOnlyFavorites, favorites, sortBy, sortOrder, getSortFunction]);
 
   // Load favorites from localStorage on mount
   useEffect(() => {
@@ -212,7 +212,7 @@ export default function Sidebar() {
     } catch (error) {
       console.error('Error loading favorites/expanded from localStorage:', error);
     }
-  }, []);
+  }, [loadCountryLeagues]);
 
   // Save favorites to localStorage whenever they change
   useEffect(() => {
@@ -247,7 +247,7 @@ export default function Sidebar() {
   };
 
   // Get sort function based on current sort settings
-  const getSortFunction = (a: CountryWithLeagues, b: CountryWithLeagues) => {
+  const getSortFunction = React.useCallback((a: CountryWithLeagues, b: CountryWithLeagues) => {
     let comparison = 0;
     
     switch (sortBy) {
@@ -265,7 +265,7 @@ export default function Sidebar() {
     }
     
     return sortOrder === 'asc' ? comparison : -comparison;
-  };
+  }, [sortBy, sortOrder]);
 
   // Load countries on mount
   useEffect(() => {
