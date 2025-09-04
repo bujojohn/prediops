@@ -64,6 +64,9 @@ export default function Sidebar() {
   const [leagueTodayCounts, setLeagueTodayCounts] = useState<Map<number, number>>(new Map());
   const [countsLoadingCountries, setCountsLoadingCountries] = useState<Set<number>>(new Set());
   const today = React.useMemo(() => new Date().toISOString().split('T')[0], []);
+  const storageKey = React.useMemo(() => `sidebar-counts-${today}`, [today]);
+  const [visibleCountryBadges, setVisibleCountryBadges] = useState<Set<number>>(new Set());
+  const [visibleLeagueBadges, setVisibleLeagueBadges] = useState<Set<number>>(new Set());
 
   // Debounced search input
   const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
@@ -72,6 +75,28 @@ export default function Sidebar() {
     return () => clearTimeout(t);
   }, [searchTerm]);
   
+  // Restore persisted counts for today on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw) as { countries?: [number, number][], leagues?: [number, number][] };
+        if (parsed?.countries?.length) {
+          const map = new Map<number, number>(parsed.countries);
+          setCountryTodayCounts(map);
+          setVisibleCountryBadges(new Set(Array.from(map.keys())));
+        }
+        if (parsed?.leagues?.length) {
+          const lmap = new Map<number, number>(parsed.leagues);
+          setLeagueTodayCounts(lmap);
+          setVisibleLeagueBadges(new Set(Array.from(lmap.keys())));
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to restore sidebar counts from storage', e);
+    }
+  }, [storageKey]);
+
   // Load countries with leagues using API route
     const loadCountriesWithLeagues = async () => {
       try {
@@ -154,13 +179,10 @@ export default function Sidebar() {
       const res = await fetch(url);
       const data = await res.json();
       const fixtures = data?.success ? (data.data || []) : [];
-      // country total
-      setCountryTodayCounts(prev => {
-        const next = new Map(prev);
-        next.set(countryId, fixtures.length);
-        return next;
-      });
-      // per-league aggregation
+      // Build next maps and persist
+      const nextCountryMap = new Map(countryTodayCounts);
+      nextCountryMap.set(countryId, fixtures.length);
+
       const perLeague = new Map<number, number>();
       for (const f of fixtures) {
         const lid = f?.league?.id;
@@ -168,13 +190,32 @@ export default function Sidebar() {
           perLeague.set(lid, (perLeague.get(lid) || 0) + 1);
         }
       }
-      if (perLeague.size > 0) {
-        setLeagueTodayCounts(prev => {
-          const next = new Map(prev);
-          perLeague.forEach((cnt, lid) => next.set(lid, cnt));
-          return next;
-        });
-      }
+      const nextLeagueMap = new Map(leagueTodayCounts);
+      perLeague.forEach((cnt, lid) => nextLeagueMap.set(lid, cnt));
+
+      setCountryTodayCounts(nextCountryMap);
+      setLeagueTodayCounts(nextLeagueMap);
+
+      try {
+        localStorage.setItem(
+          storageKey,
+          JSON.stringify({
+            countries: Array.from(nextCountryMap.entries()),
+            leagues: Array.from(nextLeagueMap.entries()),
+          })
+        );
+      } catch {}
+
+      setTimeout(() => {
+        setVisibleCountryBadges(prev => new Set(prev).add(countryId));
+        if (perLeague.size > 0) {
+          setVisibleLeagueBadges(prev => {
+            const next = new Set(prev);
+            perLeague.forEach((_, lid) => next.add(lid));
+            return next;
+          });
+        }
+      }, 0);
     } catch (e) {
       // Non-fatal: leave counts absent
       console.error('Failed fetching today\'s fixtures for country', countryId, e);
@@ -185,7 +226,7 @@ export default function Sidebar() {
         return next;
       });
     }
-  }, [countryTodayCounts, today]);
+  }, [countryTodayCounts, leagueTodayCounts, today, storageKey]);
 
   // Toggle country expansion with accordion behavior (only one country expanded at a time)
   const toggleCountry = (countryId: number) => {
@@ -505,10 +546,13 @@ export default function Sidebar() {
                       ) : (
                         (() => {
                           const c = countryTodayCounts.get(country.id) ?? 0;
+                          const isVisible = visibleCountryBadges.has(country.id);
                           return (
                             <Badge
                               variant="outline"
-                              className={`text-[10px] ml-1 ${
+                              className={`text-[10px] ml-1 transition-opacity duration-300 ${
+                                isVisible ? 'opacity-100' : 'opacity-0'
+                              } ${
                                 c > 0
                                   ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
                                   : 'bg-muted text-muted-foreground'
@@ -577,10 +621,13 @@ export default function Sidebar() {
                                 ) : (
                                   (() => {
                                     const lc = leagueTodayCounts.get(league.id) ?? 0;
+                                    const lVisible = visibleLeagueBadges.has(league.id);
                                     return (
                                       <Badge
                                         variant="outline"
-                                        className={`text-[10px] ${
+                                        className={`text-[10px] transition-opacity duration-300 ${
+                                          lVisible ? 'opacity-100' : 'opacity-0'
+                                        } ${
                                           lc > 0
                                             ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
                                             : 'bg-muted text-muted-foreground'
