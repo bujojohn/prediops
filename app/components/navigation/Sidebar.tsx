@@ -58,6 +58,10 @@ export default function Sidebar() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [showSettings, setShowSettings] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  // Today fixture counts
+  const [countryTodayCounts, setCountryTodayCounts] = useState<Map<number, number>>(new Map());
+  const [leagueTodayCounts, setLeagueTodayCounts] = useState<Map<number, number>>(new Map());
+  const today = React.useMemo(() => new Date().toISOString().split('T')[0], []);
 
   // Debounced search input
   const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
@@ -139,6 +143,41 @@ export default function Sidebar() {
     }
   }, []);
 
+  // Fetch today's fixtures for a country and compute per-league counts
+  const fetchCountryTodayCounts = React.useCallback(async (countryId: number) => {
+    if (countryTodayCounts.has(countryId)) return;
+    try {
+      const url = `/api/sportmonks/fixtures/date-country?date=${today}&countryId=${countryId}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const fixtures = data?.success ? (data.data || []) : [];
+      // country total
+      setCountryTodayCounts(prev => {
+        const next = new Map(prev);
+        next.set(countryId, fixtures.length);
+        return next;
+      });
+      // per-league aggregation
+      const perLeague = new Map<number, number>();
+      for (const f of fixtures) {
+        const lid = f?.league?.id;
+        if (typeof lid === 'number') {
+          perLeague.set(lid, (perLeague.get(lid) || 0) + 1);
+        }
+      }
+      if (perLeague.size > 0) {
+        setLeagueTodayCounts(prev => {
+          const next = new Map(prev);
+          perLeague.forEach((cnt, lid) => next.set(lid, cnt));
+          return next;
+        });
+      }
+    } catch (e) {
+      // Non-fatal: leave counts absent
+      console.error('Failed fetching today\'s fixtures for country', countryId, e);
+    }
+  }, [countryTodayCounts, today]);
+
   // Toggle country expansion with accordion behavior (only one country expanded at a time)
   const toggleCountry = (countryId: number) => {
     const newExpanded = new Set<number>();
@@ -152,6 +191,8 @@ export default function Sidebar() {
       newExpanded.add(countryId);
       // Load leagues when expanding
       loadCountryLeagues(countryId);
+      // Load today's counts
+      fetchCountryTodayCounts(countryId);
       // Persist expanded country
       try { localStorage.setItem('sidebar-expanded-country', String(countryId)); } catch {}
       // Smooth scroll into view
@@ -240,6 +281,7 @@ export default function Sidebar() {
           setExpandedCountries(new Set([id]));
           // Preload leagues
           loadCountryLeagues(id);
+          fetchCountryTodayCounts(id);
           // Scroll into view after render
           setTimeout(() => {
             const el = document.getElementById(`country-${id}`);
@@ -250,7 +292,7 @@ export default function Sidebar() {
     } catch (error) {
       console.error('Error loading favorites/expanded from localStorage:', error);
     }
-  }, [loadCountryLeagues]);
+  }, [loadCountryLeagues, fetchCountryTodayCounts]);
 
   // Save favorites to localStorage whenever they change
   useEffect(() => {
@@ -449,6 +491,9 @@ export default function Sidebar() {
                       }`}>
                         {country.name || country.fifa_name || country.official_name}
                       </span>
+                      <Badge variant="outline" className="text-[10px] ml-1">
+                        {countryTodayCounts.get(country.id) ?? 0}
+                      </Badge>
                     </button>
                     
                     <div className="flex items-center gap-1.5">
@@ -501,6 +546,9 @@ export default function Sidebar() {
                                     {league.short_code}
                                   </Badge>
                                 )}
+                                <Badge variant="secondary" className="text-[10px]">
+                                  {leagueTodayCounts.get(league.id) ?? 0}
+                                </Badge>
                               </a>
                             </div>
                           );
