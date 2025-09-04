@@ -25,7 +25,8 @@ export async function GET(request: NextRequest) {
     const allFixtures = fixturesResponse?.data || [];
     
     // Filter fixtures for the specific country
-    const countryFixtures = allFixtures.filter((fixture: any) => {
+    type FixtureWithCountry = { league?: { country?: { id?: number | string | null } | null } | null };
+    const countryFixtures = allFixtures.filter((fixture: FixtureWithCountry) => {
       return fixture.league?.country?.id?.toString() === countryId;
     });
 

@@ -45,6 +45,11 @@ export default function Sidebar() {
   const [isLoading, setIsLoading] = useState(true);
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  // Keep a ref in sync with countryLeagues to allow a stable callback without depending on state
+  const countryLeaguesRef = React.useRef(countryLeagues);
+  useEffect(() => {
+    countryLeaguesRef.current = countryLeagues;
+  }, [countryLeagues]);
   
   // Favorites and filtering state
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
@@ -97,8 +102,8 @@ export default function Sidebar() {
   };
 
   // Load leagues for a specific country using API route
-  const loadCountryLeagues = async (countryId: number) => {
-    if (countryLeagues.has(countryId)) {
+  const loadCountryLeagues = React.useCallback(async (countryId: number) => {
+    if (countryLeaguesRef.current.has(countryId)) {
       return; // Already loaded
     }
 
@@ -110,17 +115,29 @@ export default function Sidebar() {
       
       if (data.success) {
         const leagues = data.data || [];
-        setCountryLeagues(prev => new Map(prev).set(countryId, leagues));
+        setCountryLeagues(prev => {
+          const next = new Map(prev).set(countryId, leagues);
+          countryLeaguesRef.current = next;
+          return next;
+        });
       } else {
-        setCountryLeagues(prev => new Map(prev).set(countryId, []));
+        setCountryLeagues(prev => {
+          const next = new Map(prev).set(countryId, []);
+          countryLeaguesRef.current = next;
+          return next;
+        });
       }
     } catch (error) {
       console.error(`Error loading leagues for country ${countryId}:`, error);
-      setCountryLeagues(prev => new Map(prev).set(countryId, []));
+      setCountryLeagues(prev => {
+        const next = new Map(prev).set(countryId, []);
+        countryLeaguesRef.current = next;
+        return next;
+      });
     } finally {
       setLoadingStates(prev => new Map(prev).set(countryId, false));
     }
-  };
+  }, []);
 
   // Toggle country expansion with accordion behavior (only one country expanded at a time)
   const toggleCountry = (countryId: number) => {
@@ -146,6 +163,27 @@ export default function Sidebar() {
     
     setExpandedCountries(newExpanded);
   };
+
+  // Get sort function based on current sort settings
+  const getSortFunction = React.useCallback((a: CountryWithLeagues, b: CountryWithLeagues) => {
+    let comparison = 0;
+    
+    switch (sortBy) {
+      case 'name':
+        const nameA = (a.name || a.fifa_name || a.official_name || '').toLowerCase();
+        const nameB = (b.name || b.fifa_name || b.official_name || '').toLowerCase();
+        comparison = nameA.localeCompare(nameB);
+        break;
+      case 'fixtures':
+        comparison = (a.fixtureCount || 0) - (b.fixtureCount || 0);
+        break;
+      case 'leagues':
+        comparison = (a.leaguesCount || 0) - (b.leaguesCount || 0);
+        break;
+    }
+    
+    return sortOrder === 'asc' ? comparison : -comparison;
+  }, [sortBy, sortOrder]);
 
   // Filter and sort countries based on search term, favorites, and sort settings
   useEffect(() => {
@@ -184,7 +222,7 @@ export default function Sidebar() {
     const sortedCountries = filtered.sort(getSortFunction);
     
     setFilteredCountries(sortedCountries);
-  }, [debouncedSearch, allCountries, showOnlyFavorites, favorites, sortBy, sortOrder]);
+  }, [debouncedSearch, allCountries, showOnlyFavorites, favorites, sortBy, sortOrder, getSortFunction]);
 
   // Load favorites from localStorage on mount
   useEffect(() => {
@@ -212,7 +250,7 @@ export default function Sidebar() {
     } catch (error) {
       console.error('Error loading favorites/expanded from localStorage:', error);
     }
-  }, []);
+  }, [loadCountryLeagues]);
 
   // Save favorites to localStorage whenever they change
   useEffect(() => {
@@ -246,26 +284,7 @@ export default function Sidebar() {
     setIsRefreshing(false);
   };
 
-  // Get sort function based on current sort settings
-  const getSortFunction = (a: CountryWithLeagues, b: CountryWithLeagues) => {
-    let comparison = 0;
-    
-    switch (sortBy) {
-      case 'name':
-        const nameA = (a.name || a.fifa_name || a.official_name || '').toLowerCase();
-        const nameB = (b.name || b.fifa_name || b.official_name || '').toLowerCase();
-        comparison = nameA.localeCompare(nameB);
-        break;
-      case 'fixtures':
-        comparison = (a.fixtureCount || 0) - (b.fixtureCount || 0);
-        break;
-      case 'leagues':
-        comparison = (a.leaguesCount || 0) - (b.leaguesCount || 0);
-        break;
-    }
-    
-    return sortOrder === 'asc' ? comparison : -comparison;
-  };
+  // (moved getSortFunction above to avoid use-before-declare)
 
   // Load countries on mount
   useEffect(() => {

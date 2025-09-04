@@ -139,17 +139,19 @@ export async function getCountriesWithLeagues(): Promise<
       >();
 
       leaguesResponse.data.forEach((league: League) => {
-        const countryId = league.country_id || league.country?.id;
-        if (countryId && league.active) {
+        const resolvedCountryId = league.country_id || league.country?.id;
+        if (resolvedCountryId && league.active) {
           // Only count active leagues
-          if (!countryLeaguesMap.has(countryId)) {
-            countryLeaguesMap.set(countryId, {
-              country: league.country || { id: countryId, name: 'Unknown' },
+          if (!countryLeaguesMap.has(resolvedCountryId)) {
+            const countryName = league.country?.name ?? 'Unknown';
+            const countryIdValue = league.country?.id ?? resolvedCountryId;
+            countryLeaguesMap.set(resolvedCountryId, {
+              country: { id: countryIdValue, name: countryName },
               leaguesCount: 0,
               fixtureCount: 0,
             });
           }
-          const countryData = countryLeaguesMap.get(countryId)!;
+          const countryData = countryLeaguesMap.get(resolvedCountryId)!;
           countryData.leaguesCount++;
           countryData.fixtureCount += 1; // Base fixture count per active league
         }
@@ -170,7 +172,7 @@ export async function getCountriesWithLeagues(): Promise<
         // Sort by: countries with leagues first, then alphabetically
         if (a.leaguesCount > 0 && b.leaguesCount === 0) return -1;
         if (a.leaguesCount === 0 && b.leaguesCount > 0) return 1;
-        return a.name.localeCompare(b.name);
+        return (a.name ?? '').localeCompare(b.name ?? '');
       });
 
       // Update cache
@@ -200,7 +202,8 @@ export async function getCountriesWithLeagues(): Promise<
 /**
  * Get leagues for a specific country using the new optimized endpoint
  */
-export async function getCountryLeagues(countryId: number): Promise<any[]> {
+export type SimpleLeague = Pick<League, 'id' | 'name' | 'active' | 'short_code'> & { country_id?: number };
+export async function getCountryLeagues(countryId: number): Promise<SimpleLeague[]> {
   try {
     const leaguesResponse = await sportmonks.getLeaguesByCountryId(
       countryId.toString(),
@@ -215,11 +218,11 @@ export async function getCountryLeagues(countryId: number): Promise<any[]> {
       // Sort leagues by name and filter active ones
       const sortedLeagues = leaguesResponse.data
         .filter((league: League) => league.active)
-        .sort((a: any, b: any) => {
+        .sort((a: League, b: League) => {
           const nameA = a.name?.toLowerCase() || "";
           const nameB = b.name?.toLowerCase() || "";
           return nameA.localeCompare(nameB);
-        });
+        }) as SimpleLeague[];
 
       console.log(
         `Found ${sortedLeagues.length} active leagues for country ${countryId}`
