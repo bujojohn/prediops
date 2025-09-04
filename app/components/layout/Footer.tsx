@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Target, Github, Twitter, Mail, Globe } from 'lucide-react';
+import { Target, Facebook, Twitter, Mail, Globe } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 export function Footer() {
@@ -27,7 +27,7 @@ export function Footer() {
             </p>
                          <div className="flex items-center gap-2">
                <Badge variant="secondary" className="text-xs">
-                 v2.3.0
+                 v2.4.0
                </Badge>
                <span className="text-xs text-slate-500">Latest Release</span>
              </div>
@@ -76,15 +76,15 @@ export function Footer() {
             <h3 className="text-lg font-semibold">Connect</h3>
             <div className="flex items-center gap-3">
               <Link 
-                href="https://github.com" 
+                href="https://www.facebook.com/prediops" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-slate-400 hover:text-white transition-colors"
               >
-                <Github className="h-5 w-5" />
+                <Facebook className="h-5 w-5" />
               </Link>
               <Link 
-                href="https://twitter.com" 
+                href="https://twitter.com/prediops" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-slate-400 hover:text-white transition-colors"
