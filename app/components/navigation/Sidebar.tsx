@@ -23,6 +23,20 @@ import { SidebarTheme } from './SidebarTheme';
 import { getCountryPredictionsUrl, generateLeagueSlug } from '@/lib/utils/country-utils';
 import type { Country } from '@/schemas/country.schema';
 
+type VariableSizeListHandle = { resetAfterIndex: (index: number, shouldForceUpdate?: boolean) => void };
+type VariableSizeListProps = {
+  height: number;
+  width: number;
+  itemCount: number;
+  itemSize: (index: number) => number;
+  overscanCount?: number;
+  className?: string;
+  children: (props: { index: number; style: React.CSSProperties }) => React.ReactNode;
+};
+type VariableSizeListComponent = React.ForwardRefExoticComponent<
+  VariableSizeListProps & React.RefAttributes<VariableSizeListHandle>
+>;
+
 interface CountryWithLeagues extends Country {
   fixtureCount: number;
   leaguesCount: number;
@@ -51,7 +65,38 @@ export default function Sidebar() {
   useEffect(() => {
     countryLeaguesRef.current = countryLeagues;
   }, [countryLeagues]);
-  
+  // Measure available height for virtual list
+  const listsContainerRef = React.useRef<HTMLDivElement | null>(null);
+  const [countryListHeight, setCountryListHeight] = useState(0);
+  const [countryListWidth, setCountryListWidth] = useState(0);
+  const [VirtualList, setVirtualList] = useState<VariableSizeListComponent | null>(null);
+  useEffect(() => {
+    const el = listsContainerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => {
+      try {
+        setCountryListHeight(el.clientHeight);
+        setCountryListWidth(el.clientWidth);
+      } catch {}
+    });
+    ro.observe(el);
+    // Initial measure
+    setCountryListHeight(el.clientHeight);
+    setCountryListWidth(el.clientWidth);
+    return () => {
+      try { ro.disconnect(); } catch {}
+    };
+  }, []);
+  useEffect(() => {
+    let mounted = true;
+    import('react-window').then((mod) => {
+      if (!mounted) return;
+      const Comp = (mod as unknown as { [k: string]: unknown }).VariableSizeList as unknown as VariableSizeListComponent;
+      setVirtualList(Comp);
+    }).catch(() => {});
+    return () => { mounted = false; };
+  }, []);
+ 
   // Favorites and filtering state
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
@@ -96,13 +141,29 @@ export default function Sidebar() {
     return { countryItems: countries, regionItems: regions };
   }, [filteredCountries, isRegion]);
 
+  // Virtualization refs and size calculators
+  const countryListRef = React.useRef<VariableSizeListHandle | null>(null);
+  const getCountryItemSize = React.useCallback((index: number) => {
+    const c = countryItems[index];
+    if (!c) return 44;
+    const isExpanded = expandedCountries.has(c.id);
+    if (!isExpanded) return 44;
+    const leagues = countryLeagues.get(c.id) || [];
+    return 44 + Math.max(1, leagues.length) * 30 + 8;
+  }, [countryItems, expandedCountries, countryLeagues]);
+ 
+  // Reset sizes when expansion or leagues change
+  useEffect(() => {
+    try { countryListRef.current?.resetAfterIndex(0, true); } catch {}
+  }, [expandedCountries, countryLeagues, countryItems]);
+
   // Debounced search input
   const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(searchTerm), 200);
     return () => clearTimeout(t);
   }, [searchTerm]);
-  
+
   // Restore persisted counts for today on mount
   useEffect(() => {
     try {
@@ -126,8 +187,8 @@ export default function Sidebar() {
   }, [storageKey]);
 
   // Load countries with leagues using API route
-    const loadCountriesWithLeagues = async () => {
-      try {
+  const loadCountriesWithLeagues = async () => {
+    try {
       setIsLoading(true);
       const response = await fetch('/api/sportmonks/countries/with-leagues');
       const data = await response.json();
@@ -143,18 +204,18 @@ export default function Sidebar() {
             fixtureCount: c.fixtureCount
           }))
         });
-          setAllCountries(countries);
-          setFilteredCountries(countries);
+        setAllCountries(countries);
+        setFilteredCountries(countries);
         console.log(`Loaded ${countries.length} countries with leagues`);
       } else {
         console.error('Failed to load countries:', data.error);
         setAllCountries([]);
         setFilteredCountries([]);
-        }
-      } catch (error) {
-        console.error('Error loading countries with leagues:', error);
-          setAllCountries([]);
-          setFilteredCountries([]);
+      }
+    } catch (error) {
+      console.error('Error loading countries with leagues:', error);
+      setAllCountries([]);
+      setFilteredCountries([]);
     } finally {
       setIsLoading(false);
     }
@@ -505,13 +566,13 @@ export default function Sidebar() {
         <div className="p-3 border-b">
           <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Search countries..."
+            <Input
+              placeholder="Search countries..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
-              />
-            </div>
+            />
+          </div>
           
           {/* Controls Row */}
           <div className="flex items-center gap-2 mb-3">
@@ -528,7 +589,7 @@ export default function Sidebar() {
               <span>Favorites</span>
             </button>
             
-
+            
             
             <button
               onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
@@ -622,151 +683,154 @@ export default function Sidebar() {
         </div>
 
         {/* Lists */}
-        <div className="flex-1 overflow-y-auto" data-sidebar-scroll-container>
+        <div className="flex-1 overflow-hidden" data-sidebar-scroll-container ref={listsContainerRef}>
           {/* Countries Section */}
           <div className="p-1">
             <div className="px-1 py-1 text-[11px] uppercase tracking-wide text-muted-foreground">Countries</div>
             <div className="space-y-0.5">
-            {countryItems.map((country) => {
-              const isExpanded = expandedCountries.has(country.id);
-              const leagues = countryLeagues.get(country.id) || [];
-              const isLoadingLeagues = loadingStates.get(country.id) || false;
-
-              return (
-                 <div key={country.id} className="space-y-0.5" id={`country-${country.id}`} data-country-id={country.id}>
-                  {/* Country Header */}
-                  <div className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
-                    <button
-                      onClick={() => toggleCountry(country.id)}
-                      className="flex items-center gap-1.5 flex-1 text-left"
-                    >
-                      {isExpanded ? (
-                        <ChevronDown className="h-3.5 w-3.5" />
-                      ) : (
-                        <ChevronRight className="h-3.5 w-3.5" />
-                      )}
-                      <span className={`font-medium truncate text-sm ${
-                        (country.leaguesCount || 0) === 0 ? 'text-muted-foreground italic' : ''
-                      }`}>
-                        {country.name || country.fifa_name || country.official_name}
-                      </span>
-                      {isRegion(country) && (
-                        <Badge variant="outline" className="text-[10px] ml-1">
-                          Region
-                        </Badge>
-                      )}
-                      {countsLoadingCountries.has(country.id) ? (
-                        <Skeleton title="Fetching..." className="ml-1 inline-block h-3 w-6" />
-                      ) : (
-                        (() => {
-                          const c = countryTodayCounts.get(country.id) ?? 0;
-                          const isVisible = visibleCountryBadges.has(country.id);
-                          return (
-                            <Badge
-                              variant="outline"
-                              className={`text-[10px] ml-1 transition-opacity duration-300 ${
-                                isVisible ? 'opacity-100' : 'opacity-0'
-                              } ${
-                                c > 0
-                                  ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
-                                  : 'bg-muted text-muted-foreground'
-                              }`}
-                              title={c > 0 ? `${c} fixtures today` : 'No fixtures today'}
-                            >
-                              {c}
-                            </Badge>
-                          );
-                        })()
-                      )}
-                    </button>
-                    
-                    <div className="flex items-center gap-1.5">
-                      {/* Favorite Star */}
-                      <button
-                        onClick={(e) => toggleFavorite(country.id, e)}
-                        className={`transition-colors ${
-                          favorites.has(country.id)
-                            ? 'text-yellow-500 hover:text-yellow-600'
-                            : 'text-muted-foreground hover:text-yellow-500'
-                        }`}
-                        title={favorites.has(country.id) ? 'Remove from favorites' : 'Add to favorites'}
-                      >
-                        {favorites.has(country.id) ? (
-                          <Star className="h-3.5 w-3.5 fill-current" />
-                        ) : (
-                          <StarOff className="h-3.5 w-3.5" />
-                        )}
-                      </button>
-                      <a
-                        href={getCountryPredictionsUrl(country)}
-                        className="text-muted-foreground hover:text-foreground transition-colors"
-                        title="View all leagues"
-                      >
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      </a>
-                    </div>
-                  </div>
-
-                  {/* Leagues List */}
-                  {isExpanded && (
-                    <div className="ml-4 space-y-0.5">
-                      {isLoadingLeagues ? (
-                        <div className="p-1.5 text-xs text-muted-foreground">
-                          Loading leagues...
-                        </div>
-                      ) : leagues.length > 0 ? (
-                        leagues.map((league) => {
-                          const active = pathname?.startsWith('/predictions/league') && searchParams?.get('id') === String(league.id);
-                          return (
-                            <div key={league.id} className={`flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors ${active ? 'bg-accent/60' : ''}`}>
-                              <a
-                                href={`/predictions/league/${generateLeagueSlug(league)}?id=${league.id}`}
-                                className={`flex items-center gap-1.5 flex-1 text-xs ${active ? 'text-primary font-medium' : ''}`}
-                                title={`League ID: ${league.id}`}
-                              >
-                                <span className="truncate">{league.name}</span>
-                                {league.short_code && (
-                                  <Badge variant="outline" className={`text-xs px-1 py-0.5 ${active ? 'border-primary text-primary' : ''}`}>
-                                    {league.short_code}
+              {countryListHeight > 0 && countryListWidth > 0 && VirtualList ? (
+                <VirtualList
+                  ref={countryListRef}
+                  height={countryListHeight - 28 /* header line height estimate */}
+                  width={countryListWidth}
+                  itemCount={countryItems.length}
+                  itemSize={getCountryItemSize}
+                  overscanCount={6}
+                  className="will-change-transform"
+                >
+                  {({ index, style }: { index: number; style: React.CSSProperties }) => {
+                    const country = countryItems[index];
+                    const isExpanded = expandedCountries.has(country.id);
+                    const leagues = countryLeagues.get(country.id) || [];
+                    const isLoadingLeagues = loadingStates.get(country.id) || false;
+                    return (
+                      <div style={style as React.CSSProperties} className="space-y-0.5" id={`country-${country.id}`} data-country-id={country.id}>
+                        <div className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
+                          <button
+                            onClick={() => toggleCountry(country.id)}
+                            className="flex items-center gap-1.5 flex-1 text-left"
+                          >
+                            {isExpanded ? (
+                              <ChevronDown className="h-3.5 w-3.5" />
+                            ) : (
+                              <ChevronRight className="h-3.5 w-3.5" />
+                            )}
+                            <span className={`font-medium truncate text-sm ${
+                              (country.leaguesCount || 0) === 0 ? 'text-muted-foreground italic' : ''
+                            }`}>
+                              {country.name || country.fifa_name || country.official_name}
+                            </span>
+                            {isRegion(country) && (
+                              <Badge variant="outline" className="text-[10px] ml-1">Region</Badge>
+                            )}
+                            {countsLoadingCountries.has(country.id) ? (
+                              <Skeleton title="Fetching..." className="ml-1 inline-block h-3 w-6" />
+                            ) : (
+                              (() => {
+                                const c = countryTodayCounts.get(country.id) ?? 0;
+                                const isVisible = visibleCountryBadges.has(country.id);
+                                return (
+                                  <Badge
+                                    variant="outline"
+                                    className={`text-[10px] ml-1 transition-opacity duration-300 ${
+                                      isVisible ? 'opacity-100' : 'opacity-0'
+                                    } ${
+                                      c > 0
+                                        ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
+                                        : 'bg-muted text-muted-foreground'
+                                    }`}
+                                    title={c > 0 ? `${c} fixtures today` : 'No fixtures today'}
+                                  >
+                                    {c}
                                   </Badge>
-                                )}
-                                {isLoadingLeagues || countsLoadingCountries.has(country.id) ? (
-                                  <Skeleton title="Fetching..." className="ml-1 inline-block h-3 w-5" />
-                                ) : (
-                                  (() => {
-                                    const lc = leagueTodayCounts.get(league.id) ?? 0;
-                                    const lVisible = visibleLeagueBadges.has(league.id);
-                                    return (
-                                      <Badge
-                                        variant="outline"
-                                        className={`text-[10px] transition-opacity duration-300 ${
-                                          lVisible ? 'opacity-100' : 'opacity-0'
-                                        } ${
-                                          lc > 0
-                                            ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
-                                            : 'bg-muted text-muted-foreground'
-                                        }`}
-                                        title={lc > 0 ? `${lc} fixtures today` : 'No fixtures today'}
-                                      >
-                                        {lc}
-                                      </Badge>
-                                    );
-                                  })()
-                                )}
-                              </a>
-                            </div>
-                          );
-                        })
-                      ) : (
-                        <div className="p-1.5 text-xs text-muted-foreground">
-                          No active leagues found
+                                );
+                              })()
+                            )}
+                          </button>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={(e) => toggleFavorite(country.id, e)}
+                              className={`transition-colors ${
+                                favorites.has(country.id)
+                                  ? 'text-yellow-500 hover:text-yellow-600'
+                                  : 'text-muted-foreground hover:text-yellow-500'
+                              }`}
+                              title={favorites.has(country.id) ? 'Remove from favorites' : 'Add to favorites'}
+                            >
+                              {favorites.has(country.id) ? (
+                                <Star className="h-3.5 w-3.5 fill-current" />
+                              ) : (
+                                <StarOff className="h-3.5 w-3.5" />
+                              )}
+                            </button>
+                            <a
+                              href={getCountryPredictionsUrl(country)}
+                              className="text-muted-foreground hover:text-foreground transition-colors"
+                              title="View all leagues"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            </a>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                        {isExpanded && (
+                          <div className="ml-4 space-y-0.5">
+                            {isLoadingLeagues ? (
+                              <div className="p-1.5 text-xs text-muted-foreground">Loading leagues...</div>
+                            ) : leagues.length > 0 ? (
+                              leagues.map((league) => {
+                                const active = pathname?.startsWith('/predictions/league') && searchParams?.get('id') === String(league.id);
+                                return (
+                                  <div key={league.id} className={`flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors ${active ? 'bg-accent/60' : ''}`}>
+                                    <a
+                                      href={`/predictions/league/${generateLeagueSlug(league)}?id=${league.id}`}
+                                      className={`flex items-center gap-1.5 flex-1 text-xs ${active ? 'text-primary font-medium' : ''}`}
+                                      title={`League ID: ${league.id}`}
+                                    >
+                                      <span className="truncate">{league.name}</span>
+                                      {league.short_code && (
+                                        <Badge variant="outline" className={`text-xs px-1 py-0.5 ${active ? 'border-primary text-primary' : ''}`}>
+                                          {league.short_code}
+                                        </Badge>
+                                      )}
+                                      {isLoadingLeagues || countsLoadingCountries.has(country.id) ? (
+                                        <Skeleton title="Fetching..." className="ml-1 inline-block h-3 w-5" />
+                                      ) : (
+                                        (() => {
+                                          const lc = leagueTodayCounts.get(league.id) ?? 0;
+                                          const lVisible = visibleLeagueBadges.has(league.id);
+                                          return (
+                                            <Badge
+                                              variant="outline"
+                                              className={`text-[10px] transition-opacity duration-300 ${
+                                                lVisible ? 'opacity-100' : 'opacity-0'
+                                              } ${
+                                                lc > 0
+                                                  ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
+                                                  : 'bg-muted text-muted-foreground'
+                                              }`}
+                                              title={lc > 0 ? `${lc} fixtures today` : 'No fixtures today'}
+                                            >
+                                              {lc}
+                                            </Badge>
+                                          );
+                                        })()
+                                      )}
+                                    </a>
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <div className="p-1.5 text-xs text-muted-foreground">No active leagues found</div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }}
+                </VirtualList>
+              ) : (
+                <div className="text-xs text-muted-foreground p-1.5">Measuring...</div>
+              )}
             </div>
           </div>
 
@@ -775,141 +839,141 @@ export default function Sidebar() {
             <div className="p-1 mt-2">
               <div className="px-1 py-1 text-[11px] uppercase tracking-wide text-muted-foreground">Regions</div>
               <div className="space-y-0.5">
-              {regionItems.map((country) => {
-                const isExpanded = expandedCountries.has(country.id);
-                const leagues = countryLeagues.get(country.id) || [];
-                const isLoadingLeagues = loadingStates.get(country.id) || false;
+                {regionItems.map((country) => {
+                  const isExpanded = expandedCountries.has(country.id);
+                  const leagues = countryLeagues.get(country.id) || [];
+                  const isLoadingLeagues = loadingStates.get(country.id) || false;
 
-                return (
-                  <div key={country.id} className="space-y-0.5" id={`country-${country.id}`} data-country-id={country.id}>
-                    {/* Country Header */}
-                    <div className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
-                      <button
-                        onClick={() => toggleCountry(country.id)}
-                        className="flex items-center gap-1.5 flex-1 text-left"
-                      >
-                        {isExpanded ? (
-                          <ChevronDown className="h-3.5 w-3.5" />
-                        ) : (
-                          <ChevronRight className="h-3.5 w-3.5" />
-                        )}
-                        <span className={`font-medium truncate text-sm ${
-                          (country.leaguesCount || 0) === 0 ? 'text-muted-foreground italic' : ''
-                        }`}>
-                          {country.name || country.fifa_name || country.official_name}
-                        </span>
-                        <Badge variant="outline" className="text-[10px] ml-1">Region</Badge>
-                        {countsLoadingCountries.has(country.id) ? (
-                          <Skeleton title="Fetching..." className="ml-1 inline-block h-3 w-6" />
-                        ) : (
-                          (() => {
-                            const c = countryTodayCounts.get(country.id) ?? 0;
-                            const isVisible = visibleCountryBadges.has(country.id);
-                            return (
-                              <Badge
-                                variant="outline"
-                                className={`text-[10px] ml-1 transition-opacity duration-300 ${
-                                  isVisible ? 'opacity-100' : 'opacity-0'
-                                } ${
-                                  c > 0
-                                    ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
-                                    : 'bg-muted text-muted-foreground'
-                                }`}
-                                title={c > 0 ? `${c} fixtures today` : 'No fixtures today'}
-                              >
-                                {c}
-                              </Badge>
-                            );
-                          })()
-                        )}
-                      </button>
-                      <div className="flex items-center gap-1.5">
-                        {/* Favorite Star */}
+                  return (
+                    <div key={country.id} className="space-y-0.5" id={`country-${country.id}`} data-country-id={country.id}>
+                      {/* Country Header */}
+                      <div className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
                         <button
-                          onClick={(e) => toggleFavorite(country.id, e)}
-                          className={`transition-colors ${
-                            favorites.has(country.id)
-                              ? 'text-yellow-500 hover:text-yellow-600'
-                              : 'text-muted-foreground hover:text-yellow-500'
-                          }`}
-                          title={favorites.has(country.id) ? 'Remove from favorites' : 'Add to favorites'}
+                          onClick={() => toggleCountry(country.id)}
+                          className="flex items-center gap-1.5 flex-1 text-left"
                         >
-                          {favorites.has(country.id) ? (
-                            <Star className="h-3.5 w-3.5 fill-current" />
+                          {isExpanded ? (
+                            <ChevronDown className="h-3.5 w-3.5" />
                           ) : (
-                            <StarOff className="h-3.5 w-3.5" />
+                            <ChevronRight className="h-3.5 w-3.5" />
+                          )}
+                          <span className={`font-medium truncate text-sm ${
+                            (country.leaguesCount || 0) === 0 ? 'text-muted-foreground italic' : ''
+                          }`}>
+                            {country.name || country.fifa_name || country.official_name}
+                          </span>
+                          <Badge variant="outline" className="text-[10px] ml-1">Region</Badge>
+                          {countsLoadingCountries.has(country.id) ? (
+                            <Skeleton title="Fetching..." className="ml-1 inline-block h-3 w-6" />
+                          ) : (
+                            (() => {
+                              const c = countryTodayCounts.get(country.id) ?? 0;
+                              const isVisible = visibleCountryBadges.has(country.id);
+                              return (
+                                <Badge
+                                  variant="outline"
+                                  className={`text-[10px] ml-1 transition-opacity duration-300 ${
+                                    isVisible ? 'opacity-100' : 'opacity-0'
+                                  } ${
+                                    c > 0
+                                      ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
+                                      : 'bg-muted text-muted-foreground'
+                                  }`}
+                                  title={c > 0 ? `${c} fixtures today` : 'No fixtures today'}
+                                >
+                                  {c}
+                                </Badge>
+                              );
+                            })()
                           )}
                         </button>
-                        <a
-                          href={getCountryPredictionsUrl(country)}
-                          className="text-muted-foreground hover:text-foreground transition-colors"
-                          title="View all leagues"
-                        >
-                          <ExternalLink className="h-3.5 w-3.5" />
-                        </a>
+                        <div className="flex items-center gap-1.5">
+                          {/* Favorite Star */}
+                          <button
+                            onClick={(e) => toggleFavorite(country.id, e)}
+                            className={`transition-colors ${
+                              favorites.has(country.id)
+                                ? 'text-yellow-500 hover:text-yellow-600'
+                                : 'text-muted-foreground hover:text-yellow-500'
+                            }`}
+                            title={favorites.has(country.id) ? 'Remove from favorites' : 'Add to favorites'}
+                          >
+                            {favorites.has(country.id) ? (
+                              <Star className="h-3.5 w-3.5 fill-current" />
+                            ) : (
+                              <StarOff className="h-3.5 w-3.5" />
+                            )}
+                          </button>
+                          <a
+                            href={getCountryPredictionsUrl(country)}
+                            className="text-muted-foreground hover:text-foreground transition-colors"
+                            title="View all leagues"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </a>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Leagues List */}
-                    {isExpanded && (
-                      <div className="ml-4 space-y-0.5">
-                        {isLoadingLeagues ? (
-                          <div className="p-1.5 text-xs text-muted-foreground">
-                            Loading leagues...
-                          </div>
-                        ) : leagues.length > 0 ? (
-                          leagues.map((league) => {
-                            const active = pathname?.startsWith('/predictions/league') && searchParams?.get('id') === String(league.id);
-                            return (
-                              <div key={league.id} className={`flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors ${active ? 'bg-accent/60' : ''}`}>
-                                <a
-                                  href={`/predictions/league/${generateLeagueSlug(league)}?id=${league.id}`}
-                                  className={`flex items-center gap-1.5 flex-1 text-xs ${active ? 'text-primary font-medium' : ''}`}
-                                  title={`League ID: ${league.id}`}
-                                >
-                                  <span className="truncate">{league.name}</span>
-                                  {league.short_code && (
-                                    <Badge variant="outline" className={`text-xs px-1 py-0.5 ${active ? 'border-primary text-primary' : ''}`}>
-                                      {league.short_code}
-                                    </Badge>
-                                  )}
-                                  {isLoadingLeagues || countsLoadingCountries.has(country.id) ? (
-                                    <Skeleton title="Fetching..." className="ml-1 inline-block h-3 w-5" />
-                                  ) : (
-                                    (() => {
-                                      const lc = leagueTodayCounts.get(league.id) ?? 0;
-                                      const lVisible = visibleLeagueBadges.has(league.id);
-                                      return (
-                                        <Badge
-                                          variant="outline"
-                                          className={`text-[10px] transition-opacity duration-300 ${
-                                            lVisible ? 'opacity-100' : 'opacity-0'
-                                          } ${
-                                            lc > 0
-                                              ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
-                                              : 'bg-muted text-muted-foreground'
-                                          }`}
-                                          title={lc > 0 ? `${lc} fixtures today` : 'No fixtures today'}
-                                        >
-                                          {lc}
-                                        </Badge>
-                                      );
-                                    })()
-                                  )}
-                                </a>
-                              </div>
-                            );
-                          })
-                        ) : (
-                          <div className="p-1.5 text-xs text-muted-foreground">
-                            No active leagues found
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                      {/* Leagues List */}
+                      {isExpanded && (
+                        <div className="ml-4 space-y-0.5">
+                          {isLoadingLeagues ? (
+                            <div className="p-1.5 text-xs text-muted-foreground">
+                              Loading leagues...
+                            </div>
+                          ) : leagues.length > 0 ? (
+                            leagues.map((league) => {
+                              const active = pathname?.startsWith('/predictions/league') && searchParams?.get('id') === String(league.id);
+                              return (
+                                <div key={league.id} className={`flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors ${active ? 'bg-accent/60' : ''}`}>
+                                  <a
+                                    href={`/predictions/league/${generateLeagueSlug(league)}?id=${league.id}`}
+                                    className={`flex items-center gap-1.5 flex-1 text-xs ${active ? 'text-primary font-medium' : ''}`}
+                                    title={`League ID: ${league.id}`}
+                                  >
+                                    <span className="truncate">{league.name}</span>
+                                    {league.short_code && (
+                                      <Badge variant="outline" className={`text-xs px-1 py-0.5 ${active ? 'border-primary text-primary' : ''}`}>
+                                        {league.short_code}
+                                      </Badge>
+                                    )}
+                                    {isLoadingLeagues || countsLoadingCountries.has(country.id) ? (
+                                      <Skeleton title="Fetching..." className="ml-1 inline-block h-3 w-5" />
+                                    ) : (
+                                      (() => {
+                                        const lc = leagueTodayCounts.get(league.id) ?? 0;
+                                        const lVisible = visibleLeagueBadges.has(league.id);
+                                        return (
+                                          <Badge
+                                            variant="outline"
+                                            className={`text-[10px] transition-opacity duration-300 ${
+                                              lVisible ? 'opacity-100' : 'opacity-0'
+                                            } ${
+                                              lc > 0
+                                                ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
+                                                : 'bg-muted text-muted-foreground'
+                                            }`}
+                                            title={lc > 0 ? `${lc} fixtures today` : 'No fixtures today'}
+                                          >
+                                            {lc}
+                                          </Badge>
+                                        );
+                                      })()
+                                    )}
+                                  </a>
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <div className="p-1.5 text-xs text-muted-foreground">
+                              No active leagues found
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
