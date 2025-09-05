@@ -71,6 +71,7 @@ export default function Sidebar() {
   const [hideRegions, setHideRegions] = useState(false);
   // Last updated timestamp for counts
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string>('');
+  // Intersection observers for lazy counts (defined after fetch function)
 
   const isRegion = React.useCallback((country: CountryWithLeagues) => {
     const name = (country.name || country.fifa_name || country.official_name || '').trim().toLowerCase();
@@ -271,6 +272,27 @@ export default function Sidebar() {
     }
   }, [countryTodayCounts, leagueTodayCounts, today, storageKey]);
 
+  // Intersection observers for lazy counts (now placed after fetch)
+  const setupLazyObserver = React.useCallback(() => {
+    if (typeof IntersectionObserver === 'undefined') return () => {};
+    const container = document.querySelector('[data-sidebar-scroll-container]') || null;
+    const options: IntersectionObserverInit = { root: container as Element | null, threshold: 0.1 };
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          const idAttr = entry.target.getAttribute('data-country-id');
+          const cid = idAttr ? Number(idAttr) : NaN;
+          if (!Number.isNaN(cid) && !countryTodayCounts.has(cid) && !countsLoadingCountries.has(cid)) {
+            fetchCountryTodayCounts(cid);
+          }
+        }
+      }
+    }, options);
+    const rows = document.querySelectorAll('[data-country-id]');
+    rows.forEach(r => observer.observe(r));
+    return () => observer.disconnect();
+  }, [fetchCountryTodayCounts, countryTodayCounts, countsLoadingCountries]);
+
   // Toggle country expansion with accordion behavior (only one country expanded at a time)
   const toggleCountry = (countryId: number) => {
     const newExpanded = new Set<number>();
@@ -441,7 +463,9 @@ export default function Sidebar() {
   // Load countries on mount
   useEffect(() => {
     loadCountriesWithLeagues();
-  }, []);
+    const teardown = setupLazyObserver();
+    return () => { try { teardown(); } catch {} };
+  }, [setupLazyObserver]);
 
   // Auto-collapse when navigating to a league page
   useEffect(() => {
@@ -598,7 +622,7 @@ export default function Sidebar() {
         </div>
 
         {/* Lists */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto" data-sidebar-scroll-container>
           {/* Countries Section */}
           <div className="p-1">
             <div className="px-1 py-1 text-[11px] uppercase tracking-wide text-muted-foreground">Countries</div>
@@ -609,7 +633,7 @@ export default function Sidebar() {
               const isLoadingLeagues = loadingStates.get(country.id) || false;
 
               return (
-                 <div key={country.id} className="space-y-0.5" id={`country-${country.id}`}>
+                 <div key={country.id} className="space-y-0.5" id={`country-${country.id}`} data-country-id={country.id}>
                   {/* Country Header */}
                   <div className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
                     <button
@@ -757,7 +781,7 @@ export default function Sidebar() {
                 const isLoadingLeagues = loadingStates.get(country.id) || false;
 
                 return (
-                  <div key={country.id} className="space-y-0.5" id={`country-${country.id}`}>
+                  <div key={country.id} className="space-y-0.5" id={`country-${country.id}`} data-country-id={country.id}>
                     {/* Country Header */}
                     <div className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
                       <button
