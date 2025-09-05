@@ -69,6 +69,8 @@ export default function Sidebar() {
   const [visibleLeagueBadges, setVisibleLeagueBadges] = useState<Set<number>>(new Set());
   // Regions (continents, world) handling
   const [hideRegions, setHideRegions] = useState(false);
+  // Last updated timestamp for counts
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string>('');
 
   const isRegion = React.useCallback((country: CountryWithLeagues) => {
     const name = (country.name || country.fifa_name || country.official_name || '').trim().toLowerCase();
@@ -198,12 +200,27 @@ export default function Sidebar() {
   // Fetch today's fixtures for a country and compute per-league counts
   const fetchCountryTodayCounts = React.useCallback(async (countryId: number) => {
     if (countryTodayCounts.has(countryId)) return;
+    const maxAttempts = 3;
+    let attempt = 0;
+    type FixtureLike = { league?: { id?: number } };
+    let data: { success?: boolean; data?: FixtureLike[] } | null = null;
     try {
       setCountsLoadingCountries(prev => new Set(prev).add(countryId));
       const url = `/api/sportmonks/fixtures/date-country?date=${today}&countryId=${countryId}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      const fixtures = data?.success ? (data.data || []) : [];
+      while (attempt < maxAttempts) {
+        try {
+          const res = await fetch(url, { cache: 'no-store' });
+          data = await res.json();
+          if (!data?.success) throw new Error('Unsuccessful response');
+          break;
+        } catch {
+          attempt += 1;
+          if (attempt >= maxAttempts) break;
+          const backoffMs = Math.pow(2, attempt) * 250; // 250ms, 500ms, 1000ms
+          await new Promise(r => setTimeout(r, backoffMs));
+        }
+      }
+      const fixtures: FixtureLike[] = data?.success ? (data.data || []) : [];
       // Build next maps and persist
       const nextCountryMap = new Map(countryTodayCounts);
       nextCountryMap.set(countryId, fixtures.length);
@@ -220,6 +237,7 @@ export default function Sidebar() {
 
       setCountryTodayCounts(nextCountryMap);
       setLeagueTodayCounts(nextLeagueMap);
+      setLastUpdatedAt(new Date().toLocaleTimeString());
 
       try {
         localStorage.setItem(
@@ -517,6 +535,11 @@ export default function Sidebar() {
             >
               <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
+            {lastUpdatedAt && (
+              <span className="text-[10px] text-muted-foreground" title="Last updated">
+                Updated {lastUpdatedAt}
+              </span>
+            )}
             
             <button
               onClick={() => setShowSettings(!showSettings)}
