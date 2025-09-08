@@ -43,7 +43,9 @@ export function H2HModal({ open, onClose, team1Name, team2Name, isLoading, error
             {isLoading ? (
               <div className="py-8 text-center text-gray-600">Loading head-to-head…</div>
             ) : error ? (
-              <div className="py-8 text-center text-red-600">{error}</div>
+              <div className="py-6 px-3 rounded-md bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 text-sm text-center">
+                Head-to-head data isn&apos;t available on the current subscription.
+              </div>
             ) : fixtures.length === 0 ? (
               <div className="py-8 text-center text-gray-600">No recent meetings found.</div>
             ) : (
