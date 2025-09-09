@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sportmonks } from "@/lib/sportmonks";
+import { isAxiosError } from "axios";
 
 export async function GET(request: Request) {
   try {
@@ -27,9 +28,25 @@ export async function GET(request: Request) {
     });
 
     return NextResponse.json(data, { status: 200 });
-  } catch (error) {
-    console.error("/api/sportmonks/fixtures/head-to-head error", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  } catch (error: unknown) {
+    let status = 500;
+    let data: unknown = undefined;
+    let message = "Internal Server Error";
+
+    if (isAxiosError(error)) {
+      status = error.response?.status ?? 500;
+      data = error.response?.data;
+      message = error.message;
+    } else if (error instanceof Error) {
+      message = error.message;
+    }
+
+    console.error("/api/sportmonks/fixtures/head-to-head error", {
+      status,
+      message,
+      data,
+    });
+    return NextResponse.json({ success: false, message, data }, { status });
   }
 }
 
