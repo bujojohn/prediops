@@ -456,14 +456,35 @@ export function FixtureCard({
     enabled: true,
   });
 
-  // Determine ValueBet state
-  const valueBetState: ValueBetState = useMemo(() => {
-    if (valueBetLoading) return "loading";
-    if (valueBetError) return "error";
-    if (!valueBetData?.success || !valueBetData.data?.data?.length) return "unavailable";
+  // Determine ValueBet state and extract data
+  const { valueBetState, valueBetInfo } = useMemo(() => {
+    if (valueBetLoading) return { valueBetState: "loading" as ValueBetState, valueBetInfo: undefined };
+    if (valueBetError) return { valueBetState: "error" as ValueBetState, valueBetInfo: undefined };
+    if (!valueBetData?.success || !valueBetData.data?.data?.length) {
+      return { valueBetState: "unavailable" as ValueBetState, valueBetInfo: undefined };
+    }
     
-    const hasValueBet = valueBetData.data.data.some(vb => vb.predictions.is_value);
-    return hasValueBet ? "value" : "no-value";
+    const valueBets = valueBetData.data.data;
+    const valueBetItems = valueBets.filter(vb => vb.predictions.is_value);
+    const hasValueBet = valueBetItems.length > 0;
+    
+    if (hasValueBet) {
+      const bestValueBet = valueBetItems.reduce((best, current) => 
+        current.predictions.odd > best.predictions.odd ? current : best
+      );
+      
+      return {
+        valueBetState: "value" as ValueBetState,
+        valueBetInfo: {
+          count: valueBetItems.length,
+          bestOdd: bestValueBet.predictions.odd,
+          fairOdd: bestValueBet.predictions.fair_odd,
+          bookmaker: bestValueBet.predictions.bookmaker,
+        }
+      };
+    }
+    
+    return { valueBetState: "no-value" as ValueBetState, valueBetInfo: undefined };
   }, [valueBetLoading, valueBetError, valueBetData]);
 
   const liveScore = getLiveScore(fixture.id);
@@ -957,7 +978,12 @@ export function FixtureCard({
 
               {/* Odds button and ValueBet icon positioned below scores */}
               <div className="col-span-2 mt-2 flex justify-center items-center gap-2">
-                <ValueBetIcon state={valueBetState} size="sm" />
+                <ValueBetIcon 
+                  state={valueBetState} 
+                  size="sm" 
+                  showGlow={valueBetState === "value"}
+                  valueBetData={valueBetInfo}
+                />
                 <Button
                   variant="outline"
                   size="sm"
@@ -1244,7 +1270,12 @@ export function FixtureCard({
                   {formatTimeLocal(fixture.starting_at || "")}
                 </div>
               )}
-              <ValueBetIcon state={valueBetState} size="sm" />
+              <ValueBetIcon 
+                state={valueBetState} 
+                size="sm" 
+                showGlow={valueBetState === "value"}
+                valueBetData={valueBetInfo}
+              />
             </div>
             <div className="flex items-center gap-2 min-w-0 justify-end">
               <span className="font-medium truncate text-[12px] sm:text-[13px] text-right text-gray-800">

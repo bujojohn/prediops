@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { DollarSign } from "lucide-react";
+import { DollarSign, TrendingUp, XCircle, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type ValueBetState = "loading" | "value" | "no-value" | "unavailable" | "error";
@@ -11,6 +11,13 @@ export interface ValueBetIconProps {
   className?: string;
   size?: "sm" | "md" | "lg";
   title?: string;
+  showGlow?: boolean;
+  valueBetData?: {
+    count: number;
+    bestOdd?: number;
+    fairOdd?: number;
+    bookmaker?: string;
+  };
 }
 
 const sizeClasses = {
@@ -21,10 +28,26 @@ const sizeClasses = {
 
 const stateClasses = {
   loading: "text-gray-400 animate-pulse",
-  value: "text-yellow-500 dark:text-yellow-400",
+  value: "text-green-500 dark:text-green-400",
   "no-value": "text-gray-600 dark:text-gray-300",
   unavailable: "text-gray-400 dark:text-gray-500",
   error: "text-red-500 dark:text-red-400",
+};
+
+const glowClasses = {
+  value: "drop-shadow-[0_0_4px_rgba(34,197,94,0.4)] dark:drop-shadow-[0_0_4px_rgba(34,197,94,0.6)]",
+  "no-value": "",
+  unavailable: "",
+  error: "",
+  loading: "",
+};
+
+const stateIcons = {
+  loading: DollarSign,
+  value: TrendingUp,
+  "no-value": DollarSign,
+  unavailable: XCircle,
+  error: AlertCircle,
 };
 
 const stateTitles = {
@@ -35,19 +58,42 @@ const stateTitles = {
   error: "Error loading value bet data",
 };
 
+function getValueBetTooltip(state: ValueBetState, valueBetData?: ValueBetIconProps['valueBetData']): string {
+  if (state === "value" && valueBetData) {
+    const { count, bestOdd, fairOdd, bookmaker } = valueBetData;
+    let tooltip = `${count} value bet${count > 1 ? 's' : ''} available`;
+    
+    if (bestOdd && fairOdd) {
+      tooltip += `\nBest odds: ${bestOdd} (Fair: ${fairOdd})`;
+    }
+    
+    if (bookmaker) {
+      tooltip += `\nBookmaker: ${bookmaker}`;
+    }
+    
+    return tooltip;
+  }
+  
+  return stateTitles[state];
+}
+
 export function ValueBetIcon({ 
   state, 
   className, 
   size = "md",
-  title 
+  title,
+  showGlow = false,
+  valueBetData
 }: ValueBetIconProps) {
-  const iconTitle = title || stateTitles[state];
+  const IconComponent = stateIcons[state];
+  const iconTitle = title || getValueBetTooltip(state, valueBetData);
   
   return (
-    <DollarSign
+    <IconComponent
       className={cn(
         sizeClasses[size],
         stateClasses[state],
+        showGlow && state === "value" && glowClasses.value,
         className
       )}
       title={iconTitle}
