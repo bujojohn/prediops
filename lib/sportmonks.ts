@@ -741,5 +741,18 @@ export const sportmonks = {
       const response = await api.get(url, { params: makeParams(config) });
       return response.data;
     },
+
+  /**
+   * Returns value bets for a specific fixture.
+   * Doc: https://docs.sportmonks.com/football/endpoints-and-entities/endpoints/predictions/get-value-bets-by-fixture-id
+   * @param fixtureId - Fixture ID as string
+   * @param config - ApiConfig with include options
+   * @returns ApiListResponse<ValueBet>
+   */
+  async getValueBetsByFixtureId(fixtureId: string, config?: ApiConfig): Promise<ApiListResponse<ValueBet>> {
+    const url = `/predictions/value-bets/fixtures/${fixtureId}`;
+    const response = await api.get(url, { params: makeParams(config) });
+    return response.data;
+  },
   
 };

@@ -19,6 +19,8 @@ import { useQuery } from "@tanstack/react-query";
 import type { Odd } from "@/schemas/odds.schema";
 // import { useHeadToHead } from "@/app/hooks/useHeadToHead";
 // import H2HModal from "@/app/components/h2h/H2HModal";
+import { useValueBet } from "@/app/hooks/useValueBet";
+import ValueBetIcon, { type ValueBetState } from "@/app/components/valuebet/ValueBetIcon";
 
 type MarketKey = string;
 
@@ -447,6 +449,22 @@ export function FixtureCard({
   //   team2Id: away?.id,
   //   enabled: showH2H,
   // });
+
+  // ValueBet React Query
+  const { data: valueBetData, isLoading: valueBetLoading, error: valueBetError } = useValueBet({
+    fixtureId: fixture.id,
+    enabled: true,
+  });
+
+  // Determine ValueBet state
+  const valueBetState: ValueBetState = useMemo(() => {
+    if (valueBetLoading) return "loading";
+    if (valueBetError) return "error";
+    if (!valueBetData?.success || !valueBetData.data?.data?.length) return "unavailable";
+    
+    const hasValueBet = valueBetData.data.data.some(vb => vb.predictions.is_value);
+    return hasValueBet ? "value" : "no-value";
+  }, [valueBetLoading, valueBetError, valueBetData]);
 
   const liveScore = getLiveScore(fixture.id);
   const scoreHome = useMemo(
@@ -937,8 +955,9 @@ export function FixtureCard({
                 )}
               </div>
 
-              {/* Odds button positioned below scores */}
-              <div className="col-span-2 mt-2 flex justify-center">
+              {/* Odds button and ValueBet icon positioned below scores */}
+              <div className="col-span-2 mt-2 flex justify-center items-center gap-2">
+                <ValueBetIcon state={valueBetState} size="sm" />
                 <Button
                   variant="outline"
                   size="sm"
@@ -1225,6 +1244,7 @@ export function FixtureCard({
                   {formatTimeLocal(fixture.starting_at || "")}
                 </div>
               )}
+              <ValueBetIcon state={valueBetState} size="sm" />
             </div>
             <div className="flex items-center gap-2 min-w-0 justify-end">
               <span className="font-medium truncate text-[12px] sm:text-[13px] text-right text-gray-800">
