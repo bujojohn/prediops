@@ -4,10 +4,10 @@ import { isAxiosError } from "axios";
 
 export async function GET(
   request: Request,
-  { params }: { params: { fixtureId: string } }
+  { params }: { params: Promise<{ fixtureId: string }> }
 ) {
   try {
-    const { fixtureId } = params;
+    const { fixtureId } = await params;
     
     if (!fixtureId) {
       return NextResponse.json(
@@ -35,7 +35,7 @@ export async function GET(
     }
 
     console.error("/api/sportmonks/value-bets/fixture/[fixtureId] error", {
-      fixtureId: params.fixtureId,
+      fixtureId: (await params).fixtureId,
       status,
       message,
       data,
