@@ -12,6 +12,7 @@ export interface ValueBetIconProps {
   size?: "sm" | "md" | "lg";
   title?: string;
   showGlow?: boolean;
+  showExplanations?: boolean;
   valueBetData?: {
     count: number;
     bestOdd?: number;
@@ -58,23 +59,41 @@ const stateTitles = {
   error: "Error loading value bet data",
 };
 
-function getValueBetTooltip(state: ValueBetState, valueBetData?: ValueBetIconProps['valueBetData']): string {
+const stateExplanations = {
+  loading: "⏳ Loading value bet analysis...",
+  value: "🟢 Value Bet: Favorable odds detected - profitable betting opportunity",
+  "no-value": "⚪ No Value: Data available but odds are not favorable for betting",
+  unavailable: "⚫ No Data: Value bet analysis not available for this fixture",
+  error: "🔴 Error: Failed to load value bet data",
+};
+
+function getValueBetTooltip(
+  state: ValueBetState, 
+  valueBetData?: ValueBetIconProps['valueBetData'],
+  showExplanations?: boolean
+): string {
+  const explanation = showExplanations ? stateExplanations[state] : stateTitles[state];
+  
   if (state === "value" && valueBetData) {
     const { count, bestOdd, fairOdd, bookmaker } = valueBetData;
-    let tooltip = `${count} value bet${count > 1 ? 's' : ''} available`;
+    let tooltip = explanation;
+    
+    if (count > 0) {
+      tooltip += `\n\n📊 ${count} value bet${count > 1 ? 's' : ''} available`;
+    }
     
     if (bestOdd && fairOdd) {
-      tooltip += `\nBest odds: ${bestOdd} (Fair: ${fairOdd})`;
+      tooltip += `\n💰 Best odds: ${bestOdd} (Fair: ${fairOdd})`;
     }
     
     if (bookmaker) {
-      tooltip += `\nBookmaker: ${bookmaker}`;
+      tooltip += `\n🏦 Bookmaker: ${bookmaker}`;
     }
     
     return tooltip;
   }
   
-  return stateTitles[state];
+  return explanation;
 }
 
 export function ValueBetIcon({ 
@@ -83,10 +102,11 @@ export function ValueBetIcon({
   size = "md",
   title,
   showGlow = false,
+  showExplanations = false,
   valueBetData
 }: ValueBetIconProps) {
   const IconComponent = stateIcons[state];
-  const iconTitle = title || getValueBetTooltip(state, valueBetData);
+  const iconTitle = title || getValueBetTooltip(state, valueBetData, showExplanations);
   
   return (
     <IconComponent

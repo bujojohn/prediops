@@ -4,6 +4,7 @@ import { createContext, useContext, useState, ReactNode } from 'react';
 
 interface DisplaySettings {
   showTeamImages: boolean;
+  showValueBetExplanations: boolean;
 }
 
 interface DisplaySettingsContextType {
@@ -16,6 +17,7 @@ const DisplaySettingsContext = createContext<DisplaySettingsContextType | undefi
 
 const defaultSettings: DisplaySettings = {
   showTeamImages: true,
+  showValueBetExplanations: true,
 };
 
 export function DisplaySettingsProvider({ children }: { children: ReactNode }) {
