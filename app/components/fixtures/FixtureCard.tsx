@@ -17,8 +17,8 @@ import { LoadingIndicator } from "@/app/components/ui/loading-indicator";
 import { FixturesContext } from "@/app/contexts/FixturesContext";
 import { useQuery } from "@tanstack/react-query";
 import type { Odd } from "@/schemas/odds.schema";
-import { useHeadToHead } from "@/app/hooks/useHeadToHead";
-import H2HModal from "@/app/components/h2h/H2HModal";
+// import { useHeadToHead } from "@/app/hooks/useHeadToHead";
+// import H2HModal from "@/app/components/h2h/H2HModal";
 
 type MarketKey = string;
 
@@ -225,7 +225,7 @@ export function FixtureCard({
   const [selectedMarketKey, setSelectedMarketKey] = useState<MarketKey | null>(
     null
   );
-  const [showH2H, setShowH2H] = useState(false);
+  // const [showH2H, setShowH2H] = useState(false);
   const { settings } = useDisplaySettings();
   const isLive = isLiveMatch(fixture);
   const { getLiveScore, isUpdating } = useLiveScores([fixture], isLive);
@@ -441,12 +441,12 @@ export function FixtureCard({
     [participantsArray]
   );
 
-  // H2H React Query
-  const { data: h2hData, isLoading: h2hLoading, error: h2hError } = useHeadToHead({
-    team1Id: home?.id,
-    team2Id: away?.id,
-    enabled: showH2H,
-  });
+  // H2H React Query (disabled until endpoint access)
+  // const { data: h2hData, isLoading: h2hLoading, error: h2hError } = useHeadToHead({
+  //   team1Id: home?.id,
+  //   team2Id: away?.id,
+  //   enabled: showH2H,
+  // });
 
   const liveScore = getLiveScore(fixture.id);
   const scoreHome = useMemo(
@@ -903,11 +903,7 @@ export function FixtureCard({
                       className="rounded h-4 w-4"
                     />
                   )}
-                  <span
-                    className="text-[12px] font-medium text-gray-800 dark:text-gray-200 truncate cursor-pointer hover:underline"
-                    onClick={() => setShowH2H(true)}
-                    title="Head-to-Head"
-                  >
+                  <span className="text-[12px] font-medium text-gray-800 dark:text-gray-200 truncate">
                     {home?.name || "Home"}
                   </span>
                 </div>
@@ -919,11 +915,7 @@ export function FixtureCard({
                       className="rounded h-4 w-4"
                     />
                   )}
-                  <span
-                    className="text-[12px] font-medium text-gray-800 dark:text-gray-200 truncate cursor-pointer hover:underline"
-                    onClick={() => setShowH2H(true)}
-                    title="Head-to-Head"
-                  >
+                  <span className="text-[12px] font-medium text-gray-800 dark:text-gray-200 truncate">
                     {away?.name || "Away"}
                   </span>
                 </div>
@@ -1205,10 +1197,7 @@ export function FixtureCard({
             className="mt-2 grid grid-cols-3 items-center gap-2"
             style={{ minHeight: compact ? 0 : undefined }}
           >
-            <div
-              className="flex items-center gap-2 min-w-0"
-              onClick={() => setShowH2H(true)}
-            >
+            <div className="flex items-center gap-2 min-w-0">
               {settings.showTeamImages && (
                 <TeamLogo
                   src={home?.image_path ?? undefined}
@@ -1237,10 +1226,7 @@ export function FixtureCard({
                 </div>
               )}
             </div>
-            <div
-              className="flex items-center gap-2 min-w-0 justify-end"
-              onClick={() => setShowH2H(true)}
-            >
+            <div className="flex items-center gap-2 min-w-0 justify-end">
               <span className="font-medium truncate text-[12px] sm:text-[13px] text-right text-gray-800">
                 {away?.name || "Away"}
               </span>
@@ -1402,8 +1388,8 @@ export function FixtureCard({
             )}
           </div>
         </CardContent>
-        {/* H2H modal (reusable) */}
-        <H2HModal
+        {/* H2H modal (disabled until endpoint access) */}
+        {/* <H2HModal
           open={showH2H}
           onClose={() => setShowH2H(false)}
           team1Name={home?.name}
@@ -1412,7 +1398,7 @@ export function FixtureCard({
           error={h2hError ? (h2hError instanceof Error ? h2hError.message : String(h2hError)) : null}
           fixtures={h2hData?.data || []}
           onViewFull={undefined}
-        />
+        /> */}
       </Card>
       {showOdds && (
         <div
