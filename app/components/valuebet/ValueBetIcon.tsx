@@ -3,6 +3,7 @@
 import * as React from "react";
 import { DollarSign, TrendingUp, XCircle, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export type ValueBetState = "loading" | "value" | "no-value" | "unavailable" | "error";
 
@@ -106,19 +107,30 @@ export function ValueBetIcon({
   valueBetData
 }: ValueBetIconProps) {
   const IconComponent = stateIcons[state];
-  const iconTitle = title || getValueBetTooltip(state, valueBetData, showExplanations);
+  const tooltipContent = title || getValueBetTooltip(state, valueBetData, showExplanations);
   
   return (
-    <IconComponent
-      className={cn(
-        sizeClasses[size],
-        stateClasses[state],
-        showGlow && state === "value" && glowClasses.value,
-        className
-      )}
-      title={iconTitle}
-      aria-label={iconTitle}
-    />
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <IconComponent
+            className={cn(
+              sizeClasses[size],
+              stateClasses[state],
+              showGlow && state === "value" && glowClasses.value,
+              className
+            )}
+            aria-label={tooltipContent}
+          />
+        </TooltipTrigger>
+        <TooltipContent 
+          side="top" 
+          className="max-w-xs whitespace-pre-line text-center"
+        >
+          {tooltipContent}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 
