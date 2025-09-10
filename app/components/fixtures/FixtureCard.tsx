@@ -17,6 +17,10 @@ import { LoadingIndicator } from "@/app/components/ui/loading-indicator";
 import { FixturesContext } from "@/app/contexts/FixturesContext";
 import { useQuery } from "@tanstack/react-query";
 import type { Odd } from "@/schemas/odds.schema";
+// import { useHeadToHead } from "@/app/hooks/useHeadToHead";
+// import H2HModal from "@/app/components/h2h/H2HModal";
+import { useValueBet } from "@/app/hooks/useValueBet";
+import ValueBetIcon, { type ValueBetState } from "@/app/components/valuebet/ValueBetIcon";
 
 type MarketKey = string;
 
@@ -223,7 +227,7 @@ export function FixtureCard({
   const [selectedMarketKey, setSelectedMarketKey] = useState<MarketKey | null>(
     null
   );
-  const [showH2H, setShowH2H] = useState(false);
+  // const [showH2H, setShowH2H] = useState(false);
   const { settings } = useDisplaySettings();
   const isLive = isLiveMatch(fixture);
   const { getLiveScore, isUpdating } = useLiveScores([fixture], isLive);
@@ -438,6 +442,50 @@ export function FixtureCard({
     () => participantsArray.find((p) => p.meta?.location === "away"),
     [participantsArray]
   );
+
+  // H2H React Query (disabled until endpoint access)
+  // const { data: h2hData, isLoading: h2hLoading, error: h2hError } = useHeadToHead({
+  //   team1Id: home?.id,
+  //   team2Id: away?.id,
+  //   enabled: showH2H,
+  // });
+
+  // ValueBet React Query
+  const { data: valueBetData, isLoading: valueBetLoading, error: valueBetError } = useValueBet({
+    fixtureId: fixture.id,
+    enabled: true,
+  });
+
+  // Determine ValueBet state and extract data
+  const { valueBetState, valueBetInfo } = useMemo(() => {
+    if (valueBetLoading) return { valueBetState: "loading" as ValueBetState, valueBetInfo: undefined };
+    if (valueBetError) return { valueBetState: "error" as ValueBetState, valueBetInfo: undefined };
+    if (!valueBetData?.success || !valueBetData.data?.data?.length) {
+      return { valueBetState: "unavailable" as ValueBetState, valueBetInfo: undefined };
+    }
+    
+    const valueBets = valueBetData.data.data;
+    const valueBetItems = valueBets.filter(vb => vb.predictions.is_value);
+    const hasValueBet = valueBetItems.length > 0;
+    
+    if (hasValueBet) {
+      const bestValueBet = valueBetItems.reduce((best, current) => 
+        current.predictions.odd > best.predictions.odd ? current : best
+      );
+      
+      return {
+        valueBetState: "value" as ValueBetState,
+        valueBetInfo: {
+          count: valueBetItems.length,
+          bestOdd: bestValueBet.predictions.odd,
+          fairOdd: bestValueBet.predictions.fair_odd,
+          bookmaker: bestValueBet.predictions.bookmaker,
+        }
+      };
+    }
+    
+    return { valueBetState: "no-value" as ValueBetState, valueBetInfo: undefined };
+  }, [valueBetLoading, valueBetError, valueBetData]);
 
   const liveScore = getLiveScore(fixture.id);
   const scoreHome = useMemo(
@@ -928,8 +976,15 @@ export function FixtureCard({
                 )}
               </div>
 
-              {/* Odds button positioned below scores */}
-              <div className="col-span-2 mt-2 flex justify-center">
+              {/* Odds button and ValueBet icon positioned below scores */}
+              <div className="col-span-2 mt-2 flex justify-center items-center gap-2">
+                <ValueBetIcon 
+                  state={valueBetState} 
+                  size="sm" 
+                  showGlow={valueBetState === "value"}
+                  showExplanations={settings.showValueBetExplanations}
+                  valueBetData={valueBetInfo}
+                />
                 <Button
                   variant="outline"
                   size="sm"
@@ -1188,10 +1243,7 @@ export function FixtureCard({
             className="mt-2 grid grid-cols-3 items-center gap-2"
             style={{ minHeight: compact ? 0 : undefined }}
           >
-            <div
-              className="flex items-center gap-2 min-w-0"
-              onClick={() => setShowH2H(true)}
-            >
+            <div className="flex items-center gap-2 min-w-0">
               {settings.showTeamImages && (
                 <TeamLogo
                   src={home?.image_path ?? undefined}
@@ -1219,11 +1271,15 @@ export function FixtureCard({
                   {formatTimeLocal(fixture.starting_at || "")}
                 </div>
               )}
+              <ValueBetIcon 
+                state={valueBetState} 
+                size="sm" 
+                showGlow={valueBetState === "value"}
+                showExplanations={settings.showValueBetExplanations}
+                valueBetData={valueBetInfo}
+              />
             </div>
-            <div
-              className="flex items-center gap-2 min-w-0 justify-end"
-              onClick={() => setShowH2H(true)}
-            >
+            <div className="flex items-center gap-2 min-w-0 justify-end">
               <span className="font-medium truncate text-[12px] sm:text-[13px] text-right text-gray-800">
                 {away?.name || "Away"}
               </span>
@@ -1385,53 +1441,17 @@ export function FixtureCard({
             )}
           </div>
         </CardContent>
-        {/* H2H modal */}
-        {showH2H && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-            onClick={() => setShowH2H(false)}
-          >
-            <div
-              className="bg-white rounded-md shadow-xl w-full max-w-lg"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="p-4 border-b font-semibold">Head to Head</div>
-              <div className="p-4 space-y-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <TeamLogo
-                      src={home?.image_path ?? undefined}
-                      alt={home?.name || "Home"}
-                      className="rounded h-6 w-6"
-                    />
-                    <span className="font-medium">{home?.name || "Home"}</span>
-                  </div>
-                  <div className="text-gray-400">vs</div>
-                  <div className="flex items-center gap-2">
-                    <TeamLogo
-                      src={away?.image_path ?? undefined}
-                      alt={away?.name || "Away"}
-                      className="rounded h-6 w-6"
-                    />
-                    <span className="font-medium">{away?.name || "Away"}</span>
-                  </div>
-                </div>
-                <div className="text-gray-600">
-                  Head-to-head stats coming soon.
-                </div>
-              </div>
-              <div className="p-3 border-t flex justify-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowH2H(false)}
-                >
-                  Close
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* H2H modal (disabled until endpoint access) */}
+        {/* <H2HModal
+          open={showH2H}
+          onClose={() => setShowH2H(false)}
+          team1Name={home?.name}
+          team2Name={away?.name}
+          isLoading={h2hLoading}
+          error={h2hError ? (h2hError instanceof Error ? h2hError.message : String(h2hError)) : null}
+          fixtures={h2hData?.data || []}
+          onViewFull={undefined}
+        /> */}
       </Card>
       {showOdds && (
         <div

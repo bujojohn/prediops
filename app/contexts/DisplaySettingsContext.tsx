@@ -4,18 +4,21 @@ import { createContext, useContext, useState, ReactNode } from 'react';
 
 interface DisplaySettings {
   showTeamImages: boolean;
+  showValueBetExplanations: boolean;
 }
 
 interface DisplaySettingsContextType {
   settings: DisplaySettings;
   updateSettings: (newSettings: Partial<DisplaySettings>) => void;
   toggleTeamImages: () => void;
+  toggleValueBetExplanations: () => void;
 }
 
 const DisplaySettingsContext = createContext<DisplaySettingsContextType | undefined>(undefined);
 
 const defaultSettings: DisplaySettings = {
   showTeamImages: true,
+  showValueBetExplanations: true,
 };
 
 export function DisplaySettingsProvider({ children }: { children: ReactNode }) {
@@ -29,8 +32,12 @@ export function DisplaySettingsProvider({ children }: { children: ReactNode }) {
     setSettings(prev => ({ ...prev, showTeamImages: !prev.showTeamImages }));
   };
 
+  const toggleValueBetExplanations = () => {
+    setSettings(prev => ({ ...prev, showValueBetExplanations: !prev.showValueBetExplanations }));
+  };
+
   return (
-    <DisplaySettingsContext.Provider value={{ settings, updateSettings, toggleTeamImages }}>
+    <DisplaySettingsContext.Provider value={{ settings, updateSettings, toggleTeamImages, toggleValueBetExplanations }}>
       {children}
     </DisplaySettingsContext.Provider>
   );
