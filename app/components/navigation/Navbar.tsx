@@ -136,37 +136,43 @@ export function Navbar() {
               ))}
               
               {/* Mobile Actions */}
-              <div className="flex items-center justify-between px-3 py-2 border-t border-border mt-2">
-                <div className="flex items-center space-x-2">
+              <div className="px-3 py-2 border-t border-border mt-2 space-y-3">
+                {/* Display Settings */}
+                <div className="flex flex-col space-y-2">
+                  <div className="text-xs font-medium text-muted-foreground">Display Settings</div>
                   <DisplaySettingsToggle />
-                                     <Button
-                     variant="ghost"
-                     size="sm"
-                     onClick={toggleTheme}
-                     className="flex items-center space-x-2"
-                   >
-                     {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                     <span className="text-sm">Dark Mode</span>
-                   </Button>
                 </div>
                 
-                <div className="flex space-x-2">
+                {/* Theme and Other Actions */}
+                <div className="flex items-center justify-between">
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="p-2 relative"
+                    onClick={toggleTheme}
+                    className="flex items-center space-x-2"
                   >
-                    <Bell className="h-4 w-4" />
-                    <span className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full"></span>
+                    {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                    <span className="text-sm">Dark Mode</span>
                   </Button>
                   
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="p-2"
-                  >
-                    <User className="h-4 w-4" />
-                  </Button>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="p-2 relative"
+                    >
+                      <Bell className="h-4 w-4" />
+                      <span className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full"></span>
+                    </Button>
+                    
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="p-2"
+                    >
+                      <User className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
