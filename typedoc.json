@@ -1,0 +1,68 @@
+{
+  "entryPoints": [
+    "./lib",
+    "./app/components",
+    "./app/hooks",
+    "./app/contexts"
+  ],
+  "out": "./docs/generated/typedoc",
+  "exclude": [
+    "**/*.test.*",
+    "**/*.spec.*",
+    "**/node_modules/**",
+    "**/.next/**",
+    "**/dist/**",
+    "**/build/**"
+  ],
+  "excludeExternals": true,
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": true,
+  "readme": "./docs/README.md",
+  "name": "Prediops API Documentation",
+  "includeVersion": true,
+  "categorizeByGroup": true,
+  "defaultCategory": "Other",
+  "categoryOrder": [
+    "API",
+    "Components",
+    "Hooks",
+    "Utils",
+    "Types",
+    "Other"
+  ],
+  "sort": [
+    "source-order"
+  ],
+  "kindSortOrder": [
+    "Project",
+    "Module",
+    "Namespace",
+    "Enum",
+    "Class",
+    "Interface",
+    "Type alias",
+    "Constructor",
+    "Property",
+    "Variable",
+    "Function",
+    "Accessor",
+    "Method"
+  ],
+  "navigation": {
+    "includeCategories": true,
+    "includeGroups": true
+  },
+  "searchInComments": true,
+  "cleanOutputDir": true,
+  "plugin": [
+    "typedoc-plugin-markdown"
+  ],
+  "theme": "default",
+  "lightHighlightTheme": "github-light",
+  "darkHighlightTheme": "github-dark",
+  "gitRevision": "main",
+  "gitRemote": "origin",
+  "gitCommitHash": "short",
+  "gitCommitDate": "short-date"
+}
