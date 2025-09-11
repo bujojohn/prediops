@@ -431,11 +431,11 @@ export function getPredictionButtonStyle(
   // Apply the requested color theme
   switch (status) {
     case 'pending':
-      // Neutral styling pre-match; do not highlight highest
+      // Original theme color (blue) for pre-match; highlight highest probability
       return {
-        backgroundColor: 'bg-gray-100',
-        textColor: 'text-gray-600',
-        borderColor: 'border-gray-200',
+        backgroundColor: isHighest ? 'bg-blue-100' : 'bg-gray-100',
+        textColor: isHighest ? 'text-blue-700' : 'text-gray-600',
+        borderColor: isHighest ? 'border-blue-300' : 'border-gray-200',
         isHighest,
         isSuccessful,
         status: 'pending'
