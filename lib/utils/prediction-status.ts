@@ -1,4 +1,5 @@
-import { type Prediction, type Fixture } from '@/schemas';
+import { type Prediction } from '@/schemas/predictions.schema';
+import { type Fixture } from '@/schemas/fixture.schema';
 
 export type PredictionStatus = 'pending' | 'live' | 'succeeding' | 'success' | 'failed';
 

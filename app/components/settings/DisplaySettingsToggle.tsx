@@ -8,13 +8,13 @@ export function DisplaySettingsToggle() {
   const { settings, toggleTeamImages, toggleValueBetExplanations } = useDisplaySettings();
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-1">
       {/* Team Images Toggle */}
       <Button
         variant="ghost"
         size="sm"
         onClick={toggleTeamImages}
-        className="flex items-center gap-2"
+        className="flex items-center gap-2 w-full sm:w-auto justify-start sm:justify-center"
         title={settings.showTeamImages ? 'Hide team images' : 'Show team images'}
       >
         {settings.showTeamImages ? (
@@ -22,7 +22,7 @@ export function DisplaySettingsToggle() {
         ) : (
           <ImageOffIcon aria-hidden className="h-4 w-4" />
         )}
-        <span className="hidden sm:inline text-xs">
+        <span className="text-xs">
           {settings.showTeamImages ? 'Hide Images' : 'Show Images'}
         </span>
       </Button>
@@ -32,7 +32,7 @@ export function DisplaySettingsToggle() {
         variant="ghost"
         size="sm"
         onClick={toggleValueBetExplanations}
-        className="flex items-center gap-2"
+        className="flex items-center gap-2 w-full sm:w-auto justify-start sm:justify-center"
         title={settings.showValueBetExplanations ? 'Hide detailed ValueBet explanations' : 'Show detailed ValueBet explanations'}
       >
         {settings.showValueBetExplanations ? (
@@ -40,7 +40,7 @@ export function DisplaySettingsToggle() {
         ) : (
           <X aria-hidden className="h-4 w-4" />
         )}
-        <span className="hidden sm:inline text-xs">
+        <span className="text-xs">
           {settings.showValueBetExplanations ? 'Hide Details' : 'Show Details'}
         </span>
       </Button>
