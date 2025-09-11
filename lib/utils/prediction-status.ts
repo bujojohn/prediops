@@ -88,6 +88,17 @@ function calculateLivePredictionStatus(
       currentValue = `${homeScore}-${awayScore}`;
       break;
       
+    case 'first-half-winner-probability':
+      const htScores = getHalfTimeScores(fixture);
+      if (htScores) {
+        status = calculateLiveWinnerStatus(prediction, htScores.home, htScores.away);
+        currentValue = `${htScores.home}-${htScores.away}`;
+      } else {
+        status = 'live';
+        currentValue = `${homeScore}-${awayScore}`;
+      }
+      break;
+      
     case 'over-under-1_5-probability':
       status = calculateLiveOverUnderStatus(prediction, homeScore + awayScore, 1.5);
       currentValue = `${homeScore + awayScore} goals`;
@@ -137,6 +148,15 @@ function calculateFinishedPredictionStatus(
   switch (predictionType) {
     case 'fulltime-result-probability':
       status = calculateWinnerStatus(prediction, homeScore, awayScore);
+      break;
+      
+    case 'first-half-winner-probability':
+      const htScores = getHalfTimeScores(fixture);
+      if (htScores) {
+        status = calculateWinnerStatus(prediction, htScores.home, htScores.away);
+      } else {
+        status = 'pending';
+      }
       break;
       
     case 'over-under-1_5-probability':
@@ -550,17 +570,23 @@ function isPredictionSuccessful(
   
   // First Half Winner
   if (predictionType.includes('first-half-winner') || predictionTypeName.includes('first half')) {
-    // Note: We need half-time scores for this - currently using full-time scores as fallback
-    // TODO: Need half-time score data from API
-    console.warn('First half winner prediction needs half-time scores - using full-time as fallback');
+    const htScores = getHalfTimeScores(fixture);
+    if (htScores) {
+      return isWinnerPredictionSuccessful(optionCode, htScores.home, htScores.away);
+    }
+    // Fallback to full-time if HT not available
+    console.warn('First half winner prediction: HT scores not available, using full-time as fallback');
     return isWinnerPredictionSuccessful(optionCode, homeScore, awayScore);
   }
   
   // Team To Score First
   if (predictionType.includes('team_to_score_first') || predictionTypeName.includes('score first')) {
-    // Note: We need first goal scorer data for this
-    // TODO: Need first goal scorer data from API
-    console.warn('Team to score first prediction needs first goal data - cannot determine success');
+    const firstGoal = getFirstGoal(fixture);
+    if (firstGoal && firstGoal.team) {
+      const predictedTeam = optionCode === '1' ? 'home' : optionCode === '2' ? 'away' : null;
+      return predictedTeam === firstGoal.team;
+    }
+    console.warn('Team to score first prediction: first goal data not available');
     return false;
   }
   
@@ -667,4 +693,98 @@ function isDoubleChancePredictionSuccessful(optionCode: string, homeScore: numbe
 function isCorrectScorePredictionSuccessful(optionCode: string, homeScore: number, awayScore: number): boolean {
   const actualScore = `${homeScore}-${awayScore}`;
   return optionCode === actualScore;
+}
+
+/**
+ * Extract half-time scores from fixture data
+ */
+export function getHalfTimeScores(fixture: Fixture): { home: number; away: number } | null {
+  // Try to get HT scores from scores array first
+  const htScores = fixture.scores?.find(s => 
+    s.description?.toLowerCase().includes('ht') || 
+    s.description?.toLowerCase().includes('half time')
+  );
+  
+  if (htScores?.score?.goals !== undefined) {
+    // If we have HT scores directly
+    const homeScore = fixture.scores?.find(s => 
+      s.score?.participant === 'home' && 
+      (s.description?.toLowerCase().includes('ht') || s.description?.toLowerCase().includes('half time'))
+    )?.score?.goals || 0;
+    
+    const awayScore = fixture.scores?.find(s => 
+      s.score?.participant === 'away' && 
+      (s.description?.toLowerCase().includes('ht') || s.description?.toLowerCase().includes('half time'))
+    )?.score?.goals || 0;
+    
+    return { home: homeScore, away: awayScore };
+  }
+  
+  // Fallback: calculate from events in first half
+  if (fixture.events && fixture.periods) {
+    const firstHalfPeriod = fixture.periods.find(p => 
+      p.type?.name?.toLowerCase().includes('first half') ||
+      p.type?.name?.toLowerCase().includes('1st half') ||
+      p.description?.toLowerCase().includes('first half')
+    );
+    
+    if (firstHalfPeriod) {
+      const firstHalfEvents = fixture.events.filter(e => 
+        e.period_id === firstHalfPeriod.id &&
+        e.type?.name?.toLowerCase().includes('goal')
+      );
+      
+      let homeGoals = 0;
+      let awayGoals = 0;
+      
+      firstHalfEvents.forEach(event => {
+        if (event.participant_id) {
+          // Determine if it's home or away based on participant
+          const participant = fixture.participants?.find(p => p.id === event.participant_id);
+          const location = participant?.meta?.location;
+          if (location === 'home') homeGoals++;
+          else if (location === 'away') awayGoals++;
+        }
+      });
+      
+      return { home: homeGoals, away: awayGoals };
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Get first goal information from fixture events
+ */
+export function getFirstGoal(fixture: Fixture): { team: 'home' | 'away' | null; minute: number | null } | null {
+  if (!fixture.events) return null;
+  
+  // Find all goal events
+  const goalEvents = fixture.events
+    .filter(e => 
+      e.type?.name?.toLowerCase().includes('goal') &&
+      e.minute !== null &&
+      e.participant_id !== null
+    )
+    .sort((a, b) => {
+      const aMinute = (a.minute || 0) + (a.extra_minute || 0);
+      const bMinute = (b.minute || 0) + (b.extra_minute || 0);
+      return aMinute - bMinute;
+    });
+  
+  if (goalEvents.length === 0) return null;
+  
+  const firstGoal = goalEvents[0];
+  const minute = (firstGoal.minute || 0) + (firstGoal.extra_minute || 0);
+  
+  // Determine if it's home or away
+  const participant = fixture.participants?.find(p => p.id === firstGoal.participant_id);
+  const location = participant?.meta?.location;
+  const isHome = location === 'home';
+  
+  return {
+    team: isHome ? 'home' : 'away',
+    minute
+  };
 }

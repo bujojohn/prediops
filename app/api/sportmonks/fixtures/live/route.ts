@@ -8,7 +8,7 @@ export async function GET(request: Request) {
     
     // Use configuration that includes all necessary data for live match detection
     const liveFixtures = await sportmonks.getLiveFixtures({
-      include: 'participants;scores;state;predictions.type;league.country;events',
+      include: 'participants;scores;state;predictions.type;league.country;events;periods.type;events.period;events.type;metadata.type',
       sortBy: 'starting_at',
       order: 'desc',
       per_page: 50,
