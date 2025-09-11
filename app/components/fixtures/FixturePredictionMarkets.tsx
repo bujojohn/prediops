@@ -136,104 +136,51 @@ export function FixturePredictionMarkets({
 
   /**
    * Process raw prediction data into organized markets
-   * Supports multiple market types: 1X2, BTTS, Over/Under, Double Chance, Correct Score
+   * Dynamically handles all prediction types from SportMonks API
    */
   const marketsMap = useMemo(() => {
     const map: Record<string, PredictionMarket> = {};
     
     predictions.forEach((prediction) => {
       const pred = prediction.predictions;
-      const typeName = prediction.type?.name?.toLowerCase() || '';
-      const typeCode = prediction.type?.code?.toLowerCase() || '';
-
+      const typeName = prediction.type?.name || 'Unknown Market';
+      const typeCode = prediction.type?.code || '';
+      
+      // Generate a unique key for this market
+      const marketKey = typeCode || typeName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+      
       // Helper function to check if prediction has yes/no structure
       const isYesNoPred = (p: unknown): p is { yes: number | null; no: number | null } => {
         return p !== null && typeof p === 'object' && 'yes' in p && 'no' in p;
       };
 
-      // Three-way predictions (1X2, etc.)
+      // Three-way predictions (1X2, First Half Winner, etc.)
       if (pred && typeof pred === 'object' && 'home' in pred && 'away' in pred && 'draw' in pred) {
         const threeWay = pred as { home: number | null; away: number | null; draw: number | null };
         
-        if (typeName.includes('fulltime result') || typeCode.includes('fulltime-result') || typeName.includes('full time result') || typeCode.includes('full-time-result')) {
-          map['1x2'] = {
-            key: '1x2',
-            label: prediction.type?.name || 'Fulltime Result',
-            options: [
-              { code: '1', value: threeWay.home },
-              { code: 'X', value: threeWay.draw },
-              { code: '2', value: threeWay.away },
-            ],
-            sourcePrediction: prediction,
-          };
-        } else if (typeName.includes('first half winner') || typeCode.includes('first-half-winner')) {
-          map['firsthalf'] = {
-            key: 'firsthalf',
-            label: prediction.type?.name || 'First Half Winner',
-            options: [
-              { code: '1', value: threeWay.home },
-              { code: 'X', value: threeWay.draw },
-              { code: '2', value: threeWay.away },
-            ],
-            sourcePrediction: prediction,
-          };
-        } else if (typeName.includes('team to score first') || typeCode.includes('team_to_score_first')) {
-          map['teamscorefirst'] = {
-            key: 'teamscorefirst',
-            label: prediction.type?.name || 'Team To Score First',
-            options: [
-              { code: '1', value: threeWay.home },
-              { code: 'X', value: threeWay.draw },
-              { code: '2', value: threeWay.away },
-            ],
-            sourcePrediction: prediction,
-          };
-        }
+        map[marketKey] = {
+          key: marketKey,
+          label: typeName,
+          options: [
+            { code: '1', value: threeWay.home },
+            { code: 'X', value: threeWay.draw },
+            { code: '2', value: threeWay.away },
+          ],
+          sourcePrediction: prediction,
+        };
       }
       
-      // Yes/No predictions (BTTS, Over/Under, etc.)
+      // Yes/No predictions (BTTS, Over/Under, Clean Sheet, etc.)
       else if (isYesNoPred(pred)) {
-        if (typeName.includes('both teams to score') || typeCode.includes('both-teams-to-score')) {
-          map['btts'] = {
-            key: 'btts',
-            label: prediction.type?.name || 'Both Teams To Score',
-            options: [
-              { code: 'Yes', value: pred.yes },
-              { code: 'No', value: pred.no },
-            ],
-            sourcePrediction: prediction,
-          };
-        } else if (typeName.includes('over') || typeCode.includes('over')) {
-          map['overunder'] = {
-            key: 'overunder',
-            label: prediction.type?.name || 'Over/Under',
-            options: [
-              { code: 'Over', value: pred.yes },
-              { code: 'Under', value: pred.no },
-            ],
-            sourcePrediction: prediction,
-          };
-        } else if (typeName.includes('clean sheet') || typeCode.includes('clean-sheet')) {
-          map['cleansheet'] = {
-            key: 'cleansheet',
-            label: prediction.type?.name || 'Clean Sheet',
-            options: [
-              { code: 'Yes', value: pred.yes },
-              { code: 'No', value: pred.no },
-            ],
-            sourcePrediction: prediction,
-          };
-        } else if (typeName.includes('win to nil') || typeCode.includes('win-to-nil')) {
-          map['wintonil'] = {
-            key: 'wintonil',
-            label: prediction.type?.name || 'Win to Nil',
-            options: [
-              { code: 'Yes', value: pred.yes },
-              { code: 'No', value: pred.no },
-            ],
-            sourcePrediction: prediction,
-          };
-        }
+        map[marketKey] = {
+          key: marketKey,
+          label: typeName,
+          options: [
+            { code: 'Yes', value: pred.yes },
+            { code: 'No', value: pred.no },
+          ],
+          sourcePrediction: prediction,
+        };
       }
       
       // Half Time/Full Time predictions
@@ -243,9 +190,10 @@ export function FixturePredictionMarkets({
           away_home: number | null; away_away: number | null; away_draw: number | null;
           draw_draw: number | null; draw_home: number | null; draw_away: number | null;
         };
-        map['htft'] = {
-          key: 'htft',
-          label: prediction.type?.name || 'Half Time/Full Time',
+        
+        map[marketKey] = {
+          key: marketKey,
+          label: typeName,
           options: [
             { code: '1/1', value: htft.home_home },
             { code: '1/X', value: htft.home_draw },
@@ -262,12 +210,12 @@ export function FixturePredictionMarkets({
       }
       
       // Correct score predictions
-      else if (pred && typeof pred === 'object' && 'scores' in pred && 'score' in pred) {
-        const scorePred = pred as { scores: Record<string, number>; score: Record<string, number> };
+      else if (pred && typeof pred === 'object' && 'scores' in pred) {
+        const scorePred = pred as { scores: Record<string, number> };
         
         // Use the scores object for display
         const scoreOptions = Object.entries(scorePred.scores)
-          .filter(([, value]) => value !== null)
+          .filter(([, value]) => value !== null && value !== undefined)
           .sort(([, a], [, b]) => (b || 0) - (a || 0))
           .slice(0, 8) // Limit to top 8 scores
           .map(([key, value]) => ({
@@ -276,24 +224,52 @@ export function FixturePredictionMarkets({
           }));
         
         if (scoreOptions.length > 0) {
-          map['correctscore'] = {
-            key: 'correctscore',
-            label: prediction.type?.name || 'Correct Score',
+          map[marketKey] = {
+            key: marketKey,
+            label: typeName,
             options: scoreOptions,
+            sourcePrediction: prediction,
           };
         }
       }
       
-      // Add more market types as needed...
+      // Handle any other prediction structure dynamically
+      else if (pred && typeof pred === 'object') {
+        const options = Object.entries(pred as Record<string, number | null>)
+          .filter(([, value]) => value !== null && value !== undefined)
+          .sort(([, a], [, b]) => (b || 0) - (a || 0))
+          .slice(0, 10) // Limit to top 10 options
+          .map(([key, value]) => ({
+            code: key,
+            value
+          }));
+        
+        if (options.length > 0) {
+          map[marketKey] = {
+            key: marketKey,
+            label: typeName,
+            options,
+            sourcePrediction: prediction,
+          };
+        }
+      }
     });
     
     return map;
   }, [predictions]);
 
-  // Set default selected market; prefer Full Time Result (1x2) if available
+  // Set default selected market; prefer Full Time Result if available
   useMemo(() => {
     if (!selectedMarketKey && Object.keys(marketsMap).length > 0) {
-      const preferred = marketsMap['1x2'] ? '1x2' : Object.keys(marketsMap)[0];
+      // Look for Full Time Result market by name or code
+      const ftrMarket = Object.values(marketsMap).find(market => 
+        market.label.toLowerCase().includes('full time result') ||
+        market.label.toLowerCase().includes('fulltime result') ||
+        market.key === '1x2' ||
+        market.key === 'fulltime_result'
+      );
+      
+      const preferred = ftrMarket ? ftrMarket.key : Object.keys(marketsMap)[0];
       setSelectedMarketKey(preferred);
     }
   }, [marketsMap, selectedMarketKey]);
@@ -621,7 +597,7 @@ export function FixturePredictionMarkets({
         <div className="flex gap-1.5 overflow-x-auto">
           {options.map((opt) => {
             const mkt = selectedMarket;
-            const style = fixture && mkt?.key === '1x2' && mkt?.sourcePrediction
+            const style = fixture && mkt?.sourcePrediction
               ? getPredictionButtonStyle(mkt.sourcePrediction, fixture, opt.code, opt.value)
               : null;
             const bg = style?.backgroundColor ?? 'bg-white dark:bg-transparent';
@@ -681,22 +657,35 @@ export function FixturePredictionMarkets({
                 .slice(0, 3);
               return (
                 <>
-                  {topOptions.map((opt) => (
-                    <Button
-                      key={opt.code}
-                      variant="outline"
-                      size="sm"
-                      className="h-10 px-3 py-2 text-center min-w-0 flex-1 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                      aria-label={`${opt.code} prediction: ${opt.value != null ? `${Number(opt.value).toFixed(0)}%` : 'No data'}`}
-                    >
-                      <div className="flex flex-col items-center gap-0.5">
-                        <span className="text-xs font-medium text-gray-900 dark:text-gray-300">{opt.code}</span>
-                        <span className="text-xs font-semibold text-blue-700 dark:text-blue-400">
-                          {opt.value != null ? `${Number(opt.value).toFixed(0)}%` : '-'}
-                        </span>
-                      </div>
-                    </Button>
-                  ))}
+                  {topOptions.map((opt) => {
+                    const mkt = selectedMarket;
+                    const style = fixture && mkt?.sourcePrediction
+                      ? getPredictionButtonStyle(mkt.sourcePrediction, fixture, opt.code, opt.value)
+                      : null;
+                    const bg = style?.backgroundColor ?? 'bg-white dark:bg-transparent';
+                    const txt = style?.textColor ?? 'text-gray-900 dark:text-gray-300';
+                    const brd = style?.borderColor ?? 'border-gray-200 dark:border-gray-600';
+                    return (
+                      <Button
+                        key={opt.code}
+                        variant="outline"
+                        size="sm"
+                        className={cn(
+                          'h-10 px-3 py-2 text-center min-w-0 flex-1 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border',
+                          bg, txt, brd,
+                          style?.isHighest && 'font-semibold'
+                        )}
+                        aria-label={`${opt.code} prediction: ${opt.value != null ? `${Number(opt.value).toFixed(0)}%` : 'No data'}`}
+                      >
+                        <div className="flex flex-col items-center gap-0.5">
+                          <span className={cn('text-xs font-medium', txt)}>{opt.code}</span>
+                          <span className={cn('text-xs font-semibold', style ? '' : 'text-blue-700 dark:text-blue-400')}>
+                            {opt.value != null ? `${Number(opt.value).toFixed(0)}%` : '-'}
+                          </span>
+                        </div>
+                      </Button>
+                    );
+                  })}
                   <Button
                     ref={moreButtonRef}
                     variant="outline"
@@ -714,7 +703,7 @@ export function FixturePredictionMarkets({
             // For markets with 3 or fewer options, show all
             return options.map((opt) => {
               const mkt = selectedMarket;
-              const style = fixture && mkt?.key === '1x2' && mkt?.sourcePrediction
+              const style = fixture && mkt?.sourcePrediction
                 ? getPredictionButtonStyle(mkt.sourcePrediction, fixture, opt.code, opt.value)
                 : null;
               const bg = style?.backgroundColor ?? 'bg-white dark:bg-transparent';
