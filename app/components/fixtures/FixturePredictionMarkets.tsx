@@ -1,3 +1,21 @@
+/**
+ * Fixture Prediction Markets Component
+ * 
+ * This component displays prediction markets for football fixtures with dynamic styling
+ * based on prediction accuracy. It supports multiple market types and provides a
+ * searchable dropdown for market selection.
+ * 
+ * Key Features:
+ * - Dynamic market mapping for all prediction types from SportMonks API
+ * - Visual styling based on prediction success (green/red/blue themes)
+ * - Responsive design with mobile and desktop variants
+ * - Searchable market dropdown
+ * - Real-time status updates for live matches
+ * 
+ * @author Prediops Team
+ * @version 1.0.0
+ */
+
 'use client';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
@@ -136,7 +154,19 @@ export function FixturePredictionMarkets({
 
   /**
    * Process raw prediction data into organized markets
-   * Dynamically handles all prediction types from SportMonks API
+   * 
+   * This function dynamically maps all prediction types from the SportMonks API into
+   * a standardized format. It handles various prediction structures:
+   * - Three-way predictions (1X2, First Half Winner, etc.)
+   * - Yes/No predictions (BTTS, Over/Under, Clean Sheet, etc.)
+   * - Half Time/Full Time predictions
+   * - Correct Score predictions
+   * - Any other prediction structure dynamically
+   * 
+   * The function creates unique keys for each market and preserves the original
+   * prediction data for styling calculations.
+   * 
+   * @returns Record mapping market keys to PredictionMarket objects
    */
   const marketsMap = useMemo(() => {
     const map: Record<string, PredictionMarket> = {};

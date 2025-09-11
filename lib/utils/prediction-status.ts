@@ -1,8 +1,37 @@
+/**
+ * Prediction Status System
+ * 
+ * This module provides comprehensive prediction status calculation and styling for football predictions.
+ * It determines the success/failure status of predictions based on live match data and applies appropriate
+ * visual styling (green for success, red for failure, blue for pending).
+ * 
+ * Key Features:
+ * - Live match status detection (in-play vs completed)
+ * - Half-time score extraction from periods/events data
+ * - First goal detection for "Team To Score First" predictions
+ * - Dynamic styling based on prediction accuracy
+ * - Support for multiple prediction types (1X2, BTTS, Over/Under, etc.)
+ * 
+ * @author Prediops Team
+ * @version 1.0.0
+ */
+
 import { type Prediction } from '@/schemas/predictions.schema';
 import { type Fixture } from '@/schemas/fixture.schema';
 
+/**
+ * Prediction status states
+ * - pending: Match not started yet
+ * - live: Match in progress, prediction status unknown
+ * - succeeding: Match in progress, prediction currently correct
+ * - success: Match finished, prediction was correct
+ * - failed: Match finished, prediction was incorrect
+ */
 export type PredictionStatus = 'pending' | 'live' | 'succeeding' | 'success' | 'failed';
 
+/**
+ * Result of prediction status calculation
+ */
 export interface PredictionStatusResult {
   status: PredictionStatus;
   confidence: number;
@@ -12,6 +41,13 @@ export interface PredictionStatusResult {
 
 /**
  * Calculate the current status of a prediction based on fixture state and match progress
+ * 
+ * This is the main function that determines whether a prediction is succeeding, successful, or failed.
+ * It handles both live matches (in-progress) and completed matches.
+ * 
+ * @param prediction - The prediction object containing type and probability data
+ * @param fixture - The fixture object containing match state, scores, and events
+ * @returns PredictionStatusResult with status, confidence, and current value
  */
 export function calculatePredictionStatus(
   prediction: Prediction,
@@ -403,6 +439,21 @@ export function getStatusDisplay(status: PredictionStatus) {
 
 /**
  * Get button styling for a prediction option based on its status
+ * 
+ * This function determines the appropriate Tailwind CSS classes for styling prediction buttons
+ * based on the prediction's success status and whether it's the highest probability option.
+ * 
+ * Color Scheme:
+ * - Green: Successful/succeeding predictions (highest probability)
+ * - Red: Failed/failing predictions (highest probability)
+ * - Blue: Pending predictions (highest probability)
+ * - Gray: Non-highest probability options
+ * 
+ * @param prediction - The prediction object
+ * @param fixture - The fixture object with match data
+ * @param optionCode - The option code (e.g., '1', 'X', '2', 'Yes', 'No')
+ * @param optionValue - The probability value for this option
+ * @returns Styling object with Tailwind classes, or null if no value
  */
 export function getPredictionButtonStyle(
   prediction: Prediction,
@@ -697,6 +748,13 @@ function isCorrectScorePredictionSuccessful(optionCode: string, homeScore: numbe
 
 /**
  * Extract half-time scores from fixture data
+ * 
+ * This function attempts to get half-time scores from multiple sources:
+ * 1. Direct HT scores from the scores array
+ * 2. Calculated from first-half events if HT scores not available
+ * 
+ * @param fixture - The fixture object containing scores and events
+ * @returns Object with home and away HT scores, or null if not available
  */
 export function getHalfTimeScores(fixture: Fixture): { home: number; away: number } | null {
   // Try to get HT scores from scores array first
@@ -756,6 +814,12 @@ export function getHalfTimeScores(fixture: Fixture): { home: number; away: numbe
 
 /**
  * Get first goal information from fixture events
+ * 
+ * This function finds the first goal scored in a match and determines which team scored it.
+ * It sorts all goal events by minute and returns the earliest one.
+ * 
+ * @param fixture - The fixture object containing events and participants
+ * @returns Object with team ('home'/'away') and minute of first goal, or null if no goals
  */
 export function getFirstGoal(fixture: Fixture): { team: 'home' | 'away' | null; minute: number | null } | null {
   if (!fixture.events) return null;
