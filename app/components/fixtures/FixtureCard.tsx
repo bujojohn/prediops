@@ -21,6 +21,7 @@ import type { Odd } from "@/schemas/odds.schema";
 // import H2HModal from "@/app/components/h2h/H2HModal";
 import { useValueBet } from "@/app/hooks/useValueBet";
 import ValueBetIcon, { type ValueBetState } from "@/app/components/valuebet/ValueBetIcon";
+import { FixturePredictionMarkets } from "@/app/components/fixtures/FixturePredictionMarkets";
 
 type MarketKey = string;
 
@@ -997,194 +998,12 @@ export function FixtureCard({
 
               {/* Column 4: Prediction Probabilities */}
               <div className="col-span-4 flex flex-col justify-center">
-                {marketsMap && selectedMarketKey && (
-                  <div className="space-y-1">
-                    <div className="text-[12px] text-gray-700 dark:text-gray-300 truncate">
-                      {marketsMap?.[selectedMarketKey!]?.label ||
-                        "No predictions available"}
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                      <div className="flex gap-1 flex-1 relative">
-                        {(() => {
-                          const market =
-                            selectedMarketKey && marketsMap
-                              ? marketsMap[selectedMarketKey]
-                              : null;
-                          const options = market?.options || [];
-
-                          if (options.length > 6) {
-                            const topOptions = options
-                              .filter((opt) => opt.value !== null)
-                              .sort((a, b) => (b.value || 0) - (a.value || 0))
-                              .slice(0, 3);
-                            const restOptions = options
-                              .filter((opt) => opt.value !== null)
-                              .sort((a, b) => (b.value || 0) - (a.value || 0))
-                              .slice(3);
-                            return (
-                              <>
-                                {topOptions.map((opt) => (
-                                  <Button
-                                    key={opt.code}
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-6 px-2 text-[12px] min-w-0 flex-1"
-                                    aria-label={`${opt.code} prediction: ${
-                                      opt.value != null
-                                        ? `${Number(opt.value).toFixed(0)}%`
-                                        : "No data"
-                                    }`}
-                                  >
-                                    <span className="font-medium">
-                                      {opt.code}
-                                    </span>
-                                    <span className="ml-1 text-blue-600">
-                                      {opt.value != null
-                                        ? `${Number(opt.value).toFixed(0)}%`
-                                        : "-"}
-                                    </span>
-                                  </Button>
-                                ))}
-                                <Button
-                                  ref={moreBtnRef}
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-6 px-2 text-[12px] relative"
-                                  onClick={() => setShowMorePopover((v) => !v)}
-                                  aria-label="Show more options"
-                                >
-                                  +{options.length - 3} more
-                                </Button>
-                                {showMorePopover && (
-                                  <div
-                                    ref={popoverRef}
-                                    className="absolute top-full right-0 z-50 w-56 max-h-60 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-lg p-2 overflow-y-auto"
-                                  >
-                                    <div className="grid grid-cols-3 gap-1">
-                                      {restOptions.map((opt) => (
-                                        <Button
-                                          key={opt.code}
-                                          variant="outline"
-                                          size="sm"
-                                          className="h-6 px-1 text-[10px]"
-                                          aria-label={`${
-                                            opt.code
-                                          } prediction: ${
-                                            opt.value != null
-                                              ? `${Number(opt.value).toFixed(
-                                                  0
-                                                )}%`
-                                              : "No data"
-                                          }`}
-                                        >
-                                          <span className="font-medium">
-                                            {opt.code}
-                                          </span>
-                                          <span className="ml-1 text-blue-600">
-                                            {opt.value != null
-                                              ? `${Number(opt.value).toFixed(
-                                                  0
-                                                )}%`
-                                              : "-"}
-                                          </span>
-                                        </Button>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-                              </>
-                            );
-                          }
-
-                          return options.map((opt) => (
-                            <Button
-                              key={opt.code}
-                              variant="outline"
-                              size="sm"
-                              className="h-6 px-2 text-[12px] min-w-0 flex-1"
-                              aria-label={`${opt.code} prediction: ${
-                                opt.value != null
-                                  ? `${Number(opt.value).toFixed(0)}%`
-                                  : "No data"
-                              }`}
-                            >
-                              <span className="font-medium">{opt.code}</span>
-                              <span className="ml-1 text-blue-600">
-                                {opt.value != null
-                                  ? `${Number(opt.value).toFixed(0)}%`
-                                  : "-"}
-                              </span>
-                            </Button>
-                          ));
-                        })()}
-                      </div>
-
-                      {(() => {
-                        const marketCount = marketsMap
-                          ? Object.keys(marketsMap).length
-                          : 0;
-                        return marketsMap && marketCount > 1;
-                      })() && (
-                        <div className="relative">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                            onClick={() => setMarketOpen((v) => !v)}
-                            aria-label="Select prediction market"
-                            aria-expanded={marketOpen}
-                          >
-                            <ChevronDown
-                              className={cn(
-                                "h-3 w-3 text-gray-700 dark:text-gray-300 transition-transform",
-                                marketOpen && "rotate-180"
-                              )}
-                            />
-                          </Button>
-                          {marketOpen && (
-                            <div className="absolute right-0 mt-1 w-60 max-h-60 rounded-md border bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 shadow-md z-10 overflow-y-auto">
-                              <div className="p-2 border-b border-gray-100 dark:border-gray-700">
-                                <input
-                                  type="text"
-                                  value={marketFilter}
-                                  onChange={(e) =>
-                                    setMarketFilter(e.target.value)
-                                  }
-                                  placeholder="Search markets..."
-                                  className="w-full px-2 py-1 text-xs rounded bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 focus:outline-none"
-                                />
-                              </div>
-                              {Object.values(marketsMap)
-                                .filter((m) =>
-                                  m.label
-                                    .toLowerCase()
-                                    .includes(marketFilter.toLowerCase())
-                                )
-                                .map((m) => (
-                                  <button
-                                    type="button"
-                                    key={m.key}
-                                    className={cn(
-                                      "w-full text-left px-3 py-2 text-xs hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100",
-                                      selectedMarketKey === m.key &&
-                                        "bg-gray-50 dark:bg-gray-700"
-                                    )}
-                                    onClick={() => {
-                                      setSelectedMarketKey(m.key);
-                                      setMarketOpen(false);
-                                    }}
-                                  >
-                                    {m.label}
-                                  </button>
-                                ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
+                <FixturePredictionMarkets
+                  predictions={fixture.predictions || []}
+                  variant="desktop"
+                  className="w-full"
+                  fixture={fixture}
+                />
               </div>
             </div>
           </CardContent>
