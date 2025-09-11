@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Prediction } from '@/schemas/predictions.schema';
+import type { Fixture } from '@/schemas/fixture.schema';
+import { getPredictionButtonStyle } from '@/lib/utils/prediction-status';
 
 /**
  * Represents a single prediction option with its code and probability value
@@ -27,6 +29,8 @@ interface PredictionMarket {
   label: string;
   /** Array of prediction options for this market */
   options: PredictionOption[];
+  /** The source prediction this market is derived from (used for status styling) */
+  sourcePrediction?: Prediction;
 }
 
 /**
@@ -39,6 +43,8 @@ interface FixturePredictionMarketsProps {
   className?: string;
   /** Layout variant - mobile for compact layout, desktop for expanded layout */
   variant?: 'mobile' | 'desktop';
+  /** Optional fixture for live/finished status-based styling */
+  fixture?: Fixture;
 }
 
 /**
@@ -73,7 +79,8 @@ interface FixturePredictionMarketsProps {
 export function FixturePredictionMarkets({ 
   predictions, 
   className, 
-  variant = 'desktop' 
+  variant = 'desktop',
+  fixture
 }: FixturePredictionMarketsProps) {
   const [selectedMarketKey, setSelectedMarketKey] = useState<string>('');
   const [marketOpen, setMarketOpen] = useState(false);
@@ -148,7 +155,7 @@ export function FixturePredictionMarkets({
       if (pred && typeof pred === 'object' && 'home' in pred && 'away' in pred && 'draw' in pred) {
         const threeWay = pred as { home: number | null; away: number | null; draw: number | null };
         
-        if (typeName.includes('fulltime result') || typeCode.includes('fulltime-result')) {
+        if (typeName.includes('fulltime result') || typeCode.includes('fulltime-result') || typeName.includes('full time result') || typeCode.includes('full-time-result')) {
           map['1x2'] = {
             key: '1x2',
             label: prediction.type?.name || 'Fulltime Result',
@@ -157,6 +164,7 @@ export function FixturePredictionMarkets({
               { code: 'X', value: threeWay.draw },
               { code: '2', value: threeWay.away },
             ],
+            sourcePrediction: prediction,
           };
         } else if (typeName.includes('first half winner') || typeCode.includes('first-half-winner')) {
           map['firsthalf'] = {
@@ -167,6 +175,7 @@ export function FixturePredictionMarkets({
               { code: 'X', value: threeWay.draw },
               { code: '2', value: threeWay.away },
             ],
+            sourcePrediction: prediction,
           };
         } else if (typeName.includes('team to score first') || typeCode.includes('team_to_score_first')) {
           map['teamscorefirst'] = {
@@ -177,6 +186,7 @@ export function FixturePredictionMarkets({
               { code: 'X', value: threeWay.draw },
               { code: '2', value: threeWay.away },
             ],
+            sourcePrediction: prediction,
           };
         }
       }
@@ -191,6 +201,7 @@ export function FixturePredictionMarkets({
               { code: 'Yes', value: pred.yes },
               { code: 'No', value: pred.no },
             ],
+            sourcePrediction: prediction,
           };
         } else if (typeName.includes('over') || typeCode.includes('over')) {
           map['overunder'] = {
@@ -200,6 +211,7 @@ export function FixturePredictionMarkets({
               { code: 'Over', value: pred.yes },
               { code: 'Under', value: pred.no },
             ],
+            sourcePrediction: prediction,
           };
         } else if (typeName.includes('clean sheet') || typeCode.includes('clean-sheet')) {
           map['cleansheet'] = {
@@ -209,6 +221,7 @@ export function FixturePredictionMarkets({
               { code: 'Yes', value: pred.yes },
               { code: 'No', value: pred.no },
             ],
+            sourcePrediction: prediction,
           };
         } else if (typeName.includes('win to nil') || typeCode.includes('win-to-nil')) {
           map['wintonil'] = {
@@ -218,6 +231,7 @@ export function FixturePredictionMarkets({
               { code: 'Yes', value: pred.yes },
               { code: 'No', value: pred.no },
             ],
+            sourcePrediction: prediction,
           };
         }
       }
@@ -243,6 +257,7 @@ export function FixturePredictionMarkets({
             { code: '2/X', value: htft.away_draw },
             { code: '2/2', value: htft.away_away },
           ],
+          sourcePrediction: prediction,
         };
       }
       
@@ -275,10 +290,11 @@ export function FixturePredictionMarkets({
     return map;
   }, [predictions]);
 
-  // Set default selected market
+  // Set default selected market; prefer Full Time Result (1x2) if available
   useMemo(() => {
     if (!selectedMarketKey && Object.keys(marketsMap).length > 0) {
-      setSelectedMarketKey(Object.keys(marketsMap)[0]);
+      const preferred = marketsMap['1x2'] ? '1x2' : Object.keys(marketsMap)[0];
+      setSelectedMarketKey(preferred);
     }
   }, [marketsMap, selectedMarketKey]);
 
@@ -603,23 +619,36 @@ export function FixturePredictionMarkets({
         
         {/* Row 2: Prediction Buttons */}
         <div className="flex gap-1.5 overflow-x-auto">
-          {options.map((opt) => (
-            <Button
-              key={opt.code}
-              variant="outline"
-              size="sm"
-              className="h-10 px-3 py-2 text-center shrink-0 min-w-[4.5rem] cursor-help border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              title={`${opt.code}: ${opt.value != null ? `${Number(opt.value).toFixed(1)}%` : 'No data'}`}
-              aria-label={`${opt.code} prediction: ${opt.value != null ? `${Number(opt.value).toFixed(1)}%` : 'No data'}`}
-            >
-              <div className="flex flex-col items-center gap-0.5">
-                <div className="text-[10px] font-medium text-gray-900 dark:text-gray-300 leading-tight">{opt.code}</div>
-                <div className="text-xs font-semibold text-blue-700 dark:text-blue-400 leading-tight">
-                  {opt.value != null ? `${Number(opt.value).toFixed(1)}%` : '-'}
+          {options.map((opt) => {
+            const mkt = selectedMarket;
+            const style = fixture && mkt?.key === '1x2' && mkt?.sourcePrediction
+              ? getPredictionButtonStyle(mkt.sourcePrediction, fixture, opt.code, opt.value)
+              : null;
+            const bg = style?.backgroundColor ?? 'bg-white dark:bg-transparent';
+            const txt = style?.textColor ?? 'text-gray-900 dark:text-gray-300';
+            const brd = style?.borderColor ?? 'border-gray-200 dark:border-gray-600';
+            return (
+              <Button
+                key={opt.code}
+                variant="outline"
+                size="sm"
+                className={cn(
+                  'h-10 px-3 py-2 text-center shrink-0 min-w-[4.5rem] cursor-help hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border',
+                  bg, txt, brd,
+                  style?.isHighest && 'font-semibold'
+                )}
+                title={`${opt.code}: ${opt.value != null ? `${Number(opt.value).toFixed(1)}%` : 'No data'}`}
+                aria-label={`${opt.code} prediction: ${opt.value != null ? `${Number(opt.value).toFixed(1)}%` : 'No data'}`}
+              >
+                <div className="flex flex-col items-center gap-0.5">
+                  <div className={cn('text-[10px] font-medium leading-tight', txt)}>{opt.code}</div>
+                  <div className={cn('text-xs font-semibold leading-tight', style ? '' : 'text-blue-700 dark:text-blue-400')}>
+                    {opt.value != null ? `${Number(opt.value).toFixed(1)}%` : '-'}
+                  </div>
                 </div>
-              </div>
-            </Button>
-          ))}
+              </Button>
+            );
+          })}
         </div>
 
         {/* Render popovers */}
@@ -683,22 +712,35 @@ export function FixturePredictionMarkets({
             }
             
             // For markets with 3 or fewer options, show all
-            return options.map((opt) => (
-              <Button
-                key={opt.code}
-                variant="outline"
-                size="sm"
-                className="h-10 px-3 py-2 text-center min-w-0 flex-1 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                aria-label={`${opt.code} prediction: ${opt.value != null ? `${Number(opt.value).toFixed(0)}%` : 'No data'}`}
-              >
-                <div className="flex flex-col items-center gap-0.5">
-                  <span className="text-xs font-medium text-gray-900 dark:text-gray-300">{opt.code}</span>
-                  <span className="text-xs font-semibold text-blue-700 dark:text-blue-400">
-                    {opt.value != null ? `${Number(opt.value).toFixed(0)}%` : '-'}
-                  </span>
-                </div>
-              </Button>
-            ));
+            return options.map((opt) => {
+              const mkt = selectedMarket;
+              const style = fixture && mkt?.key === '1x2' && mkt?.sourcePrediction
+                ? getPredictionButtonStyle(mkt.sourcePrediction, fixture, opt.code, opt.value)
+                : null;
+              const bg = style?.backgroundColor ?? 'bg-white dark:bg-transparent';
+              const txt = style?.textColor ?? 'text-gray-900 dark:text-gray-300';
+              const brd = style?.borderColor ?? 'border-gray-200 dark:border-gray-600';
+              return (
+                <Button
+                  key={opt.code}
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    'h-10 px-3 py-2 text-center min-w-0 flex-1 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border',
+                    bg, txt, brd,
+                    style?.isHighest && 'font-semibold'
+                  )}
+                  aria-label={`${opt.code} prediction: ${opt.value != null ? `${Number(opt.value).toFixed(0)}%` : 'No data'}`}
+                >
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span className={cn('text-xs font-medium', txt)}>{opt.code}</span>
+                    <span className={cn('text-xs font-semibold', style ? '' : 'text-blue-700 dark:text-blue-400')}>
+                      {opt.value != null ? `${Number(opt.value).toFixed(0)}%` : '-'}
+                    </span>
+                  </div>
+                </Button>
+              );
+            });
           })()}
         </div>
 

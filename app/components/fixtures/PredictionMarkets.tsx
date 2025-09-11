@@ -47,7 +47,13 @@ export function PredictionMarkets({ predictions, className, variant = 'desktop' 
       if (pred && typeof pred === 'object' && 'home' in pred && 'away' in pred && 'draw' in pred) {
         const threeWay = pred as { home: number | null; away: number | null; draw: number | null };
         
-        if (typeName.includes('fulltime result') || typeCode.includes('fulltime-result')) {
+        // Be lenient about spacing/hyphenation when matching Full Time Result
+        if (
+          typeName.includes('fulltime result') ||
+          typeName.includes('full time result') ||
+          typeCode.includes('fulltime-result') ||
+          typeCode.includes('full-time-result')
+        ) {
           map['1x2'] = {
             key: '1x2',
             label: prediction.type?.name || 'Fulltime Result',
@@ -101,10 +107,11 @@ export function PredictionMarkets({ predictions, className, variant = 'desktop' 
     return map;
   }, [predictions]);
 
-  // Set default selected market
+  // Set default selected market: prefer Full Time Result (1x2) if available
   useMemo(() => {
     if (!selectedMarketKey && Object.keys(marketsMap).length > 0) {
-      setSelectedMarketKey(Object.keys(marketsMap)[0]);
+      const preferred = marketsMap['1x2'] ? '1x2' : Object.keys(marketsMap)[0];
+      setSelectedMarketKey(preferred);
     }
   }, [marketsMap, selectedMarketKey]);
 
