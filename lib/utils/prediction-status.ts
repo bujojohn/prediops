@@ -220,14 +220,13 @@ function calculateLiveWinnerStatus(
     else if (maxProb === away) predictedResult = 'away';
     else predictedResult = 'draw';
     
-    // For live matches, we can't determine final success/failure yet
-    // But we can show if it's currently on track
+    // For live matches, treat on-track as 'succeeding' and off-track as 'failed'
     if (predictedResult === 'home' && homeScore > awayScore) return 'succeeding';
     if (predictedResult === 'away' && awayScore > homeScore) return 'succeeding';
     if (predictedResult === 'draw' && homeScore === awayScore) return 'succeeding';
-    
-    // If not currently succeeding, show as live
-    return 'live';
+
+    // Off-track right now
+    return 'failed';
   }
   return 'live';
 }
@@ -432,11 +431,11 @@ export function getPredictionButtonStyle(
   // Apply the requested color theme
   switch (status) {
     case 'pending':
-      // Original theme color (blue) for pending matches
+      // Neutral styling pre-match; do not highlight highest
       return {
-        backgroundColor: isHighest ? 'bg-blue-100' : 'bg-gray-100',
-        textColor: isHighest ? 'text-blue-700' : 'text-gray-600',
-        borderColor: isHighest ? 'border-blue-300' : 'border-gray-200',
+        backgroundColor: 'bg-gray-100',
+        textColor: 'text-gray-600',
+        borderColor: 'border-gray-200',
         isHighest,
         isSuccessful,
         status: 'pending'
