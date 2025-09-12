@@ -7,7 +7,7 @@ export async function GET(
 ) {
   try {
     const { searchParams } = new URL(request.url);
-    const include = searchParams.get('include') || 'participants;scores;state;league.country';
+    const include = searchParams.get('include') || 'participants;scores;state;league.country;periods.type;events.period;events.type;metadata.type';
     const limit = parseInt(searchParams.get('limit') || '50');
     const page = parseInt(searchParams.get('page') || '1');
 
