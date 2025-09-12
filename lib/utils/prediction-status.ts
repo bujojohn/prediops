@@ -276,13 +276,14 @@ function calculateLiveWinnerStatus(
     else if (maxProb === away) predictedResult = 'away';
     else predictedResult = 'draw';
     
-    // For live matches, treat on-track as 'succeeding' and off-track as 'failed'
+    // For live matches, treat on-track as 'succeeding' and uncertain as 'live'
     if (predictedResult === 'home' && homeScore > awayScore) return 'succeeding';
     if (predictedResult === 'away' && awayScore > homeScore) return 'succeeding';
     if (predictedResult === 'draw' && homeScore === awayScore) return 'succeeding';
 
-    // Off-track right now
-    return 'failed';
+    // For uncertain outcomes during live matches, return 'live' instead of 'failed'
+    // This provides a more accurate user experience as the match is still in progress
+    return 'live';
   }
   return 'live';
 }
