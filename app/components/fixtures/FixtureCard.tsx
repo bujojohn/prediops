@@ -912,7 +912,7 @@ export function FixtureCard({
                   }
                   if (phase === "scheduled" && fixture.starting_at) {
                     return (
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 text-xs">
                         <span>{formatTimeLocal(fixture.starting_at || "")}</span>
                       </div>
                     );
