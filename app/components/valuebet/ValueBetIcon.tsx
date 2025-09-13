@@ -19,6 +19,7 @@ export interface ValueBetIconProps {
     bestOdd?: number;
     fairOdd?: number;
     bookmaker?: string;
+    bet?: string;
   };
 }
 
@@ -76,11 +77,15 @@ function getValueBetTooltip(
   const explanation = showExplanations ? stateExplanations[state] : stateTitles[state];
   
   if (state === "value" && valueBetData) {
-    const { count, bestOdd, fairOdd, bookmaker } = valueBetData;
+    const { count, bestOdd, fairOdd, bookmaker, bet } = valueBetData;
     let tooltip = explanation;
     
+    if (bet) {
+      tooltip += `\n\n🎯 Bet: ${bet}`;
+    }
+    
     if (count > 0) {
-      tooltip += `\n\n📊 ${count} value bet${count > 1 ? 's' : ''} available`;
+      tooltip += `\n📊 ${count} value bet${count > 1 ? 's' : ''} available`;
     }
     
     if (bestOdd && fairOdd) {
