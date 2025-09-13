@@ -481,7 +481,7 @@ export function FixtureCard({
           bestOdd: bestValueBet.predictions.odd,
           fairOdd: bestValueBet.predictions.fair_odd,
           bookmaker: bestValueBet.predictions.bookmaker,
-          bet: bestValueBet.predictions.bet,
+          betName: bestValueBet.predictions.bet,
         }
       };
     }
