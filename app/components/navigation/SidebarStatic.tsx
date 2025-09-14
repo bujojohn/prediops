@@ -1,142 +1,351 @@
 'use client';
 
-import React from 'react';
-import { usePathname } from 'next/navigation';
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect, memo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Search, 
-  Star, 
-  Settings, 
-  RefreshCw
+  Globe, 
+  ChevronDown, 
+  ChevronRight, 
+  ExternalLink,
+  Info,
+  Star,
+  StarOff,
+  SortAsc,
+  SortDesc,
+  RefreshCw,
+  Settings
 } from 'lucide-react';
-import { useDisplaySettings } from '@/app/contexts/DisplaySettingsContext';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { SidebarTheme } from './SidebarTheme';
+import { getCountryPredictionsUrl, generateLeagueSlug } from '@/lib/utils/country-utils';
+import type { Country } from '@/schemas/country.schema';
 
-// Static shell that can be prerendered
-export function SidebarStatic() {
+interface CountryWithLeagues extends Country {
+  fixtureCount: number;
+  leaguesCount: number;
+}
+
+interface League {
+  id: number;
+  name: string;
+  active: boolean;
+  type?: string;
+  short_code?: string;
+}
+
+// Static shell that can be prerendered with full functionality
+export const SidebarStatic = memo(function SidebarStatic() {
   const pathname = usePathname();
   const isHomePage = pathname === '/';
   const [searchTerm, setSearchTerm] = useState('');
-  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  useDisplaySettings(); // For future use
-
+  
   if (isHomePage) {
     return null;
   }
 
   return (
-    <div className="hidden md:block w-64 h-screen bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
+    <SidebarTheme>
       <div className="flex flex-col h-full">
-        {/* Static Header */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Predictions
-            </h2>
-            <div className="flex gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowSettings(!showSettings)}
-                className="h-8 w-8 p-0"
-              >
-                <Settings className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Static Search */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="relative">
+        {/* Header with Search */}
+        <div className="p-3 border-b">
+          <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
               placeholder="Search countries..."
+              className="pl-10"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
             />
           </div>
-        </div>
-
-        {/* Static Controls */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700 space-y-2">
-          <Button
-            variant={showOnlyFavorites ? "default" : "outline"}
-            size="sm"
-            onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
-            className="w-full justify-start"
-          >
-            <Star className="h-4 w-4 mr-2" />
-            {showOnlyFavorites ? 'All Countries' : 'Favorites Only'}
-          </Button>
           
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full justify-start"
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh Counts
-          </Button>
+          {/* Controls Row */}
+          <div className="flex items-center gap-2 mb-3">
+            <button
+              className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors text-muted-foreground hover:text-foreground"
+              title="Show only favorites"
+            >
+              <Star className="h-3 w-3" />
+              <span>Favorites</span>
+            </button>
+            
+            <button
+              className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:text-foreground transition-colors"
+              title="Sort ascending"
+            >
+              <SortAsc className="h-3 w-3" />
+            </button>
+
+            <button
+              className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:text-foreground transition-colors"
+              title="Refresh counts"
+            >
+              <RefreshCw className="h-3 w-3" />
+            </button>
+
+            <button
+              className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:text-foreground transition-colors"
+              title="Settings"
+            >
+              <Settings className="h-3 w-3" />
+            </button>
+          </div>
         </div>
 
         {/* Dynamic Content Area - This will stream in */}
         <div className="flex-1 overflow-auto">
-          <SidebarContent />
+          <SidebarContent searchTerm={searchTerm} />
         </div>
       </div>
-    </div>
+    </SidebarTheme>
   );
-}
+});
 
-// Dynamic content that loads the actual sidebar data
-function SidebarContent() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [countries, setCountries] = useState([]);
+// Dynamic content that loads the actual sidebar data with full functionality
+function SidebarContent({ searchTerm }: { searchTerm: string }) {
+  const [allCountries, setAllCountries] = useState<CountryWithLeagues[]>([]);
+  const [filteredCountries, setFilteredCountries] = useState<CountryWithLeagues[]>([]);
+  const [expandedCountries, setExpandedCountries] = useState<Set<number>>(new Set());
+  const [countryLeagues, setCountryLeagues] = useState<Map<number, League[]>>(new Map());
+  const [loadingStates, setLoadingStates] = useState<Map<number, boolean>>(new Map());
+  const [isLoading] = useState(false);
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  
+  // Favorites and filtering state
+  const [favorites, setFavorites] = useState<Set<number>>(new Set());
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
+  const [sortBy, setSortBy] = useState<'name' | 'fixtures' | 'leagues'>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [showSettings, setShowSettings] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Today fixture counts
+  const [countryTodayCounts, setCountryTodayCounts] = useState<Map<number, number>>(new Map());
+  const [leagueTodayCounts, setLeagueTodayCounts] = useState<Map<number, number>>(new Map());
+  const [countsLoadingCountries, setCountsLoadingCountries] = useState<Set<number>>(new Set());
+  const today = React.useMemo(() => new Date().toISOString().split('T')[0], []);
+  const storageKey = React.useMemo(() => `sidebar-counts-${today}`, [today]);
+  const [visibleCountryBadges, setVisibleCountryBadges] = useState<Set<number>>(new Set());
+  const [visibleLeagueBadges, setVisibleLeagueBadges] = useState<Set<number>>(new Set());
+  
+  // Regions (continents, world) handling
+  const [hideRegions, setHideRegions] = useState(false);
 
-  // Load data on mount
-  React.useEffect(() => {
-    const loadCountries = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch('/api/sportmonks/countries/with-leagues');
-        const data = await response.json();
-        if (data.success) {
-          setCountries(data.data || []);
-        }
-      } catch (error) {
-        console.error('Error loading countries:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadCountries();
+  const isRegion = React.useCallback((country: CountryWithLeagues) => {
+    const name = (country.name || country.fifa_name || country.official_name || '').trim().toLowerCase();
+    if (!name) return false;
+    const regions = new Set([
+      'africa', 'europe', 'asia', 'north america', 'south america', 'oceania', 'antarctica', 'world', 'international'
+    ]);
+    if (regions.has(name)) return true;
+    // Also treat aggregated scopes like "uefa", "caf" etc. as regions if present in short_code/fifa_name
+    const code = (country.fifa_name || country.official_name || '').trim().toLowerCase();
+    const orgs = ['uefa', 'caf', 'afc', 'conmebol', 'concacaf', 'ofc', 'fifa'];
+    return orgs.some(org => name.includes(org) || code.includes(org));
   }, []);
 
-  if (isLoading) {
+  // Split filtered list into countries and regions
+  const { countryItems, regionItems } = React.useMemo(() => {
+    const countries: CountryWithLeagues[] = [];
+    const regions: CountryWithLeagues[] = [];
+    for (const c of filteredCountries) {
+      if (isRegion(c)) regions.push(c); else countries.push(c);
+    }
+    return { countryItems: countries, regionItems: regions };
+  }, [filteredCountries, isRegion]);
+
+  // Debounced search input
+  const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchTerm), 200);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
+
+  // Load countries with leagues using API route
+  const loadCountriesWithLeagues = async () => {
+    try {
+      const response = await fetch('/api/sportmonks/countries/with-leagues');
+      const data = await response.json();
+      
+      if (data.success) {
+        const countries = data.data || [];
+        setAllCountries(countries);
+        setFilteredCountries(countries);
+      } else {
+        console.error('Failed to load countries:', data.error);
+        setAllCountries([]);
+        setFilteredCountries([]);
+      }
+    } catch (error) {
+      console.error('Error loading countries with leagues:', error);
+      setAllCountries([]);
+      setFilteredCountries([]);
+    }
+  };
+
+  // Load countries on mount
+  useEffect(() => {
+    loadCountriesWithLeagues();
+  }, []);
+
+  // Filter countries based on search term
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredCountries(allCountries);
+      return;
+    }
+
+    const filtered = allCountries.filter((country) => {
+      const name = (country.name || country.fifa_name || country.official_name || '').toLowerCase();
+      return name.includes(searchTerm.toLowerCase());
+    });
+
+    setFilteredCountries(filtered);
+  }, [searchTerm, allCountries]);
+
+  // Show skeleton while data is loading
+  if (isLoading || allCountries.length === 0) {
     return <SidebarContentSkeleton />;
   }
 
   return (
-    <div className="p-4 space-y-3">
-      {/* Render actual countries */}
-      {countries.map((country: { id: number; name: string; fixtureCount?: number }) => (
-        <div key={country.id} className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="font-medium text-gray-900 dark:text-white">
-              {country.name}
-            </span>
-            <Badge variant="secondary">
-              {country.fixtureCount || 0}
-            </Badge>
-          </div>
-        </div>
-      ))}
+    <div className="p-1">
+      {/* Countries Section */}
+      <div className="space-y-0.5">
+        {countryItems.map((country) => {
+          const isExpanded = expandedCountries.has(country.id);
+          const leagues = countryLeagues.get(country.id) || [];
+          const isLoadingLeagues = loadingStates.get(country.id) || false;
+
+          return (
+            <div key={country.id} className="space-y-0.5" id={`country-${country.id}`}>
+              {/* Country Header */}
+              <div className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
+                <button
+                  onClick={() => {
+                    setExpandedCountries(prev => {
+                      const newSet = new Set(prev);
+                      if (newSet.has(country.id)) {
+                        newSet.delete(country.id);
+                      } else {
+                        newSet.add(country.id);
+                      }
+                      return newSet;
+                    });
+                  }}
+                  className="flex items-center gap-1.5 flex-1 text-left"
+                >
+                  {isExpanded ? (
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  ) : (
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  )}
+                  <span className={`font-medium truncate text-sm ${
+                    (country.leaguesCount || 0) === 0 ? 'text-muted-foreground italic' : ''
+                  }`}>
+                    {country.name || country.fifa_name || country.official_name}
+                  </span>
+                  <Badge
+                    variant="outline"
+                    className={`text-[10px] ml-1 transition-opacity duration-300 ${
+                      countryTodayCounts.get(country.id) ?? 0 > 0
+                        ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
+                        : 'bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    {countryTodayCounts.get(country.id) ?? 0}
+                  </Badge>
+                </button>
+                
+                <div className="flex items-center gap-1.5">
+                  {/* Favorite Star */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setFavorites(prev => {
+                        const newSet = new Set(prev);
+                        if (newSet.has(country.id)) {
+                          newSet.delete(country.id);
+                        } else {
+                          newSet.add(country.id);
+                        }
+                        return newSet;
+                      });
+                    }}
+                    className={`transition-colors ${
+                      favorites.has(country.id)
+                        ? 'text-yellow-500 hover:text-yellow-600'
+                        : 'text-muted-foreground hover:text-yellow-500'
+                    }`}
+                    title={favorites.has(country.id) ? 'Remove from favorites' : 'Add to favorites'}
+                  >
+                    {favorites.has(country.id) ? (
+                      <Star className="h-3.5 w-3.5 fill-current" />
+                    ) : (
+                      <StarOff className="h-3.5 w-3.5" />
+                    )}
+                  </button>
+                  <a
+                    href={getCountryPredictionsUrl(country)}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    title="View all leagues"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                </div>
+              </div>
+
+              {/* Leagues List */}
+              {isExpanded && (
+                <div className="ml-4 space-y-0.5">
+                  {isLoadingLeagues ? (
+                    <div className="p-1.5 text-xs text-muted-foreground">
+                      Loading leagues...
+                    </div>
+                  ) : leagues.length > 0 ? (
+                    leagues.map((league) => {
+                      const active = pathname?.startsWith('/predictions/league') && searchParams?.get('id') === String(league.id);
+                      return (
+                        <div key={league.id} className={`flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors ${active ? 'bg-accent/60' : ''}`}>
+                          <a
+                            href={`/predictions/league/${generateLeagueSlug(league)}?id=${league.id}`}
+                            className={`flex items-center gap-1.5 flex-1 text-xs ${active ? 'text-primary font-medium' : ''}`}
+                            title={`League ID: ${league.id}`}
+                          >
+                            <span className="truncate">{league.name}</span>
+                            {league.short_code && (
+                              <Badge variant="outline" className={`text-xs px-1 py-0.5 ${active ? 'border-primary text-primary' : ''}`}>
+                                {league.short_code}
+                              </Badge>
+                            )}
+                            <Badge
+                              variant="outline"
+                              className={`text-[10px] transition-opacity duration-300 ${
+                                leagueTodayCounts.get(league.id) ?? 0 > 0
+                                  ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
+                                  : 'bg-muted text-muted-foreground'
+                              }`}
+                            >
+                              {leagueTodayCounts.get(league.id) ?? 0}
+                            </Badge>
+                          </a>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="p-1.5 text-xs text-muted-foreground">
+                      No active leagues found
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
