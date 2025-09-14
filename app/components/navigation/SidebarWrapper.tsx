@@ -18,7 +18,18 @@ export function SidebarWrapper({ children }: SidebarWrapperProps) {
       {/* Desktop Sidebar - Hidden on home page */}
       {!isHomePage && (
         <div className="hidden md:block">
-          <Suspense fallback={<div>Loading Sidebar...</div>}>
+          <Suspense fallback={
+            <div className="w-64 h-screen bg-gray-100 dark:bg-gray-800 animate-pulse">
+              <div className="p-4 space-y-4">
+                <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                <div className="space-y-2">
+                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                </div>
+              </div>
+            </div>
+          }>
             <Sidebar />
           </Suspense>
         </div>

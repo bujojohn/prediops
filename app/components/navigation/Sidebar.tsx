@@ -43,7 +43,7 @@ const Sidebar = memo(function Sidebar() {
   const [expandedCountries, setExpandedCountries] = useState<Set<number>>(new Set());
   const [countryLeagues, setCountryLeagues] = useState<Map<number, League[]>>(new Map());
   const [loadingStates, setLoadingStates] = useState<Map<number, boolean>>(new Map());
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading] = useState(false); // Start with false to show skeleton immediately
   const pathname = usePathname();
   const searchParams = useSearchParams();
   // Keep a ref in sync with countryLeagues to allow a stable callback without depending on state
@@ -123,9 +123,9 @@ const Sidebar = memo(function Sidebar() {
   }, [storageKey]);
   
   // Load countries with leagues using API route
-    const loadCountriesWithLeagues = async () => {
-      try {
-      setIsLoading(true);
+  const loadCountriesWithLeagues = async () => {
+    try {
+      // Don't set loading to true initially to avoid blocking render
       const response = await fetch('/api/sportmonks/countries/with-leagues');
       const data = await response.json();
       
@@ -152,9 +152,8 @@ const Sidebar = memo(function Sidebar() {
         console.error('Error loading countries with leagues:', error);
           setAllCountries([]);
           setFilteredCountries([]);
-    } finally {
-      setIsLoading(false);
     }
+    // No need to set loading false since we start with false
   };
 
   // Load leagues for a specific country using API route
@@ -432,7 +431,8 @@ const Sidebar = memo(function Sidebar() {
     }
   }, [pathname]);
 
-  if (isLoading) {
+  // Show skeleton while data is loading (but don't block initial render)
+  if (isLoading || allCountries.length === 0) {
     return (
       <SidebarTheme>
         <div className="flex flex-col h-full">
