@@ -41,20 +41,25 @@ export function PerformanceOptimizer({
   children
 }: PerformanceOptimizerProps) {
   const elementRef = useRef<HTMLDivElement>(null);
+  const createdFontLinkRef = useRef<HTMLLinkElement | null>(null);
   
   useEffect(() => {
     if (typeof window === 'undefined' || !elementRef.current) return;
     
     // Preload critical resources
     const preloadCriticalResources = () => {
-      // Preload critical fonts
-      const fontLink = document.createElement('link');
-      fontLink.rel = 'preload';
-      fontLink.as = 'font';
-      fontLink.type = 'font/woff2';
-      fontLink.crossOrigin = 'anonymous';
-      fontLink.href = '/fonts/inter-var.woff2';
-      document.head.appendChild(fontLink);
+      // Preload critical fonts - only if not already present
+      const existingFontLink = document.querySelector('link[rel="preload"][as="font"][href="/fonts/inter-var.woff2"]');
+      if (!existingFontLink) {
+        const fontLink = document.createElement('link');
+        fontLink.rel = 'preload';
+        fontLink.as = 'font';
+        fontLink.type = 'font/woff2';
+        fontLink.crossOrigin = 'anonymous';
+        fontLink.href = '/fonts/inter-var.woff2';
+        document.head.appendChild(fontLink);
+        createdFontLinkRef.current = fontLink;
+      }
       
       // Preload critical images
       const criticalImages = [
@@ -92,9 +97,11 @@ export function PerformanceOptimizer({
     
     // Cleanup
     return () => {
-      // Remove preloaded fonts if needed
-      const preloadedFonts = document.querySelectorAll('link[rel="preload"][as="font"]');
-      preloadedFonts.forEach(link => link.remove());
+      // Only remove the specific font link we created, not all preloaded fonts
+      if (createdFontLinkRef.current && createdFontLinkRef.current.parentNode) {
+        createdFontLinkRef.current.remove();
+        createdFontLinkRef.current = null;
+      }
     };
   }, []);
   
