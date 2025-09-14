@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -36,7 +36,7 @@ interface League {
   short_code?: string;
 }
 
-export default function Sidebar() {
+const Sidebar = memo(function Sidebar() {
   const [allCountries, setAllCountries] = useState<CountryWithLeagues[]>([]);
   const [filteredCountries, setFilteredCountries] = useState<CountryWithLeagues[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -121,7 +121,7 @@ export default function Sidebar() {
       console.warn('Failed to restore sidebar counts from storage', e);
     }
   }, [storageKey]);
-
+  
   // Load countries with leagues using API route
     const loadCountriesWithLeagues = async () => {
       try {
@@ -872,4 +872,6 @@ export default function Sidebar() {
       </div>
     </SidebarTheme>
   );
-} 
+});
+
+export default Sidebar; 

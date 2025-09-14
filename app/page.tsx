@@ -48,7 +48,7 @@ export default function Home() {
               Prediops
             </h1>
             
-            <p className="text-xl lg:text-2xl text-slate-600 dark:text-slate-300 mb-8 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-xl lg:text-2xl text-slate-600 dark:text-slate-300 mb-8 max-w-3xl mx-auto">
               Professional sports predictions and value betting opportunities across{' '}
               <span className="font-semibold text-blue-600">111+ leagues</span> worldwide
             </p>

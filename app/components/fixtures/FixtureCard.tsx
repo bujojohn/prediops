@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef, useContext } from "react";
+import { useEffect, useMemo, useState, useRef, useContext, memo } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import type { Fixture } from "@/schemas/fixture.schema";
 import type { Prediction as FixturePrediction } from "@/schemas/predictions.schema";
@@ -212,7 +212,7 @@ function getMinutesPlayed(fixture: Fixture): number | null {
   }
 }
 
-export function FixtureCard({
+export const FixtureCard = memo(function FixtureCard({
   fixture: propFixture,
   compact = false,
 }: {
@@ -481,6 +481,7 @@ export function FixtureCard({
           bestOdd: bestValueBet.predictions.odd,
           fairOdd: bestValueBet.predictions.fair_odd,
           bookmaker: bestValueBet.predictions.bookmaker,
+          betName: bestValueBet.predictions.bet,
         }
       };
     }
@@ -1297,4 +1298,4 @@ export function FixtureCard({
       )}
     </>
   );
-}
+});

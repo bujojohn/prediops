@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -23,7 +23,24 @@ interface PredictionMarketsProps {
   variant?: 'compact' | 'desktop' | 'mobile';
 }
 
-export function PredictionMarkets({ predictions, className, variant = 'desktop' }: PredictionMarketsProps) {
+// Memoized option component to prevent unnecessary re-renders
+const PredictionOptionButton = memo(({ opt }: { opt: PredictionOption }) => (
+  <Button
+    variant="outline"
+    size="sm"
+    className="h-6 px-1 sm:px-2 text-[10px] sm:text-[12px] min-w-0 flex-1"
+    aria-label={`${opt.code} prediction: ${opt.value != null ? `${Number(opt.value).toFixed(0)}%` : 'No data'}`}
+  >
+    <span className="font-medium">{opt.code}</span>
+    <span className="ml-1 text-blue-600">
+      {opt.value != null ? `${Number(opt.value).toFixed(0)}%` : '-'}
+    </span>
+  </Button>
+));
+
+PredictionOptionButton.displayName = 'PredictionOptionButton';
+
+export const PredictionMarkets = memo(function PredictionMarkets({ predictions, className, variant = 'desktop' }: PredictionMarketsProps) {
   const [selectedMarketKey, setSelectedMarketKey] = useState<string>('');
   const [marketOpen, setMarketOpen] = useState(false);
   const [marketFilter, setMarketFilter] = useState('');
@@ -107,6 +124,12 @@ export function PredictionMarkets({ predictions, className, variant = 'desktop' 
     return map;
   }, [predictions]);
 
+  // Optimized callback for market selection
+  const handleMarketSelect = useCallback((key: string) => {
+    setSelectedMarketKey(key);
+    setMarketOpen(false);
+  }, []);
+
   // Set default selected market: prefer Full Time Result (1x2) if available
   useMemo(() => {
     if (!selectedMarketKey && Object.keys(marketsMap).length > 0) {
@@ -163,7 +186,7 @@ export function PredictionMarkets({ predictions, className, variant = 'desktop' 
                         type="button"
                         key={m.key}
                         className={cn('w-full text-left px-3 py-2 text-sm hover:bg-gray-50', selectedMarketKey === m.key && 'bg-gray-50')}
-                        onClick={() => { setSelectedMarketKey(m.key); setMarketOpen(false); }}
+                        onClick={() => handleMarketSelect(m.key)}
                       >
                         {m.label}
                       </button>
@@ -250,18 +273,7 @@ export function PredictionMarkets({ predictions, className, variant = 'desktop' 
             
             // For markets with 6 or fewer options, show all
             return options.map((opt) => (
-              <Button
-                key={opt.code}
-                variant="outline"
-                size="sm"
-                className="h-6 px-1 sm:px-2 text-[10px] sm:text-[12px] min-w-0 flex-1"
-                aria-label={`${opt.code} prediction: ${opt.value != null ? `${Number(opt.value).toFixed(0)}%` : 'No data'}`}
-              >
-                <span className="font-medium">{opt.code}</span>
-                <span className="ml-1 text-blue-600">
-                  {opt.value != null ? `${Number(opt.value).toFixed(0)}%` : '-'}
-                </span>
-              </Button>
+              <PredictionOptionButton key={opt.code} opt={opt} />
             ));
           })()}
         </div>
@@ -297,7 +309,7 @@ export function PredictionMarkets({ predictions, className, variant = 'desktop' 
                       type="button"
                       key={m.key}
                       className={cn('w-full text-left px-3 py-2 text-xs hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100', selectedMarketKey === m.key && 'bg-gray-50 dark:bg-gray-700')}
-                      onClick={() => { setSelectedMarketKey(m.key); setMarketOpen(false); }}
+                      onClick={() => handleMarketSelect(m.key)}
                     >
                       {m.label}
                     </button>
@@ -309,4 +321,4 @@ export function PredictionMarkets({ predictions, className, variant = 'desktop' 
       </div>
     </div>
   );
-}
+});
