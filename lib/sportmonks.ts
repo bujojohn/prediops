@@ -43,7 +43,7 @@ const api = axios.create({
 
 // Types for API configuration
 export interface ApiConfig {
-  include?: string; // e.g. 'participants;scores;state;predictions;league;venue'
+  include?: string; // e.g. 'participants;scores;state;predictions;league'
   select?: string; // e.g. 'name,starting_at,has_odds'
   filters?: string; // e.g. 'todayDate;leagues:1,2'
   order?: "asc" | "desc";

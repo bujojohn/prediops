@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 // Validation schemas for API configuration
 export const apiConfigSchema = z.object({
-  include: z.string().optional(), // e.g. 'participants;scores;state;predictions;league;venue'
+  include: z.string().optional(), // e.g. 'participants;scores;state;predictions;league'
   select: z.string().optional(), // e.g. 'name,starting_at,has_odds'
   filters: z.union([
     z.string(), // For simple filters like 'todayDate'
@@ -124,7 +124,7 @@ export const fixturesByDateRangeForTeamConfigSchema = apiConfigSchema.extend({
 });
 
 export const teamsConfigSchema = apiConfigSchema.extend({
-  include: z.string().optional(), // e.g. 'country;league;statistics;venue'
+  include: z.string().optional(), // e.g. 'country;league;statistics'
   filters: z.object({
     leagues: z.union([z.number(), z.array(z.number())]).optional(),
     countries: z.union([z.number(), z.array(z.number())]).optional(),
