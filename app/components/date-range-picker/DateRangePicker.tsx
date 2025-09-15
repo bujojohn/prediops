@@ -32,20 +32,21 @@ export function DateRangePicker({
   }, [startDate, endDate]);
 
   const today = startOfDay(new Date());
-  const minDate = subDays(today, maxDays);
+  // Allow unlimited past dates, but limit future to maxDays from today
+  const minDate = null; // No limit on past dates
   const maxDate = addDays(today, maxDays);
 
   const handleDateClick = (date: Date) => {
     const normalizedDate = startOfDay(date);
     
-    // If no start date selected or both dates selected, start fresh
+    // If no start date selected, or both dates are selected, start fresh
     if (!selectedStart || (selectedStart && selectedEnd)) {
       setSelectedStart(normalizedDate);
-      setSelectedEnd(normalizedDate);
+      setSelectedEnd(null); // Clear end date to allow range selection
       return;
     }
 
-    // If start date is selected but not end date
+    // If start date is selected but no end date
     if (selectedStart && !selectedEnd) {
       if (isBefore(normalizedDate, selectedStart)) {
         // Clicked date is before start date, make it the new start
@@ -58,9 +59,9 @@ export function DateRangePicker({
       return;
     }
 
-    // Reset selection
+    // If we reach here, both dates are selected, so reset
     setSelectedStart(normalizedDate);
-    setSelectedEnd(normalizedDate);
+    setSelectedEnd(null);
   };
 
   const handleConfirmRange = () => {
@@ -94,7 +95,8 @@ export function DateRangePicker({
   };
 
   const isDateDisabled = (date: Date) => {
-    return isBefore(date, minDate) || isAfter(date, maxDate);
+    // Only limit future dates, allow unlimited past dates
+    return isAfter(date, maxDate);
   };
 
   // Generate calendar days

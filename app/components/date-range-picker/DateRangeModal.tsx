@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Calendar, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Modal } from '@/components/ui/modal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format, addDays, subDays, startOfDay, isSameDay, isBefore, isAfter } from 'date-fns';
 
@@ -33,41 +33,23 @@ export function DateRangeModal({
     setSelectedEnd(startOfDay(endDate));
   }, [startDate, endDate]);
 
-  // Close modal on escape key
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
-      // Prevent body scroll when modal is open
-      document.body.style.overflow = 'hidden';
-    }
-
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen, onClose]);
 
   const today = startOfDay(new Date());
-  const minDate = subDays(today, maxDays);
+  // Allow unlimited past dates, but limit future to maxDays from today
+  const minDate = null; // No limit on past dates
   const maxDate = addDays(today, maxDays);
 
   const handleDateClick = (date: Date) => {
     const normalizedDate = startOfDay(date);
     
-    // If no start date selected or both dates selected, start fresh
+    // If no start date selected, or both dates are selected, start fresh
     if (!selectedStart || (selectedStart && selectedEnd)) {
       setSelectedStart(normalizedDate);
-      setSelectedEnd(normalizedDate);
+      setSelectedEnd(null); // Clear end date to allow range selection
       return;
     }
 
-    // If start date is selected but not end date
+    // If start date is selected but no end date
     if (selectedStart && !selectedEnd) {
       if (isBefore(normalizedDate, selectedStart)) {
         // Clicked date is before start date, make it the new start
@@ -80,9 +62,9 @@ export function DateRangeModal({
       return;
     }
 
-    // Reset selection
+    // If we reach here, both dates are selected, so reset
     setSelectedStart(normalizedDate);
-    setSelectedEnd(normalizedDate);
+    setSelectedEnd(null);
   };
 
   const handleConfirmRange = () => {
@@ -115,7 +97,8 @@ export function DateRangeModal({
   };
 
   const isDateDisabled = (date: Date) => {
-    return isBefore(date, minDate) || isAfter(date, maxDate);
+    // Only limit future dates, allow unlimited past dates
+    return isAfter(date, maxDate);
   };
 
   // Generate calendar days
@@ -140,41 +123,22 @@ export function DateRangeModal({
 
   const calendarDays = generateCalendarDays();
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      
-      {/* Modal */}
-      <Card className="relative z-10 w-full max-w-[640px] mx-4 max-h-[90vh] overflow-y-auto">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-blue-600" />
-              <CardTitle className="text-lg">Select Date Range</CardTitle>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="text-sm text-muted-foreground">
-                Max {maxDays} days
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onClose}
-                className="h-8 w-8 p-0"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        
-        <CardContent className="space-y-4">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={
+        <div className="flex items-center gap-2">
+          <Calendar className="h-5 w-5 text-blue-600" />
+          <span>Select Date Range</span>
+          <span className="text-sm text-muted-foreground font-normal">
+            (Max {maxDays} days future)
+          </span>
+        </div>
+      }
+      maxWidth="lg"
+      className="space-y-4"
+    >
           {/* Quick Range Buttons */}
           <div className="flex flex-wrap gap-2">
             <Button
@@ -356,8 +320,6 @@ export function DateRangeModal({
               Apply Date Range
             </Button>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+    </Modal>
   );
 }
