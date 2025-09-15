@@ -1,4 +1,7 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
+import { Calendar, Activity } from "lucide-react";
+import { format } from "date-fns";
 import { sportmonks } from "@/lib/sportmonks";
 import { League } from "@/schemas/league.schema";
 import { Fixture } from "@/schemas/fixture.schema";
@@ -346,10 +349,72 @@ export default async function LeaguePredictionsPage({
             initialEndDate={endDate}
           />
         ) : (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground text-lg">
-              No upcoming fixtures found for {league.name} in the selected date range
-            </p>
+          <div className="text-center py-12 max-w-2xl mx-auto">
+            <div className="space-y-6">
+              {/* Icon and Main Message */}
+              <div className="space-y-3">
+                <div className="mx-auto w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                  <Calendar className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                  No Fixtures Found
+                </h3>
+                <p className="text-muted-foreground">
+                  No upcoming fixtures found for <strong>{league.name}</strong> in the selected date range.
+                </p>
+              </div>
+
+              {/* Suggested Actions */}
+              <div className="space-y-4">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="font-medium mb-2">Here are some things you can try:</p>
+                  <ul className="space-y-1 text-left max-w-md mx-auto">
+                    <li className="flex items-center gap-2">
+                      <span className="text-blue-500">•</span>
+                      <span>Try selecting a different date range</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-blue-500">•</span>
+                      <span>Check if the season is currently active</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-blue-500">•</span>
+                      <span>Browse other leagues or competitions</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-blue-500">•</span>
+                      <span>Look for upcoming matches in the next few weeks</span>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Link
+                    href="/predictions"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  >
+                    <Calendar className="w-4 h-4" />
+                    Browse All Fixtures
+                  </Link>
+                  <Link
+                    href="/live"
+                    className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    <Activity className="w-4 h-4" />
+                    View Live Matches
+                  </Link>
+                </div>
+              </div>
+
+              {/* Date Range Info */}
+              <div className="text-xs text-gray-500 bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                <p><strong>Selected Range:</strong> {format(startDate, 'MMM dd, yyyy')} - {format(endDate, 'MMM dd, yyyy')}</p>
+                <p className="mt-1">
+                  <strong>Tip:</strong> Try expanding your date range or selecting a different time period.
+                </p>
+              </div>
+            </div>
           </div>
         )}
       </div>

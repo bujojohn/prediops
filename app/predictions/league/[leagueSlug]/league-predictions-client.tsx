@@ -209,10 +209,78 @@ export function LeaguePredictionsClient({
           {/* Fixtures List */}
           {fixtures.length === 0 ? (
             <Card>
-              <CardContent className="pt-6">
-                <p className="text-center text-muted-foreground">
-                  No fixtures found for {league.name} in the selected date range.
-                </p>
+              <CardContent className="pt-8 pb-8">
+                <div className="text-center space-y-4 max-w-md mx-auto">
+                  {/* Icon and Main Message */}
+                  <div className="space-y-3">
+                    <div className="mx-auto w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                      <Calendar className="w-6 h-6 text-gray-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      No Fixtures Found
+                    </h3>
+                    <p className="text-muted-foreground text-sm">
+                      No fixtures found for <strong>{league.name}</strong> in the selected date range.
+                    </p>
+                  </div>
+
+                  {/* Quick Actions */}
+                  <div className="space-y-3">
+                    <div className="text-xs text-gray-600 dark:text-gray-400">
+                      <p className="font-medium mb-2">Quick actions:</p>
+                      <div className="space-y-1">
+                        <button
+                          onClick={() => setShowDateRangePicker(true)}
+                          className="block w-full text-left text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                        >
+                          • Try a different date range
+                        </button>
+                        <button
+                          onClick={() => {
+                            const today = new Date();
+                            const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+                            handleDateRangeChange(today, nextWeek);
+                          }}
+                          className="block w-full text-left text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                        >
+                          • View next 7 days
+                        </button>
+                        <button
+                          onClick={() => {
+                            const today = new Date();
+                            const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+                            handleDateRangeChange(lastWeek, today);
+                          }}
+                          className="block w-full text-left text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                        >
+                          • View last 7 days
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 justify-center">
+                      <button
+                        onClick={() => setShowDateRangePicker(true)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                      >
+                        <Calendar className="w-3 h-3" />
+                        Change Dates
+                      </button>
+                      <button
+                        onClick={() => router.push('/predictions')}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        Browse All
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Date Range Info */}
+                  <div className="text-xs text-gray-500 bg-gray-50 dark:bg-gray-800 rounded-lg p-2">
+                    <p><strong>Current Range:</strong> {format(currentStartDate, 'MMM dd')} - {format(currentEndDate, 'MMM dd, yyyy')}</p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           ) : (
