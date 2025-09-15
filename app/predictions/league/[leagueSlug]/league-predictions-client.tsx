@@ -184,9 +184,10 @@ export function LeaguePredictionsClient({
                   </span>
                   <button
                     onClick={() => setShowDateRangePicker(!showDateRangePicker)}
-                    className="text-xs px-2 py-1 border rounded hover:bg-gray-50 transition-colors"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
                   >
-                    {showDateRangePicker ? 'Hide' : 'Change'}
+                    <Calendar className="w-3 h-3" />
+                    {showDateRangePicker ? 'Hide Picker' : 'Change Range'}
                   </button>
                   {isLoadingNewRange && (
                     <RefreshCw className="h-3 w-3 animate-spin text-blue-600" />
@@ -259,19 +260,19 @@ export function LeaguePredictionsClient({
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex gap-2 justify-center">
+                    <div className="flex flex-col sm:flex-row gap-2 justify-center">
                       <button
                         onClick={() => setShowDateRangePicker(true)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                        className="inline-flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
                       >
-                        <Calendar className="w-3 h-3" />
-                        Change Dates
+                        <Calendar className="w-4 h-4" />
+                        Select Different Date Range
                       </button>
                       <button
                         onClick={() => router.push('/predictions')}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                        className="inline-flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                       >
-                        Browse All
+                        Browse All Fixtures
                       </button>
                     </div>
                   </div>

@@ -337,11 +337,16 @@ function PredictionsContent({ initialFixtures }: { initialFixtures: Fixture[] })
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <button
-                  onClick={() => loadFixturesForDate(selectedDate)}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  onClick={() => {
+                    const today = new Date();
+                    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+                    const nextWeekStr = nextWeek.toISOString().split('T')[0];
+                    handleDateSelect(nextWeekStr);
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
                 >
-                  <RefreshCw className="w-4 h-4" />
-                  Refresh
+                  <Calendar className="w-4 h-4" />
+                  Try Next Week
                 </button>
                 <button
                   onClick={() => {
@@ -352,6 +357,13 @@ function PredictionsContent({ initialFixtures }: { initialFixtures: Fixture[] })
                 >
                   <Calendar className="w-4 h-4" />
                   View Today
+                </button>
+                <button
+                  onClick={() => loadFixturesForDate(selectedDate)}
+                  className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Refresh
                 </button>
               </div>
             </div>

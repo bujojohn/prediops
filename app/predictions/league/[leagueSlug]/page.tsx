@@ -391,18 +391,25 @@ export default async function LeaguePredictionsPage({
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Link
-                    href="/predictions"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                    href={`/predictions/league/${generateLeagueSlug(league)}?startDate=${format(new Date(), 'yyyy-MM-dd')}&endDate=${format(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd')}`}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
                   >
                     <Calendar className="w-4 h-4" />
-                    Browse All Fixtures
+                    Try Next 7 Days
                   </Link>
                   <Link
-                    href="/live"
+                    href={`/predictions/league/${generateLeagueSlug(league)}?startDate=${format(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd')}&endDate=${format(new Date(), 'yyyy-MM-dd')}`}
+                    className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    <Calendar className="w-4 h-4" />
+                    Try Last 7 Days
+                  </Link>
+                  <Link
+                    href="/predictions"
                     className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                   >
                     <Activity className="w-4 h-4" />
-                    View Live Matches
+                    Browse All Fixtures
                   </Link>
                 </div>
               </div>
