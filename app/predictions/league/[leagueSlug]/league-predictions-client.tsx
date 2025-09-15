@@ -435,7 +435,7 @@ export function LeaguePredictionsClient({
                                   </span>
                                 </td>
                                 <td className="p-3 text-center">
-                                  {row.form ? (
+                                  {row.form && typeof row.form === 'string' && row.form.length > 0 ? (
                                     <div className="flex gap-1 justify-center">
                                       {row.form.split('').slice(-5).map((result, i) => (
                                         <span 
@@ -556,7 +556,7 @@ export function LeaguePredictionsClient({
                                   {row.goal_difference ?? 0 > 0 ? '+' : ''}{row.goal_difference ?? '-'}
                                 </span>
                               </div>
-                              {row.form && (
+                              {row.form && typeof row.form === 'string' && row.form.length > 0 && (
                                 <div className="flex items-center gap-2">
                                   <span className="text-sm text-gray-600 dark:text-gray-400">Form:</span>
                                   <div className="flex gap-1">
