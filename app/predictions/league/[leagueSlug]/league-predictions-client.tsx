@@ -8,7 +8,7 @@ import { Fixture, League, Standing } from '@/schemas';
 import { Team } from '@/schemas/team.schema';
 import { TeamLogo } from '@/app/components/ui/optimized-image';
 import { FixtureList } from '@/app/components/fixtures/FixtureList';
-import { DateRangePicker } from '@/app/components/date-range-picker/DateRangePicker';
+import { DateRangeModal } from '@/app/components/date-range-picker/DateRangeModal';
 import { Calendar, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { dateKeyUTC, formatSemanticDateUTC } from '@/lib/utils';
@@ -194,18 +194,17 @@ export function LeaguePredictionsClient({
                 </div>
               </div>
             </CardHeader>
-            {showDateRangePicker && (
-              <CardContent className="pt-0">
-                <DateRangePicker
-                  startDate={currentStartDate}
-                  endDate={currentEndDate}
-                  onDateRangeChange={handleDateRangeChange}
-                  maxDays={21}
-                  className="border-0 shadow-none p-0"
-                />
-              </CardContent>
-            )}
           </Card>
+
+          {/* Date Range Modal */}
+          <DateRangeModal
+            isOpen={showDateRangePicker}
+            startDate={currentStartDate}
+            endDate={currentEndDate}
+            onDateRangeChange={handleDateRangeChange}
+            onClose={() => setShowDateRangePicker(false)}
+            maxDays={21}
+          />
 
           {/* Fixtures List */}
           {fixtures.length === 0 ? (
@@ -228,9 +227,9 @@ export function LeaguePredictionsClient({
                     </h3>
                     <span className="text-xs text-gray-500">
                       ({dateGroup.fixtures.length} fixture{dateGroup.fixtures.length !== 1 ? 's' : ''})
-                    </span>
-                  </div>
-                  
+                      </span>
+                    </div>
+                    
                   {/* Fixtures for this date */}
                   <FixtureList
                     groups={[{
@@ -248,17 +247,17 @@ export function LeaguePredictionsClient({
                           <span className="inline-block h-2 w-2 rounded-full bg-blue-500" />
                           <div className="font-medium truncate text-sm">
                             {league.name} Fixtures
-                          </div>
-                        </div>
+                      </div>
+                    </div>
                         <button type="button" className="text-xs px-2 py-1 border rounded text-gray-700 bg-white">
                           {count}
                         </button>
                       </div>
                     )}
-                  />
-                </div>
+                      />
+                    </div>
               ))}
-            </div>
+                    </div>
           )}
         </TabsContent>
 

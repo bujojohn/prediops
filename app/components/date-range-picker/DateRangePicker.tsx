@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format, addDays, subDays, startOfDay, isSameDay, isBefore, isAfter } from 'date-fns';
 
 interface DateRangePickerProps {
@@ -144,38 +145,90 @@ export function DateRangePicker({
           >
             Today
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleQuickRange(3)}
-            className="text-xs"
-          >
-            ±3 Days
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleQuickRange(7)}
-            className="text-xs"
-          >
-            ±7 Days
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleQuickRange(14)}
-            className="text-xs"
-          >
-            ±14 Days
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleQuickRange(21)}
-            className="text-xs"
-          >
-            ±21 Days
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuickRange(3)}
+                  className="text-xs"
+                >
+                  ±3 Days
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>3 days before and after today</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuickRange(7)}
+                  className="text-xs"
+                >
+                  ±7 Days
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>7 days before and after today</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuickRange(14)}
+                  className="text-xs"
+                >
+                  ±14 Days
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>14 days before and after today</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuickRange(21)}
+                  className="text-xs"
+                >
+                  ±21 Days
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>21 days before and after today</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs border-dashed"
+                >
+                  Custom Range
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Click on calendar dates to select custom range</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
 
         {/* Calendar */}
