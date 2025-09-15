@@ -3,20 +3,13 @@
 import React, { useState, useEffect, memo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Search, 
-  Globe, 
   ChevronDown, 
   ChevronRight, 
   ExternalLink,
-  Info,
   Star,
-  StarOff,
-  SortAsc,
-  SortDesc,
-  RefreshCw,
-  Settings
+  StarOff
 } from 'lucide-react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { SidebarTheme } from './SidebarTheme';
@@ -71,26 +64,6 @@ export const SidebarStatic = memo(function SidebarStatic() {
               <span>Favorites</span>
             </button>
             
-            <button
-              className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:text-foreground transition-colors"
-              title="Sort ascending"
-            >
-              <SortAsc className="h-3 w-3" />
-            </button>
-
-            <button
-              className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:text-foreground transition-colors"
-              title="Refresh counts"
-            >
-              <RefreshCw className="h-3 w-3" />
-            </button>
-
-            <button
-              className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:text-foreground transition-colors"
-              title="Settings"
-            >
-              <Settings className="h-3 w-3" />
-            </button>
           </div>
         </div>
 
@@ -116,23 +89,9 @@ function SidebarContent({ searchTerm }: { searchTerm: string }) {
   
   // Favorites and filtering state
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
-  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
-  const [sortBy, setSortBy] = useState<'name' | 'fixtures' | 'leagues'>('name');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const [showSettings, setShowSettings] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  
   // Today fixture counts
-  const [countryTodayCounts, setCountryTodayCounts] = useState<Map<number, number>>(new Map());
-  const [leagueTodayCounts, setLeagueTodayCounts] = useState<Map<number, number>>(new Map());
-  const [countsLoadingCountries, setCountsLoadingCountries] = useState<Set<number>>(new Set());
-  const today = React.useMemo(() => new Date().toISOString().split('T')[0], []);
-  const storageKey = React.useMemo(() => `sidebar-counts-${today}`, [today]);
-  const [visibleCountryBadges, setVisibleCountryBadges] = useState<Set<number>>(new Set());
-  const [visibleLeagueBadges, setVisibleLeagueBadges] = useState<Set<number>>(new Set());
-  
-  // Regions (continents, world) handling
-  const [hideRegions, setHideRegions] = useState(false);
+  const [countryTodayCounts] = useState<Map<number, number>>(new Map());
+  const [leagueTodayCounts] = useState<Map<number, number>>(new Map());
 
   const isRegion = React.useCallback((country: CountryWithLeagues) => {
     const name = (country.name || country.fifa_name || country.official_name || '').trim().toLowerCase();
@@ -148,21 +107,14 @@ function SidebarContent({ searchTerm }: { searchTerm: string }) {
   }, []);
 
   // Split filtered list into countries and regions
-  const { countryItems, regionItems } = React.useMemo(() => {
+  const { countryItems } = React.useMemo(() => {
     const countries: CountryWithLeagues[] = [];
     const regions: CountryWithLeagues[] = [];
     for (const c of filteredCountries) {
       if (isRegion(c)) regions.push(c); else countries.push(c);
     }
-    return { countryItems: countries, regionItems: regions };
+    return { countryItems: countries };
   }, [filteredCountries, isRegion]);
-
-  // Debounced search input
-  const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(searchTerm), 200);
-    return () => clearTimeout(t);
-  }, [searchTerm]);
 
   // Load countries with leagues using API route
   const loadCountriesWithLeagues = async () => {
@@ -185,6 +137,52 @@ function SidebarContent({ searchTerm }: { searchTerm: string }) {
       setFilteredCountries([]);
     }
   };
+
+  // Load leagues for a specific country using API route
+  const loadCountryLeagues = React.useCallback(async (countryId: number) => {
+    if (countryLeagues.has(countryId)) {
+      return; // Already loaded
+    }
+
+    setLoadingStates(prev => new Map(prev).set(countryId, true));
+    
+    try {
+      const response = await fetch(`/api/sportmonks/leagues/country/${countryId}`);
+      const data = await response.json();
+      
+      if (data.success && data.data) {
+        const leagues = data.data.filter((league: League) => league.active);
+        setCountryLeagues(prev => new Map(prev).set(countryId, leagues));
+      } else {
+        console.error('Failed to load leagues for country:', countryId, data.error);
+        setCountryLeagues(prev => new Map(prev).set(countryId, []));
+      }
+    } catch (error) {
+      console.error('Error loading leagues for country:', countryId, error);
+      setCountryLeagues(prev => new Map(prev).set(countryId, []));
+    } finally {
+      setLoadingStates(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(countryId);
+        return newMap;
+      });
+    }
+  }, [countryLeagues]);
+
+  // Toggle country expansion
+  const toggleCountry = React.useCallback((countryId: number) => {
+    setExpandedCountries(prev => {
+      const newExpanded = new Set(prev);
+      if (newExpanded.has(countryId)) {
+        newExpanded.delete(countryId);
+      } else {
+        newExpanded.add(countryId);
+        // Load leagues when expanding
+        loadCountryLeagues(countryId);
+      }
+      return newExpanded;
+    });
+  }, [loadCountryLeagues]);
 
   // Load countries on mount
   useEffect(() => {
@@ -225,17 +223,7 @@ function SidebarContent({ searchTerm }: { searchTerm: string }) {
               {/* Country Header */}
               <div className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
                 <button
-                  onClick={() => {
-                    setExpandedCountries(prev => {
-                      const newSet = new Set(prev);
-                      if (newSet.has(country.id)) {
-                        newSet.delete(country.id);
-                      } else {
-                        newSet.add(country.id);
-                      }
-                      return newSet;
-                    });
-                  }}
+                  onClick={() => toggleCountry(country.id)}
                   className="flex items-center gap-1.5 flex-1 text-left"
                 >
                   {isExpanded ? (

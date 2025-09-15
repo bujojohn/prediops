@@ -45,7 +45,7 @@ const api = axios.create({
 export interface ApiConfig {
   include?: string; // e.g. 'participants;scores;state;predictions;league'
   select?: string; // e.g. 'name,starting_at,has_odds'
-  filters?: string; // e.g. 'todayDate;leagues:1,2'
+  filters?: string | Record<string, unknown>; // e.g. 'todayDate;leagues:1,2' or { leagues: 8 }
   order?: "asc" | "desc";
   sortBy?: "starting_at" | "name";
   page?: number;
@@ -79,8 +79,30 @@ function makeParams(
   } catch (error) {
     console.error("Invalid API configuration:", error);
   }
-  const { populate, ...rest } = config;
+  const { populate, filters, ...rest } = config;
   const params: Record<string, string | number | boolean> = {};
+  
+  // Handle filters specially - convert object to Sportmonks format
+  if (filters) {
+    if (typeof filters === 'string') {
+      params.filters = filters;
+    } else if (typeof filters === 'object') {
+      // Convert object filters to Sportmonks format
+      const filterParts: string[] = [];
+      for (const [key, value] of Object.entries(filters)) {
+        if (Array.isArray(value)) {
+          filterParts.push(`${key}:${value.join(',')}`);
+        } else if (value !== undefined && value !== null) {
+          filterParts.push(`${key}:${value}`);
+        }
+      }
+      if (filterParts.length > 0) {
+        params.filters = filterParts.join(';');
+      }
+    }
+  }
+  
+  // Handle other primitive parameters
   for (const [key, value] of Object.entries(rest)) {
     if (
       typeof value === "string" ||
@@ -90,6 +112,7 @@ function makeParams(
       params[key] = value;
     }
   }
+  
   if (populate) params._filters = "populate_";
   return params;
 }
@@ -363,7 +386,7 @@ export const sportmonks = {
     Returns the league you've requested by LeagueId with configurable options
     Doc: https://docs.sportmonks.com/football/endpoints-and-entities/endpoints/leagues/get-league-by-id
   */
-  async getLeaguesById(
+  async getLeagueById(
     leagueId: string,
     config?: ApiConfig
   ): Promise<ApiListResponse<League>> {

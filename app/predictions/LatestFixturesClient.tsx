@@ -12,6 +12,7 @@ import {
   HorizontalDatePicker, 
   useDatePickerWithFixtures 
 } from '@/app/components/date-picker';
+import { createLeagueGroupTitle } from '@/lib/utils/league-utils';
 
 function groupByDate(fixtures: Fixture[]): FixtureGroup[] {
   const map = new Map<string, { title: string; fixtures: Fixture[] }>();
@@ -28,9 +29,7 @@ function groupByDate(fixtures: Fixture[]): FixtureGroup[] {
 function groupByLeague(fixtures: Fixture[]): Array<{ id: string; title: string; fixtures: Fixture[] }>{
   const map = new Map<string, { title: string; fixtures: Fixture[] }>();
   for (const f of fixtures) {
-    const country = f.league?.country?.name || 'Other';
-    const league = f.league?.name || 'League';
-    const key = `${country} - ${league}`;
+    const key = createLeagueGroupTitle(f.league || undefined);
     const entry = map.get(key) || { title: key, fixtures: [] };
     entry.fixtures.push(f);
     map.set(key, entry);
