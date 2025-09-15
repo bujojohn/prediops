@@ -39,10 +39,10 @@ export function DateRangePicker({
   const handleDateClick = (date: Date) => {
     const normalizedDate = startOfDay(date);
     
-    // If no start date selected, or both dates are selected, start fresh
-    if (!selectedStart || (selectedStart && selectedEnd)) {
+    // If no start date selected, start with this date
+    if (!selectedStart) {
       setSelectedStart(normalizedDate);
-      setSelectedEnd(null); // Clear end date to allow range selection
+      setSelectedEnd(null);
       return;
     }
 
@@ -59,9 +59,20 @@ export function DateRangePicker({
       return;
     }
 
-    // If we reach here, both dates are selected, so reset
-    setSelectedStart(normalizedDate);
-    setSelectedEnd(null);
+    // If both dates are selected, allow extending the range
+    if (selectedStart && selectedEnd) {
+      if (isBefore(normalizedDate, selectedStart)) {
+        // Extend range backwards
+        setSelectedStart(normalizedDate);
+      } else if (isAfter(normalizedDate, selectedEnd)) {
+        // Extend range forwards
+        setSelectedEnd(normalizedDate);
+      } else {
+        // Clicked date is within range, start new selection from this date
+        setSelectedStart(normalizedDate);
+        setSelectedEnd(null);
+      }
+    }
   };
 
   const handleConfirmRange = () => {
@@ -251,16 +262,16 @@ export function DateRangePicker({
           </div>
 
           {/* Day Headers */}
-          <div className="grid grid-cols-7 gap-1 mb-2">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-              <div key={day} className="text-center text-xs font-medium text-muted-foreground py-1">
+          <div className="grid grid-cols-7 gap-px mb-1">
+            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
+              <div key={day} className="text-center text-xs font-medium text-muted-foreground py-0.5">
                 {day}
               </div>
             ))}
           </div>
 
           {/* Calendar Days */}
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-7 gap-px">
             {calendarDays.map((date, index) => {
               const isToday = isSameDay(date, today);
               const isSelected = isDateSelected(date);
@@ -273,7 +284,7 @@ export function DateRangePicker({
                   onClick={() => !isDisabled && handleDateClick(date)}
                   disabled={isDisabled}
                   className={`
-                    aspect-square text-xs rounded-md transition-colors
+                    h-6 text-xs rounded-sm transition-colors font-medium min-w-0
                     ${isToday ? 'bg-blue-100 text-blue-900 font-semibold' : ''}
                     ${isSelected ? 'bg-blue-600 text-white font-semibold' : ''}
                     ${isInRange && !isSelected ? 'bg-blue-50 text-blue-700' : ''}
