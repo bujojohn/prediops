@@ -68,8 +68,10 @@ export function DateRangeModal({
   };
 
   const handleConfirmRange = () => {
-    if (selectedStart && selectedEnd) {
-      onDateRangeChange(selectedStart, selectedEnd);
+    if (selectedStart) {
+      // If no end date selected, use start date as end date (single day)
+      const endDate = selectedEnd || selectedStart;
+      onDateRangeChange(selectedStart, endDate);
       onClose();
     }
   };
@@ -236,31 +238,31 @@ export function DateRangeModal({
           </div>
 
           {/* Calendar */}
-          <div className="border rounded-lg p-4">
+          <div className="border rounded-lg p-3 max-h-[400px] overflow-hidden">
             {/* Month Header */}
-            <div className="flex items-center justify-between mb-4">
-              <Button variant="ghost" size="sm" className="p-1">
-                <ChevronLeft className="h-4 w-4" />
+            <div className="flex items-center justify-between mb-2">
+              <Button variant="ghost" size="sm" className="p-1 h-6 w-6">
+                <ChevronLeft className="h-3 w-3" />
               </Button>
-              <div className="font-medium text-base">
-                {format(today, 'MMMM yyyy')}
+              <div className="font-medium text-sm">
+                {format(today, 'MMM yyyy')}
               </div>
-              <Button variant="ghost" size="sm" className="p-1">
-                <ChevronRight className="h-4 w-4" />
+              <Button variant="ghost" size="sm" className="p-1 h-6 w-6">
+                <ChevronRight className="h-3 w-3" />
               </Button>
             </div>
 
             {/* Day Headers */}
-            <div className="grid grid-cols-7 gap-1 mb-3">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                <div key={day} className="text-center text-sm font-medium text-muted-foreground py-2">
+            <div className="grid grid-cols-7 gap-0.5 mb-2">
+              {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
+                <div key={day} className="text-center text-xs font-medium text-muted-foreground py-1">
                   {day}
                 </div>
               ))}
             </div>
 
             {/* Calendar Days */}
-            <div className="grid grid-cols-7 gap-1">
+            <div className="grid grid-cols-7 gap-0.5">
               {calendarDays.map((date, index) => {
                 const isToday = isSameDay(date, today);
                 const isSelected = isDateSelected(date);
@@ -273,7 +275,7 @@ export function DateRangeModal({
                     onClick={() => !isDisabled && handleDateClick(date)}
                     disabled={isDisabled}
                     className={`
-                      aspect-square text-sm rounded-md transition-colors font-medium
+                      h-8 text-xs rounded-sm transition-colors font-medium
                       ${isToday ? 'bg-blue-100 text-blue-900 font-semibold' : ''}
                       ${isSelected ? 'bg-blue-600 text-white font-semibold' : ''}
                       ${isInRange && !isSelected ? 'bg-blue-50 text-blue-700' : ''}
@@ -289,17 +291,25 @@ export function DateRangeModal({
           </div>
 
           {/* Selected Range Display */}
-          {selectedStart && selectedEnd && (
-            <div className="text-sm text-center p-4 bg-gray-50 rounded-lg">
+          {selectedStart && (
+            <div className="text-sm text-center p-3 bg-gray-50 rounded-lg">
               <div className="font-medium text-gray-900">
-                Selected Range
+                {selectedEnd ? 'Selected Range' : 'Selected Date'}
               </div>
               <div className="text-gray-600">
-                {format(selectedStart, 'MMM dd, yyyy')} - {format(selectedEnd, 'MMM dd, yyyy')}
+                {selectedEnd ? (
+                  <>
+                    {format(selectedStart, 'MMM dd, yyyy')} - {format(selectedEnd, 'MMM dd, yyyy')}
+                  </>
+                ) : (
+                  format(selectedStart, 'MMM dd, yyyy')
+                )}
               </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                {Math.ceil((selectedEnd.getTime() - selectedStart.getTime()) / (1000 * 60 * 60 * 24)) + 1} days
-              </div>
+              {selectedEnd && (
+                <div className="text-xs text-muted-foreground mt-1">
+                  {Math.ceil((selectedEnd.getTime() - selectedStart.getTime()) / (1000 * 60 * 60 * 24)) + 1} days
+                </div>
+              )}
             </div>
           )}
 
@@ -314,7 +324,7 @@ export function DateRangeModal({
             </Button>
             <Button
               onClick={handleConfirmRange}
-              disabled={!selectedStart || !selectedEnd}
+              disabled={!selectedStart}
               className="flex-1"
             >
               Apply Date Range

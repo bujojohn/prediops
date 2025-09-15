@@ -65,8 +65,10 @@ export function DateRangePicker({
   };
 
   const handleConfirmRange = () => {
-    if (selectedStart && selectedEnd) {
-      onDateRangeChange(selectedStart, selectedEnd);
+    if (selectedStart) {
+      // If no end date selected, use start date as end date (single day)
+      const endDate = selectedEnd || selectedStart;
+      onDateRangeChange(selectedStart, endDate);
     }
   };
 
@@ -287,17 +289,25 @@ export function DateRangePicker({
         </div>
 
         {/* Selected Range Display */}
-        {selectedStart && selectedEnd && (
+        {selectedStart && (
           <div className="text-sm text-center p-3 bg-gray-50 rounded-lg">
             <div className="font-medium text-gray-900">
-              Selected Range
+              {selectedEnd ? 'Selected Range' : 'Selected Date'}
             </div>
             <div className="text-gray-600">
-              {format(selectedStart, 'MMM dd, yyyy')} - {format(selectedEnd, 'MMM dd, yyyy')}
+              {selectedEnd ? (
+                <>
+                  {format(selectedStart, 'MMM dd, yyyy')} - {format(selectedEnd, 'MMM dd, yyyy')}
+                </>
+              ) : (
+                format(selectedStart, 'MMM dd, yyyy')
+              )}
             </div>
-            <div className="text-xs text-muted-foreground mt-1">
-              {Math.ceil((selectedEnd.getTime() - selectedStart.getTime()) / (1000 * 60 * 60 * 24)) + 1} days
-            </div>
+            {selectedEnd && (
+              <div className="text-xs text-muted-foreground mt-1">
+                {Math.ceil((selectedEnd.getTime() - selectedStart.getTime()) / (1000 * 60 * 60 * 24)) + 1} days
+              </div>
+            )}
           </div>
         )}
 
@@ -305,7 +315,7 @@ export function DateRangePicker({
         <div className="flex gap-2">
           <Button
             onClick={handleConfirmRange}
-            disabled={!selectedStart || !selectedEnd}
+            disabled={!selectedStart}
             className="flex-1"
           >
             Apply Date Range
