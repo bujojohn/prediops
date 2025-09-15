@@ -62,8 +62,53 @@ export function useLiveScores(fixtures: Fixture[], enabled: boolean = true) {
           return;
         }
         
-        const homeScore = fixture.scores?.find(s => s.score?.participant === 'home')?.score?.goals ?? null;
-        const awayScore = fixture.scores?.find(s => s.score?.participant === 'away')?.score?.goals ?? null;
+        // Helper function to get the most appropriate score based on match state
+        const getScoreForParticipant = (participant: 'home' | 'away', scores: typeof fixture.scores) => {
+          if (!scores || scores.length === 0) return null;
+          
+          // For finished matches, prioritize FT (Full Time) scores
+          if (fixture.state?.short_name === 'FT' || fixture.state?.short_name === 'AET' || fixture.state?.short_name === 'PEN') {
+            const ftScore = scores.find(s => 
+              s.score?.participant === participant && 
+              s.description === 'FT'
+            );
+            if (ftScore?.score?.goals !== null && ftScore?.score?.goals !== undefined) {
+              return ftScore.score.goals;
+            }
+          }
+          
+          // For live matches, prioritize CURRENT scores
+          if (fixture.state?.short_name === 'LIVE' || fixture.state?.short_name === '2H') {
+            const currentScore = scores.find(s => 
+              s.score?.participant === participant && 
+              s.description === 'CURRENT'
+            );
+            if (currentScore?.score?.goals !== null && currentScore?.score?.goals !== undefined) {
+              return currentScore.score.goals;
+            }
+          }
+          
+          // For half-time, prioritize HT scores
+          if (fixture.state?.short_name === 'HT') {
+            const htScore = scores.find(s => 
+              s.score?.participant === participant && 
+              s.description === 'HT'
+            );
+            if (htScore?.score?.goals !== null && htScore?.score?.goals !== undefined) {
+              return htScore.score.goals;
+            }
+          }
+          
+          // Fallback: get the most recent score (highest goals count, or last entry)
+          const participantScores = scores
+            .filter(s => s.score?.participant === participant && s.score?.goals !== null && s.score?.goals !== undefined)
+            .sort((a, b) => (b.score?.goals || 0) - (a.score?.goals || 0));
+          
+          return participantScores[0]?.score?.goals || null;
+        };
+        
+        const homeScore = getScoreForParticipant('home', fixture.scores);
+        const awayScore = getScoreForParticipant('away', fixture.scores);
         
         // Calculate current minute for live matches (including 2nd half)
         let currentMinute: number | null = null;

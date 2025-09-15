@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef, useContext, memo } from "react";
+import { useEffect, useMemo, useState, useRef, useContext, memo, useCallback } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import type { Fixture } from "@/schemas/fixture.schema";
 import type { Prediction as FixturePrediction } from "@/schemas/predictions.schema";
@@ -490,19 +490,63 @@ export const FixtureCard = memo(function FixtureCard({
   }, [valueBetLoading, valueBetError, valueBetData]);
 
   const liveScore = getLiveScore(fixture.id);
+  
+  // Helper function to get the most appropriate score based on match state
+  const getScoreForParticipant = useCallback((participant: "home" | "away", scores: typeof scoresArray) => {
+    if (!scores || scores.length === 0) return null;
+    
+    // For finished matches, prioritize FT (Full Time) scores
+    if (fixture.state?.short_name === "FT" || fixture.state?.short_name === "AET" || fixture.state?.short_name === "PEN") {
+      const ftScore = scores.find(s => 
+        s.score?.participant === participant && 
+        s.description === "FT"
+      );
+      if (ftScore?.score?.goals !== null && ftScore?.score?.goals !== undefined) {
+        return ftScore.score.goals;
+      }
+    }
+    
+    // For live matches, prioritize CURRENT scores
+    if (fixture.state?.short_name === "LIVE" || fixture.state?.short_name === "2H") {
+      const currentScore = scores.find(s => 
+        s.score?.participant === participant && 
+        s.description === "CURRENT"
+      );
+      if (currentScore?.score?.goals !== null && currentScore?.score?.goals !== undefined) {
+        return currentScore.score.goals;
+      }
+    }
+    
+    // For half-time, prioritize HT scores
+    if (fixture.state?.short_name === "HT") {
+      const htScore = scores.find(s => 
+        s.score?.participant === participant && 
+        s.description === "HT"
+      );
+      if (htScore?.score?.goals !== null && htScore?.score?.goals !== undefined) {
+        return htScore.score.goals;
+      }
+    }
+    
+    // Fallback: get the most recent score (highest goals count, or last entry)
+    const participantScores = scores
+      .filter(s => s.score?.participant === participant && s.score?.goals !== null && s.score?.goals !== undefined)
+      .sort((a, b) => (b.score?.goals || 0) - (a.score?.goals || 0));
+    
+    return participantScores[0]?.score?.goals || null;
+  }, [fixture.state?.short_name]);
+  
   const scoreHome = useMemo(
     () =>
       liveScore?.homeScore ??
-      scoresArray.find((s) => s.score?.participant === "home")?.score?.goals ??
-      null,
-    [scoresArray, liveScore?.homeScore]
+      getScoreForParticipant("home", scoresArray),
+    [scoresArray, liveScore?.homeScore, getScoreForParticipant]
   );
   const scoreAway = useMemo(
     () =>
       liveScore?.awayScore ??
-      scoresArray.find((s) => s.score?.participant === "away")?.score?.goals ??
-      null,
-    [scoresArray, liveScore?.awayScore]
+      getScoreForParticipant("away", scoresArray),
+    [scoresArray, liveScore?.awayScore, getScoreForParticipant]
   );
 
   const marketsMap: Record<string, MarketDefinition> | null = useMemo(() => {
