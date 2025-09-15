@@ -10,7 +10,7 @@ interface LeaguePredictionsPageProps {
   params: Promise<{
     leagueSlug: string;
   }>;
-  searchParams: Promise<{ id?: string }>;
+  searchParams: Promise<{ id?: string; startDate?: string; endDate?: string }>;
 }
 
 // Generate metadata for SEO
@@ -165,10 +165,15 @@ export default async function LeaguePredictionsPage({
 
     if (idParam) {
       try {
-        const byId = await sportmonks.getLeaguesById(idParam, {
+        const byId = await sportmonks.getLeagueById(idParam, {
           include: "country;sport;currentSeason",
         });
-        league = byId?.data?.[0] || null;
+        // Handle both array and object shapes returned by the API client typings
+        const unwrapData = <T,>(data: T | T[] | undefined | null): T | null => {
+          if (!data) return null;
+          return Array.isArray(data) ? (data[0] ?? null) : data;
+        };
+        league = unwrapData(byId?.data);
         if (league) {
           console.log(`Found league by id: ${league.name} (ID: ${league.id})`);
         }
@@ -217,36 +222,112 @@ export default async function LeaguePredictionsPage({
       }
     }
 
-    // Get fixtures for the next 7 days for this league using date range (more efficient)
-    const today = new Date();
-    const endDate = new Date(today);
-    endDate.setDate(today.getDate() + 6); // 7 days total (today + 6 more)
+    // Get date range from URL params or default to next 7 days
+    const searchParamsResolved = await searchParams;
+    const startDateParam = searchParamsResolved.startDate;
+    const endDateParam = searchParamsResolved.endDate;
     
-    const startDateString = today.toISOString().split("T")[0];
-    const endDateString = endDate.toISOString().split("T")[0];
+    let startDateString: string;
+    let endDateString: string;
+    let startDate: Date;
+    let endDate: Date;
+    
+    if (startDateParam && endDateParam) {
+      // Use date range from URL params
+      startDate = new Date(startDateParam);
+      endDate = new Date(endDateParam);
+      startDateString = startDateParam;
+      endDateString = endDateParam;
+    } else {
+      // Default to next 7 days
+      const today = new Date();
+      endDate = new Date(today);
+      endDate.setDate(today.getDate() + 6); // 7 days total (today + 6 more)
+      startDate = today;
+      
+      startDateString = today.toISOString().split("T")[0];
+      endDateString = endDate.toISOString().split("T")[0];
+    }
+    
     const dateRange = `${startDateString},${endDateString}`;
     
-    console.log(`Fetching fixtures for date range: ${dateRange}`);
+    console.log(`Fetching fixtures for league ${league.name} (ID: ${league.id}) in date range: ${dateRange}`);
     
     let allFixtures: Fixture[] = [];
     
     try {
-      const fixturesResponse = await sportmonks.getFixturesByDateRange(startDateString, endDateString, {
-        include:
-          "participants;scores;state;predictions;predictions.market;predictions.outcomes;league.country;venue;stage;round",
-        per_page: 50, //TODO cosider clientside asycn fetch on demamand for more than limit 50
-        page: 1,
-      });
+      // Try multiple approaches to get fixtures for this league
+      console.log(`Attempting to fetch fixtures for league ${league.name} (ID: ${league.id})`);
+      
+      // Approach 1: Try with API filtering first
+      const apiConfigWithFilter = {
+        include: "participants;scores;state;predictions.type;league.country;stage;round",
+        filters: {fixtureLeagues: league.id},
+      };
+      
+      console.log('API Config with filter:', apiConfigWithFilter);
+      
+      let fixturesResponse;
+      try {
+        fixturesResponse = await sportmonks.getFixturesByDateRange(startDateString, endDateString, apiConfigWithFilter);
+      } catch (filterError) {
+        console.warn('API filtering failed, trying without filter:', filterError);
+        // Approach 2: Try without API filtering
+        const apiConfigNoFilter = {
+          include: "participants;scores;state;predictions.type;league.country;stage;round",
+          per_page: 50, 
+          page: 1,
+        };
+        fixturesResponse = await sportmonks.getFixturesByDateRange(startDateString, endDateString, apiConfigNoFilter);
+      }
 
-      // Extract fixtures for this specific league
-      allFixtures = (fixturesResponse?.data || []).filter(
-        (fixture: Fixture) =>
-          fixture.league?.id?.toString() === league.id?.toString()
-      );
+      const rawFixtures = fixturesResponse?.data || [];
+      
+      // Always filter client-side to ensure we only get fixtures for this league
+      allFixtures = rawFixtures.filter((fixture: Fixture) => {
+        const fixtureLeagueId = fixture.league?.id?.toString();
+        const targetLeagueId = league.id?.toString();
+        return fixtureLeagueId === targetLeagueId;
+      });
       
       console.log(
-        `Found ${allFixtures.length} fixtures for league ${league.name} in date range ${startDateString} to ${endDateString}`
+        `Raw fixtures from API: ${rawFixtures.length}, Filtered for league ${league.name} (ID: ${league.id}): ${allFixtures.length}`
       );
+      
+      // Debug: Log first few fixtures to check league IDs
+      if (rawFixtures.length > 0) {
+        console.log('Sample fixture league IDs:', rawFixtures.slice(0, 5).map((f: Fixture) => ({
+          fixtureId: f.id,
+          leagueId: f.league?.id,
+          leagueName: f.league?.name
+        })));
+      }
+      
+      // If still no fixtures, try a different date range (maybe current date)
+      if (allFixtures.length === 0) {
+        console.log('No fixtures found in date range, trying current date...');
+        const todayString = new Date().toISOString().split("T")[0];
+        try {
+          const todayResponse = await sportmonks.getFixturesByDate(todayString, {
+            include: "participants;scores;state;predictions.type;league.country;stage;round",
+            per_page: 50,
+            page: 1,
+          });
+          
+          const todayFixtures = todayResponse?.data || [];
+          const todayFiltered = todayFixtures.filter((fixture: Fixture) => {
+            const fixtureLeagueId = fixture.league?.id?.toString();
+            const targetLeagueId = league.id?.toString();
+            return fixtureLeagueId === targetLeagueId;
+          });
+          
+          console.log(`Today's fixtures for league ${league.name}: ${todayFiltered.length}`);
+          allFixtures = todayFiltered;
+        } catch (todayError) {
+          console.error('Error fetching today\'s fixtures:', todayError);
+        }
+      }
+      
     } catch (error) {
       console.error('Error fetching fixtures by date range:', error);
       // allFixtures remains empty array from declaration above
@@ -261,11 +342,13 @@ export default async function LeaguePredictionsPage({
             predictions={[]}
             standings={standings}
             teams={teams}
+            initialStartDate={startDate}
+            initialEndDate={endDate}
           />
         ) : (
           <div className="text-center py-12">
             <p className="text-muted-foreground text-lg">
-              No upcoming fixtures found for {league.name}
+              No upcoming fixtures found for {league.name} in the selected date range
             </p>
           </div>
         )}

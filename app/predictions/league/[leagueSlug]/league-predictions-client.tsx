@@ -1,13 +1,17 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Fixture, League, Standing, Team } from '@/schemas';
+import { Fixture, League, Standing } from '@/schemas';
+import { Team } from '@/schemas/team.schema';
 import { TeamLogo } from '@/app/components/ui/optimized-image';
-import { formatDateLocal, formatTimeLocal } from '@/lib/utils';
+import { FixtureList } from '@/app/components/fixtures/FixtureList';
+import { DateRangePicker } from '@/app/components/date-range-picker/DateRangePicker';
+import { Calendar, RefreshCw } from 'lucide-react';
+import { format } from 'date-fns';
+import { dateKeyUTC, formatSemanticDateUTC } from '@/lib/utils';
 
 interface LeaguePredictionsClientProps {
   league: League;
@@ -15,20 +19,40 @@ interface LeaguePredictionsClientProps {
   predictions: unknown[];
   standings?: Standing[];
   teams?: Team[];
+  initialStartDate?: Date;
+  initialEndDate?: Date;
 }
 
-export function LeaguePredictionsClient({ league, fixtures, standings = [], teams = [] }: LeaguePredictionsClientProps) {
-  const [selectedMarket, setSelectedMarket] = useState<string>('all');
+export function LeaguePredictionsClient({ 
+  league, 
+  fixtures, 
+  standings = [], 
+  teams = [],
+  initialStartDate,
+  initialEndDate 
+}: LeaguePredictionsClientProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  // State for date range
+  const [currentStartDate, setCurrentStartDate] = useState<Date>(
+    initialStartDate || new Date()
+  );
+  const [currentEndDate, setCurrentEndDate] = useState<Date>(
+    initialEndDate || new Date(Date.now() + 6 * 24 * 60 * 60 * 1000) // 7 days from now
+  );
+  const [isLoadingNewRange, setIsLoadingNewRange] = useState(false);
+  const [showDateRangePicker, setShowDateRangePicker] = useState(false);
 
-  // Extract available markets from fixtures
+  // Extract available markets from fixtures for stats
   const availableMarkets = useMemo(() => {
     const markets = new Set<string>();
     fixtures.forEach(fixture => {
       if (fixture.predictions && Array.isArray(fixture.predictions)) {
         fixture.predictions.forEach((prediction: unknown) => {
-          const pred = prediction as { market?: { name?: string } };
-          if (pred.market && pred.market.name) {
-            markets.add(pred.market.name);
+          const pred = prediction as { type?: { name?: string } };
+          if (pred.type && pred.type.name) {
+            markets.add(pred.type.name);
           }
         });
       }
@@ -36,78 +60,56 @@ export function LeaguePredictionsClient({ league, fixtures, standings = [], team
     return Array.from(markets);
   }, [fixtures]);
 
-  // Filter fixtures based on selected market
-  const filteredFixtures = useMemo(() => {
-    if (selectedMarket === 'all') return fixtures;
-    
-    return fixtures.filter(fixture => {
-      if (!fixture.predictions || !Array.isArray(fixture.predictions)) return false;
-      
-      return fixture.predictions.some((prediction: unknown) => {
-        const pred = prediction as { market?: { name?: string } };
-        return pred.market && pred.market.name === selectedMarket;
-      });
-    });
-  }, [fixtures, selectedMarket]);
-
   // Count fixtures with predictions
   const fixturesWithPredictions = fixtures.filter(fixture => 
     fixture.predictions && Array.isArray(fixture.predictions) && fixture.predictions.length > 0
   ).length;
 
-  const renderPredictionMarkets = (fixture: Fixture) => {
-    if (!fixture.predictions || !Array.isArray(fixture.predictions)) {
-      return <p className="text-muted-foreground text-sm">No predictions available</p>;
-    }
+  // Group fixtures by date
+  const fixturesByDate = useMemo(() => {
+    const map = new Map<string, { title: string; fixtures: Fixture[] }>();
+    
+    fixtures.forEach(fixture => {
+      const key = fixture.starting_at ? dateKeyUTC(fixture.starting_at) : 'unknown';
+      const title = fixture.starting_at ? formatSemanticDateUTC(fixture.starting_at) : 'Unknown Date';
+      const entry = map.get(key) || { title, fixtures: [] };
+      entry.fixtures.push(fixture);
+      map.set(key, entry);
+    });
+    
+    return Array.from(map.entries())
+      .map(([id, { title, fixtures }]) => ({ id, title, fixtures }))
+      .sort((a, b) => {
+        // Sort by date, with unknown dates at the end
+        if (a.id === 'unknown') return 1;
+        if (b.id === 'unknown') return -1;
+        return a.id.localeCompare(b.id);
+      });
+  }, [fixtures]);
 
-    return (
-      <div className="space-y-3">
-        {fixture.predictions.map((prediction: unknown, index: number) => {
-          const pred = prediction as { 
-            market?: { name?: string; type?: string }; 
-            outcomes?: Array<{ 
-              label?: string; 
-              name?: string; 
-              odds?: number; 
-              probability?: number 
-            }> 
-          };
-          
-          return (
-            <div key={index} className="border rounded-lg p-3 bg-muted/50">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="font-medium text-sm">{pred.market?.name || 'Unknown Market'}</h4>
-                <Badge variant="secondary" className="text-xs">
-                  {pred.market?.type || 'Unknown Type'}
-                </Badge>
-              </div>
-              
-              {pred.outcomes && Array.isArray(pred.outcomes) && (
-                <div className="grid grid-cols-1 gap-2">
-                  {pred.outcomes.map((outcome, outcomeIndex: number) => (
-                    <div key={outcomeIndex} className="flex items-center justify-between p-2 bg-background rounded border">
-                      <span className="text-sm font-medium">{outcome.label || outcome.name || 'Unknown'}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">
-                          {outcome.odds ? `${outcome.odds.toFixed(2)}` : 'N/A'}
-                        </span>
-                        <Badge 
-                          variant={outcome.probability && outcome.probability > 0.5 ? 'default' : 'secondary'}
-                          className="text-xs"
-                        >
-                          {outcome.probability ? `${(outcome.probability * 100).toFixed(1)}%` : 'N/A'}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
+  // Handle date range change
+  const handleDateRangeChange = useCallback(async (startDate: Date, endDate: Date) => {
+    setIsLoadingNewRange(true);
+    
+    try {
+      // Update URL with new date range
+      const params = new URLSearchParams(searchParams);
+      params.set('startDate', format(startDate, 'yyyy-MM-dd'));
+      params.set('endDate', format(endDate, 'yyyy-MM-dd'));
+      
+      // Navigate to new URL with date range parameters
+      router.push(`/predictions/league/${league.name?.toLowerCase().replace(/\s+/g, '-')}?${params.toString()}`);
+      
+      // Update local state
+      setCurrentStartDate(startDate);
+      setCurrentEndDate(endDate);
+    } catch (error) {
+      console.error('Error updating date range:', error);
+    } finally {
+      setIsLoadingNewRange(false);
+    }
+  }, [router, searchParams, league.name]);
+
 
   return (
     <div className="space-y-6">
@@ -125,6 +127,7 @@ export function LeaguePredictionsClient({ league, fixtures, standings = [], team
           </div>
         </CardHeader>
       </Card>
+
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -156,38 +159,6 @@ export function LeaguePredictionsClient({ league, fixtures, standings = [], team
         </Card>
       </div>
 
-      {/* Market Filter */}
-      {availableMarkets.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Change Market</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Filter fixtures by prediction market type
-            </p>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant={selectedMarket === 'all' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setSelectedMarket('all')}
-              >
-                All Markets ({fixtures.length})
-              </Button>
-              {availableMarkets.map((market) => (
-                <Button
-                  key={market}
-                  variant={selectedMarket === market ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedMarket(market)}
-                >
-                  {market} ({filteredFixtures.length})
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="fixtures" className="w-full">
@@ -199,82 +170,95 @@ export function LeaguePredictionsClient({ league, fixtures, standings = [], team
         </TabsList>
 
         <TabsContent value="fixtures" className="space-y-4">
-          {filteredFixtures.length === 0 ? (
+          {/* Date Range Selector - Compact */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-blue-600" />
+                  <CardTitle className="text-base">Date Range</CardTitle>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">
+                    {format(currentStartDate, 'MMM dd')} - {format(currentEndDate, 'MMM dd, yyyy')}
+                  </span>
+                  <button
+                    onClick={() => setShowDateRangePicker(!showDateRangePicker)}
+                    className="text-xs px-2 py-1 border rounded hover:bg-gray-50 transition-colors"
+                  >
+                    {showDateRangePicker ? 'Hide' : 'Change'}
+                  </button>
+                  {isLoadingNewRange && (
+                    <RefreshCw className="h-3 w-3 animate-spin text-blue-600" />
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+            {showDateRangePicker && (
+              <CardContent className="pt-0">
+                <DateRangePicker
+                  startDate={currentStartDate}
+                  endDate={currentEndDate}
+                  onDateRangeChange={handleDateRangeChange}
+                  maxDays={21}
+                  className="border-0 shadow-none p-0"
+                />
+              </CardContent>
+            )}
+          </Card>
+
+          {/* Fixtures List */}
+          {fixtures.length === 0 ? (
             <Card>
               <CardContent className="pt-6">
                 <p className="text-center text-muted-foreground">
-                  No fixtures found for the selected market.
+                  No fixtures found for {league.name} in the selected date range.
                 </p>
               </CardContent>
             </Card>
           ) : (
-            filteredFixtures.map((fixture) => (
-              <Card key={fixture.id} className="overflow-hidden">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs">
-                        {fixture.stage?.name || 'Unknown Stage'}
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        {fixture.round?.name || 'Unknown Round'}
-                      </Badge>
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {fixture.starting_at ? formatDateLocal(fixture.starting_at) : 'Unknown Date'} • {fixture.starting_at ? formatTimeLocal(fixture.starting_at) : 'Unknown Time'}
-                    </div>
+            <div className="space-y-4">
+              {fixturesByDate.map((dateGroup) => (
+                <div key={dateGroup.id} className="space-y-3">
+                  {/* Date Header */}
+                  <div className="flex items-center gap-2 px-2">
+                    <span className="inline-block h-1 w-1 rounded-full bg-gray-400" />
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {dateGroup.title}
+                    </h3>
+                    <span className="text-xs text-gray-500">
+                      ({dateGroup.fixtures.length} fixture{dateGroup.fixtures.length !== 1 ? 's' : ''})
+                    </span>
                   </div>
-                </CardHeader>
-                
-                <CardContent className="space-y-4">
-                  {/* Teams */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 flex-1">
-                      <TeamLogo 
-                        src={fixture.participants?.[0]?.image_path}
-                        alt={fixture.participants?.[0]?.name || 'Home Team'}
-                        className="h-8 w-8"
-                      />
-                      <span className="font-medium">
-                        {fixture.participants?.[0]?.name || 'Home Team'}
-                      </span>
-                    </div>
-                    
-                    <div className="text-center mx-4">
-                      <div className="text-lg font-bold">VS</div>
-                      <div className="text-xs text-muted-foreground">
-                        {fixture.state?.name || 'Scheduled'}
+                  
+                  {/* Fixtures for this date */}
+                  <FixtureList
+                    groups={[{
+                      id: `fixtures-${dateGroup.id}`,
+                      title: `${league.name} - ${dateGroup.title}`,
+                      fixtures: dateGroup.fixtures
+                    }]}
+                    compact={false}
+                    renderHeader={({ toggle, count }) => (
+                      <div
+                        className="flex items-center justify-between px-4 py-3 cursor-pointer select-none bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        onClick={toggle}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="inline-block h-2 w-2 rounded-full bg-blue-500" />
+                          <div className="font-medium truncate text-sm">
+                            {league.name} Fixtures
+                          </div>
+                        </div>
+                        <button type="button" className="text-xs px-2 py-1 border rounded text-gray-700 bg-white">
+                          {count}
+                        </button>
                       </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-3 flex-1 justify-end">
-                      <span className="text-sm font-medium">
-                        {fixture.participants?.[1]?.name || 'Away Team'}
-                      </span>
-                      <TeamLogo 
-                        src={fixture.participants?.[1]?.image_path}
-                        alt={fixture.participants?.[1]?.name || 'Away Team'}
-                        className="h-8 w-8"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Venue */}
-                  {fixture.venue && (
-                    <div className="text-sm text-muted-foreground text-center">
-                      📍 {fixture.venue.name}
-                      {fixture.venue.city && `, ${fixture.venue.city.name}`}
-                    </div>
-                  )}
-
-                  {/* Predictions */}
-                  <div className="border-t pt-4">
-                    <h4 className="font-medium mb-3">Prediction Markets</h4>
-                    {renderPredictionMarkets(fixture)}
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+                    )}
+                  />
+                </div>
+              ))}
+            </div>
           )}
         </TabsContent>
 
