@@ -1,40 +1,26 @@
 'use client';
 
-import { Suspense, lazy, ComponentType } from 'react';
+import { Suspense, lazy } from 'react';
 import { LoadingIndicator } from '@/app/components/ui/loading-indicator';
 
-interface LazyLoaderProps {
-  fallback?: React.ReactNode;
-}
-
-// Generic lazy loader component
-export function createLazyLoader<T extends ComponentType<unknown>>(
-  importFn: () => Promise<{ default: T }>,
-  fallback?: React.ReactNode
-) {
-  const LazyComponent = lazy(importFn);
-  
-  return function LazyLoader(props: React.ComponentProps<T> & LazyLoaderProps) {
-    return (
-      <Suspense fallback={fallback || <LoadingIndicator size="md" />}>
-        <LazyComponent {...props} />
-      </Suspense>
-    );
-  };
-}
-
 // Pre-configured lazy loaders for common components
-export const LazyFixtureCard = createLazyLoader(
-  () => import('@/app/components/fixtures/FixtureCard'),
-  <div className="animate-pulse bg-gray-200 h-20 rounded" />
-);
+export const LazyFixtureCard = lazy(() => import('@/app/components/fixtures/FixtureCard').then(module => ({ default: module.FixtureCard })));
 
-export const LazyPredictionMarkets = createLazyLoader(
-  () => import('@/app/components/fixtures/PredictionMarkets'),
-  <div className="animate-pulse bg-gray-200 h-12 rounded" />
-);
+export const LazyPredictionMarkets = lazy(() => import('@/app/components/fixtures/PredictionMarkets').then(module => ({ default: module.PredictionMarkets })));
 
-export const LazySidebar = createLazyLoader(
-  () => import('@/app/components/navigation/Sidebar'),
-  <div className="animate-pulse bg-gray-200 h-full w-64" />
-);
+export const LazySidebar = lazy(() => import('@/app/components/navigation/Sidebar'));
+
+// Wrapper components with Suspense
+export function SuspenseWrapper({ 
+  children, 
+  fallback 
+}: { 
+  children: React.ReactNode; 
+  fallback?: React.ReactNode; 
+}) {
+  return (
+    <Suspense fallback={fallback || <LoadingIndicator size="md" />}>
+      {children}
+    </Suspense>
+  );
+}

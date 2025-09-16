@@ -35,7 +35,7 @@ interface CountryPredictionsClientProps {
 function CountryPredictionsContent({ 
   country, 
   leagues, 
-  initialFixtures
+  fixtures: initialFixtures
 }: CountryPredictionsClientProps) {
   // All hooks must be called unconditionally at the top level
   const [expandedLeagues, setExpandedLeagues] = useState<Set<number>>(new Set());
@@ -334,7 +334,7 @@ export function CountryPredictionsClient({
       <CountryPredictionsContent 
         country={country} 
         leagues={leagues} 
-        initialFixtures={fixtures} 
+        fixtures={fixtures} 
       />
     </DatePickerProvider>
   );

@@ -94,8 +94,14 @@ export const useFixturePredictions = (fixtureId: string, config?: ApiConfig) => 
   return useQuery({
     queryKey: [...sportmonksKeys.predictions(), fixtureId],
     queryFn: async () => {
-      const data = await sportmonks.getFixturePredictions(fixtureId, config);
-      return data;
+      const data = await sportmonks.getPredictions(config);
+      // Filter predictions for the specific fixture
+      return {
+        ...data,
+        data: data.data.filter((prediction: Record<string, unknown>) => 
+          prediction.fixture_id === parseInt(fixtureId)
+        )
+      };
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
