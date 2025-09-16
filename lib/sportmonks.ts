@@ -483,6 +483,41 @@ export const sportmonks = {
     return response.data;
   },
 
+  // Get teams by country with configurable options
+  async getTeamsByCountry(countryId: string, config?: ApiConfig): Promise<ApiListResponse<Team>> {
+    const url = `/teams`;
+    const filters = typeof config?.filters === 'object' && config.filters 
+      ? { ...config.filters, countries: countryId }
+      : { countries: countryId };
+    const response = await api.get(url, { 
+      params: makeParams({ ...config, filters }) 
+    });
+    return response.data;
+  },
+
+  // Get teams by league with configurable options
+  async getTeamsByLeague(leagueId: string, config?: ApiConfig): Promise<ApiListResponse<Team>> {
+    const url = `/teams`;
+    const filters = typeof config?.filters === 'object' && config.filters 
+      ? { ...config.filters, leagues: leagueId }
+      : { leagues: leagueId };
+    const response = await api.get(url, { 
+      params: makeParams({ ...config, filters }) 
+    });
+    return response.data;
+  },
+
+  // Get team with detailed information (all includes)
+  async getTeamWithDetails(teamId: string, config?: ApiConfig) {
+    const defaultIncludes = "country;coaches;rivals;players;latest;upcoming;seasons;activeSeasons;sidelined;sidelinedHistory;trophies;socials";
+    const includes = config?.include || defaultIncludes;
+    const url = `/teams/${teamId}`;
+    const response = await api.get(url, { 
+      params: makeParams({ ...config, include: includes }) 
+    });
+    return response.data;
+  },
+
   // Get players with configurable options
   async getPlayers(config?: ApiConfig): Promise<ApiListResponse<unknown>> {
     const url = `/players`;

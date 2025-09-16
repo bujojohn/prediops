@@ -123,8 +123,8 @@ const Sidebar = memo(function Sidebar() {
   }, [storageKey]);
   
   // Load countries with leagues using API route
-  const loadCountriesWithLeagues = async () => {
-    try {
+    const loadCountriesWithLeagues = async () => {
+      try {
       // Don't set loading to true initially to avoid blocking render
       const response = await fetch('/api/sportmonks/countries/with-leagues');
       const data = await response.json();

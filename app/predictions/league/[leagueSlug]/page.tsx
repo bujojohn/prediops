@@ -251,9 +251,9 @@ export default async function LeaguePredictionsPage({
       endDateString = endDateParam;
     } else {
       // Default to next 7 days
-      const today = new Date();
+    const today = new Date();
       endDate = new Date(today);
-      endDate.setDate(today.getDate() + 6); // 7 days total (today + 6 more)
+    endDate.setDate(today.getDate() + 6); // 7 days total (today + 6 more)
       startDate = today;
       
       startDateString = today.toISOString().split("T")[0];
@@ -287,7 +287,7 @@ export default async function LeaguePredictionsPage({
         const apiConfigNoFilter = {
           include: "participants;scores;state;predictions.type;league.country;stage;round",
           per_page: 50, 
-          page: 1,
+        page: 1,
         };
         fixturesResponse = await sportmonks.getFixturesByDateRange(startDateString, endDateString, apiConfigNoFilter);
       }

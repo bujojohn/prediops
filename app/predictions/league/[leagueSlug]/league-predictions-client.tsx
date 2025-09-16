@@ -202,13 +202,13 @@ export function LeaguePredictionsClient({
 
         <TabsContent value="fixtures" className="space-y-4">
           {/* Date Range Selector - Compact */}
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+            <Card>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-blue-600" />
                   <CardTitle className="text-base">Date Range</CardTitle>
-                </div>
+                    </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground">
                     {format(currentStartDate, 'MMM dd')} - {format(currentEndDate, 'MMM dd, yyyy')}
@@ -223,9 +223,9 @@ export function LeaguePredictionsClient({
                   {isLoadingNewRange && (
                     <RefreshCw className="h-3 w-3 animate-spin text-blue-600" />
                   )}
-                </div>
-              </div>
-            </CardHeader>
+                    </div>
+                  </div>
+                </CardHeader>
           </Card>
 
           {/* Date Range Modal */}
@@ -254,8 +254,8 @@ export function LeaguePredictionsClient({
                     <p className="text-muted-foreground text-sm">
                       No fixtures found for <strong>{league.name}</strong> in the selected date range.
                     </p>
-                  </div>
-
+                    </div>
+                    
                   {/* Quick Actions */}
                   <div className="space-y-3">
                     <div className="text-xs text-gray-600 dark:text-gray-400">
@@ -289,7 +289,7 @@ export function LeaguePredictionsClient({
                         </button>
                       </div>
                     </div>
-
+                    
                     {/* Action Buttons */}
                     <div className="flex flex-col sm:flex-row gap-2 justify-center">
                       <button
@@ -311,10 +311,10 @@ export function LeaguePredictionsClient({
                   {/* Date Range Info */}
                   <div className="text-xs text-gray-500 bg-gray-50 dark:bg-gray-800 rounded-lg p-2">
                     <p><strong>Current Range:</strong> {format(currentStartDate, 'MMM dd')} - {format(currentEndDate, 'MMM dd, yyyy')}</p>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
           ) : (
             <div className="space-y-4">
               {fixturesByDate.map((dateGroup) => (
@@ -498,9 +498,9 @@ export function LeaguePredictionsClient({
 
                   {/* Mobile Cards */}
                   <div className="md:hidden space-y-3">
-                    {standings
-                      .slice()
-                      .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+                  {standings
+                    .slice()
+                    .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
                       .map((row) => {
                         const isTopThree = (row.position ?? 0) <= 3;
                         const isRelegationZone = (row.position ?? 0) > standings.length - 3;
@@ -576,7 +576,7 @@ export function LeaguePredictionsClient({
                                   <span className="font-mono font-semibold">{getStandingStat(row.details, 'overall-goals-against') ?? '-'}</span>
                                 </div>
                               </div>
-                            </div>
+                        </div>
 
                             {/* Goal Difference and Form */}
                             <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
@@ -589,7 +589,7 @@ export function LeaguePredictionsClient({
                                 }`}>
                                   {(getStandingStat(row.details, 'goal-difference') ?? 0) > 0 ? '+' : ''}{getStandingStat(row.details, 'goal-difference') ?? '-'}
                                 </span>
-                              </div>
+                      </div>
                               {(() => {
                                 const formString = getFormString(row.form);
                                 return formString && formString.length > 0 && (
