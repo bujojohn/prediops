@@ -13,6 +13,29 @@ import { Calendar, RefreshCw, Trophy } from 'lucide-react';
 import { format } from 'date-fns';
 import { dateKeyUTC, formatSemanticDateUTC } from '@/lib/utils';
 
+// Helper functions to extract data from the API response structure
+function getStandingStat(details: unknown[] | null | undefined, statType: string): number | null {
+  if (!Array.isArray(details)) return null;
+  const stat = details.find((d: unknown) => {
+    const detail = d as { type?: { code?: string }; value?: number };
+    return detail.type?.code === statType;
+  });
+  return (stat as { value?: number })?.value ?? null;
+}
+
+function getFormString(formArray: unknown[] | string | null | undefined): string {
+  if (typeof formArray === 'string') return formArray;
+  if (!Array.isArray(formArray)) return '';
+  return formArray
+    .sort((a: unknown, b: unknown) => {
+      const aOrder = (a as { sort_order?: number }).sort_order || 0;
+      const bOrder = (b as { sort_order?: number }).sort_order || 0;
+      return aOrder - bOrder;
+    })
+    .map((f: unknown) => (f as { form?: string }).form || '')
+    .join('');
+}
+
 interface LeaguePredictionsClientProps {
   league: League;
   fixtures: Fixture[];
@@ -414,19 +437,19 @@ export function LeaguePredictionsClient({
                                     </div>
                                   </div>
                                 </td>
-                                <td className="p-3 text-center text-sm font-mono">{row.games_played ?? '-'}</td>
-                                <td className="p-3 text-center text-sm font-mono text-green-600 dark:text-green-400">{row.wins ?? '-'}</td>
-                                <td className="p-3 text-center text-sm font-mono text-gray-600 dark:text-gray-400">{row.draws ?? '-'}</td>
-                                <td className="p-3 text-center text-sm font-mono text-red-600 dark:text-red-400">{row.losses ?? '-'}</td>
-                                <td className="p-3 text-center text-sm font-mono">{row.goals_for ?? '-'}</td>
-                                <td className="p-3 text-center text-sm font-mono">{row.goals_against ?? '-'}</td>
+                                <td className="p-3 text-center text-sm font-mono">{getStandingStat(row.details, 'overall-matches-played') ?? '-'}</td>
+                                <td className="p-3 text-center text-sm font-mono text-green-600 dark:text-green-400">{getStandingStat(row.details, 'overall-won') ?? '-'}</td>
+                                <td className="p-3 text-center text-sm font-mono text-gray-600 dark:text-gray-400">{getStandingStat(row.details, 'overall-draw') ?? '-'}</td>
+                                <td className="p-3 text-center text-sm font-mono text-red-600 dark:text-red-400">{getStandingStat(row.details, 'overall-lost') ?? '-'}</td>
+                                <td className="p-3 text-center text-sm font-mono">{getStandingStat(row.details, 'overall-goals-for') ?? '-'}</td>
+                                <td className="p-3 text-center text-sm font-mono">{getStandingStat(row.details, 'overall-goals-against') ?? '-'}</td>
                                 <td className="p-3 text-center text-sm font-mono">
                                   <span className={`font-semibold ${
-                                    (row.goal_difference ?? 0) > 0 ? 'text-green-600 dark:text-green-400' :
-                                    (row.goal_difference ?? 0) < 0 ? 'text-red-600 dark:text-red-400' :
+                                    (getStandingStat(row.details, 'goal-difference') ?? 0) > 0 ? 'text-green-600 dark:text-green-400' :
+                                    (getStandingStat(row.details, 'goal-difference') ?? 0) < 0 ? 'text-red-600 dark:text-red-400' :
                                     'text-gray-600 dark:text-gray-400'
                                   }`}>
-                                    {row.goal_difference ?? 0 > 0 ? '+' : ''}{row.goal_difference ?? '-'}
+                                    {(getStandingStat(row.details, 'goal-difference') ?? 0) > 0 ? '+' : ''}{getStandingStat(row.details, 'goal-difference') ?? '-'}
                                   </span>
                                 </td>
                                 <td className="p-3 text-center">
@@ -435,25 +458,28 @@ export function LeaguePredictionsClient({
                                   </span>
                                 </td>
                                 <td className="p-3 text-center">
-                                  {row.form && typeof row.form === 'string' && row.form.length > 0 ? (
-                                    <div className="flex gap-1 justify-center">
-                                      {row.form.split('').slice(-5).map((result, i) => (
-                                        <span 
-                                          key={i}
-                                          className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${
-                                            result === 'W' ? 'bg-green-500 text-white' :
-                                            result === 'D' ? 'bg-gray-500 text-white' :
-                                            result === 'L' ? 'bg-red-500 text-white' :
-                                            'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
-                                          }`}
-                                        >
-                                          {result}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    <span className="text-xs text-gray-400">-</span>
-                                  )}
+                                  {(() => {
+                                    const formString = getFormString(row.form);
+                                    return formString && formString.length > 0 ? (
+                                      <div className="flex gap-1 justify-center">
+                                        {formString.slice(-5).split('').map((result, i) => (
+                                          <span 
+                                            key={i}
+                                            className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${
+                                              result === 'W' ? 'bg-green-500 text-white' :
+                                              result === 'D' ? 'bg-gray-500 text-white' :
+                                              result === 'L' ? 'bg-red-500 text-white' :
+                                              'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                                            }`}
+                                          >
+                                            {result}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <span className="text-xs text-gray-400">-</span>
+                                    );
+                                  })()}
                                 </td>
                               </tr>
                             );
@@ -517,29 +543,29 @@ export function LeaguePredictionsClient({
                               <div className="space-y-2">
                                 <div className="flex justify-between">
                                   <span className="text-gray-600 dark:text-gray-400">Played</span>
-                                  <span className="font-mono font-semibold">{row.games_played ?? '-'}</span>
+                                  <span className="font-mono font-semibold">{getStandingStat(row.details, 'overall-matches-played') ?? '-'}</span>
                                 </div>
                                 <div className="flex justify-between">
                                   <span className="text-gray-600 dark:text-gray-400">Won</span>
-                                  <span className="font-mono text-green-600 dark:text-green-400 font-semibold">{row.wins ?? '-'}</span>
+                                  <span className="font-mono text-green-600 dark:text-green-400 font-semibold">{getStandingStat(row.details, 'overall-won') ?? '-'}</span>
                                 </div>
                                 <div className="flex justify-between">
                                   <span className="text-gray-600 dark:text-gray-400">Drawn</span>
-                                  <span className="font-mono text-gray-600 dark:text-gray-400 font-semibold">{row.draws ?? '-'}</span>
+                                  <span className="font-mono text-gray-600 dark:text-gray-400 font-semibold">{getStandingStat(row.details, 'overall-draw') ?? '-'}</span>
                                 </div>
                               </div>
                               <div className="space-y-2">
                                 <div className="flex justify-between">
                                   <span className="text-gray-600 dark:text-gray-400">Lost</span>
-                                  <span className="font-mono text-red-600 dark:text-red-400 font-semibold">{row.losses ?? '-'}</span>
+                                  <span className="font-mono text-red-600 dark:text-red-400 font-semibold">{getStandingStat(row.details, 'overall-lost') ?? '-'}</span>
                                 </div>
                                 <div className="flex justify-between">
                                   <span className="text-gray-600 dark:text-gray-400">Goals For</span>
-                                  <span className="font-mono font-semibold">{row.goals_for ?? '-'}</span>
+                                  <span className="font-mono font-semibold">{getStandingStat(row.details, 'overall-goals-for') ?? '-'}</span>
                                 </div>
                                 <div className="flex justify-between">
                                   <span className="text-gray-600 dark:text-gray-400">Goals Against</span>
-                                  <span className="font-mono font-semibold">{row.goals_against ?? '-'}</span>
+                                  <span className="font-mono font-semibold">{getStandingStat(row.details, 'overall-goals-against') ?? '-'}</span>
                                 </div>
                               </div>
                             </div>
@@ -549,33 +575,36 @@ export function LeaguePredictionsClient({
                               <div className="flex items-center gap-2">
                                 <span className="text-sm text-gray-600 dark:text-gray-400">Goal Diff:</span>
                                 <span className={`font-mono font-semibold ${
-                                  (row.goal_difference ?? 0) > 0 ? 'text-green-600 dark:text-green-400' :
-                                  (row.goal_difference ?? 0) < 0 ? 'text-red-600 dark:text-red-400' :
+                                  (getStandingStat(row.details, 'goal-difference') ?? 0) > 0 ? 'text-green-600 dark:text-green-400' :
+                                  (getStandingStat(row.details, 'goal-difference') ?? 0) < 0 ? 'text-red-600 dark:text-red-400' :
                                   'text-gray-600 dark:text-gray-400'
                                 }`}>
-                                  {row.goal_difference ?? 0 > 0 ? '+' : ''}{row.goal_difference ?? '-'}
+                                  {(getStandingStat(row.details, 'goal-difference') ?? 0) > 0 ? '+' : ''}{getStandingStat(row.details, 'goal-difference') ?? '-'}
                                 </span>
                               </div>
-                              {row.form && typeof row.form === 'string' && row.form.length > 0 && (
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm text-gray-600 dark:text-gray-400">Form:</span>
-                                  <div className="flex gap-1">
-                                    {row.form.split('').slice(-5).map((result, i) => (
-                                      <span 
-                                        key={i}
-                                        className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${
-                                          result === 'W' ? 'bg-green-500 text-white' :
-                                          result === 'D' ? 'bg-gray-500 text-white' :
-                                          result === 'L' ? 'bg-red-500 text-white' :
-                                          'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
-                                        }`}
-                                      >
-                                        {result}
-                                      </span>
-                                    ))}
+                              {(() => {
+                                const formString = getFormString(row.form);
+                                return formString && formString.length > 0 && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm text-gray-600 dark:text-gray-400">Form:</span>
+                                    <div className="flex gap-1">
+                                      {formString.slice(-5).split('').map((result, i) => (
+                                        <span
+                                          key={i}
+                                          className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${
+                                            result === 'W' ? 'bg-green-500 text-white' :
+                                            result === 'D' ? 'bg-gray-500 text-white' :
+                                            result === 'L' ? 'bg-red-500 text-white' :
+                                            'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                                          }`}
+                                        >
+                                          {result}
+                                        </span>
+                                      ))}
+                                    </div>
                                   </div>
-                                </div>
-                              )}
+                                );
+                              })()}
                             </div>
                           </div>
                         );
