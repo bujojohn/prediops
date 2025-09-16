@@ -107,6 +107,29 @@ ApiConfig = {
   per_page: 50,
 };
 ```
+
+### 3.1.3 League Page Fixtures
+- **Endpoint**:  
+    /fixtures (with date range and league filters)
+
+- **API Configuration**:  
+```javascript
+ApiConfig = {
+  include: 'participants;scores;state;predictions.type;league.country',
+  sortBy: 'starting_at',
+  order: 'asc',
+  filters: { fixtureLeagues: leagueId },
+  dateFrom: startDate,
+  dateTo: endDate,
+  per_page: 50,
+};
+```
+
+- **Fallback Strategy**:
+  1. Try API filtering first
+  2. Fall back to client-side filtering if API filtering fails
+  3. Always perform client-side filtering to ensure accuracy
+  4. Show appropriate error messages if no fixtures found
 ### 3.2.1 to 3.1.2 Sample Api Data
 for endpoints 3.1.1 and 3.1.2
 ```json
@@ -600,9 +623,39 @@ for endpoints 3.1.1 and 3.1.2
 - **Error Boundaries**: Graceful error handling for individual fixture cards
 - **Loading States**: Visual feedback during live score updates
 
-## 7. Accessibility & UX
+## 7. Enhanced Empty States
+
+### No Fixtures Found
+When no fixtures are found for the selected criteria, display a comprehensive empty state:
+
+**Components:**
+- **Icon**: Calendar icon (16x16) in gray
+- **Main Heading**: "No Fixtures Found" 
+- **Description**: Contextual message explaining the empty state
+- **Suggested Actions**: Bulleted list of actionable suggestions
+- **Action Buttons**: Quick navigation options
+
+**Suggested Actions:**
+- Select a different date range using the date picker
+- Check if there are matches scheduled for nearby dates
+- Look for live matches or recent results
+- Browse other leagues or competitions
+
+**Action Buttons:**
+- **Primary**: "Try Next 7 Days" (blue button)
+- **Secondary**: "Try Last 7 Days" (border button)
+- **Secondary**: "Browse All Fixtures" (border button)
+- **Secondary**: "Change Date Range" (opens date picker modal)
+
+**Date Range Information:**
+- Show selected date range
+- Display helpful tips about league schedules
+- Provide context about seasonal breaks
+
+## 8. Accessibility & UX
 - **ARIA Labels**: Proper accessibility labels for prediction buttons and market selection
 - **Keyboard Navigation**: Full keyboard support for all interactive elements
 - **Screen Reader Support**: Semantic HTML structure for screen readers
 - **Loading Indicators**: Clear visual feedback during data updates
 - **Error Recovery**: Graceful error handling with user-friendly messages
+- **Direct Linking**: URL anchor support for direct navigation to specific sections
