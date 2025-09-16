@@ -13,7 +13,7 @@ export function PerformanceMonitor() {
     const observer = new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) {
         console.log(`Performance Metric: ${entry.name}`, {
-          value: entry.value,
+          value: 'value' in entry ? entry.value : undefined,
           startTime: entry.startTime,
           duration: entry.duration,
         });

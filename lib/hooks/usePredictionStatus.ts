@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { calculatePredictionStatus, type PredictionStatusResult } from '@/lib/utils/prediction-status';
-import { type Prediction, type Fixture } from '@/schemas';
+import { type Prediction } from '@/schemas/predictions.schema';
+import { type Fixture } from '@/schemas';
 
 interface UsePredictionStatusOptions {
   updateInterval?: number; // milliseconds

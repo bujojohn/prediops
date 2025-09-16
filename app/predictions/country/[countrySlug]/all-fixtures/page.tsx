@@ -47,7 +47,7 @@ export default async function AllFixturesPage({
     // Get all active leagues for this country
     let activeLeagues: League[] = [];
     try {
-      const leaguesResponse = await sportmonks.getLeaguesById( country.id.toString(),{
+      const leaguesResponse = await sportmonks.getLeaguesByCountryId(country.id.toString(), {
         include: 'country;sport;currentseason',
         per_page: 50,
         page: 1

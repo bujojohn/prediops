@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { format, addDays, subDays, startOfDay, isSameDay, isBefore, isAfter } from 'date-fns';
+import { format, addDays, startOfDay, isSameDay, isBefore, isAfter } from 'date-fns';
 
 interface DateRangeModalProps {
   startDate: Date;
@@ -24,8 +24,8 @@ export function DateRangeModal({
   maxDays = 21,
   isOpen
 }: DateRangeModalProps) {
-  const [selectedStart, setSelectedStart] = useState<Date>(startOfDay(startDate));
-  const [selectedEnd, setSelectedEnd] = useState<Date>(startOfDay(endDate));
+  const [selectedStart, setSelectedStart] = useState<Date | null>(startOfDay(startDate));
+  const [selectedEnd, setSelectedEnd] = useState<Date | null>(startOfDay(endDate));
 
   // Update internal state when props change
   useEffect(() => {
@@ -36,7 +36,6 @@ export function DateRangeModal({
 
   const today = startOfDay(new Date());
   // Allow unlimited past dates, but limit future to maxDays from today
-  const minDate = null; // No limit on past dates
   const maxDate = addDays(today, maxDays);
 
   const handleDateClick = (date: Date) => {
@@ -118,7 +117,6 @@ export function DateRangeModal({
   const generateCalendarDays = () => {
     const days = [];
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
     
     // Add days from previous month
     const startDate = new Date(startOfMonth);
@@ -140,15 +138,7 @@ export function DateRangeModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={
-        <div className="flex items-center gap-2">
-          <Calendar className="h-5 w-5 text-blue-600" />
-          <span>Select Date Range</span>
-          <span className="text-sm text-muted-foreground font-normal">
-            (Max {maxDays} days future)
-          </span>
-        </div>
-      }
+      title="Select Date Range"
       maxWidth="lg"
       className="space-y-4"
     >

@@ -4,9 +4,9 @@ import { notFound } from 'next/navigation';
 export default async function PredictionsByDatePage({ 
   params 
 }: { 
-  params: { date: string } 
+  params: Promise<{ date: string }> 
 }) {
-  const { date } = params;
+  const { date } = await params;
   
   // Validate date format (YYYY-MM-DD)
   const isValidDate = /^\d{4}-\d{2}-\d{2}$/.test(date);

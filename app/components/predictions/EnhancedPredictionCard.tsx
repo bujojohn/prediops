@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { PredictionStatusBadge } from './PredictionStatusBadge';
 import { calculatePredictionStatus } from '@/lib/utils/prediction-status';
-import { type Prediction, type Fixture } from '@/schemas';
+import { type Prediction } from '@/schemas/predictions.schema';
+import { type Fixture } from '@/schemas';
 import { cn } from '@/lib/utils';
 
 interface EnhancedPredictionCardProps {

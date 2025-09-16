@@ -5,6 +5,38 @@ All notable changes to Prediops will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0] - 2024-12-19
+
+### Added
+- **Comprehensive League Standings Table**: Full-featured standings with all columns (Pos, Team, P, W, D, L, GF, GA, GD, Pts, Form)
+- **Visual League Indicators**: Champions League spots (top 3) and relegation zone highlighting
+- **Recent Form Display**: Color-coded W/D/L indicators for last 5 matches
+- **Direct Tab Linking**: Anchor tags for direct navigation to specific tabs (#fixtures, #standings, #teams, #statistics)
+- **Enhanced Date Range Selection**: Prominent buttons and improved date picker modal
+- **Responsive Standings**: Desktop table and mobile card layouts for standings
+- **Enhanced Empty States**: Comprehensive no-results messages with actionable suggestions
+- **Fixture Score Accuracy**: Proper FT score prioritization for finished matches
+
+### Changed
+- **Sidebar Counter**: Expanded from "today only" to "next 7 days" for better accuracy
+- **League Page UX**: Enhanced user experience with better navigation and visual hierarchy
+- **Score Display Logic**: Improved score calculation across all fixture components
+- **API Data Handling**: Enhanced helper functions for Sportmonks API response structure
+
+### Fixed
+- **Sidebar Counter Bug**: Fixed counter always showing 0, now shows accurate fixture counts
+- **Fixture Score Display**: Corrected score calculation to show proper full-time results
+- **TypeScript Errors**: Resolved form data handling errors in standings table
+- **League ID Consistency**: Fixed inconsistent league ID usage across APIs
+- **Form Data Handling**: Fixed TypeError when processing API response form data
+
+### Technical
+- **API Integration**: Consistent league ID usage across fixtures and standings APIs
+- **Error Handling**: Robust fallback mechanisms for API failures
+- **Performance**: Memoized components and optimized re-renders
+- **Type Safety**: Enhanced TypeScript types for standings and form data
+- **Code Quality**: Helper functions for API data extraction and validation
+
 ## [2.7.0] - 2024-12-19
 
 ### Added
@@ -70,6 +102,13 @@ For earlier versions, see git history and previous documentation.
 ---
 
 ## Migration Notes
+
+### Version 2.8.0
+- **League Page**: Enhanced league page with comprehensive standings table and improved UX
+- **Sidebar Counter**: Sidebar now shows fixture counts for next 7 days instead of just today
+- **Direct Linking**: League page tabs now support direct linking via URL anchors
+- **Score Display**: Improved score calculation for more accurate fixture results
+- **No Migration Required**: All enhancements are backward compatible
 
 ### Version 2.7.0
 - **API Changes**: Update any custom API calls to remove venue include parameters

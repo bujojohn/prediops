@@ -113,8 +113,10 @@ const allContinents = await sportmonks.getContinents({
 | `/fixtures` (with `filters=todayDate`)        | Upcoming fixtures for today (Predictions)   | None | [`Fixture`](../schemas/fixture.schema.ts), [`FixtureSchema`](../schemas/fixture.schema.ts) |
 | `/predictions/probabilities/fixtures/{id}`    | Get predictions for a specific fixture      | None                                 | [`PredictionProbability`](../schemas/predictions.schema.ts), [`predictionsSchema`](../schemas/predictions.schema.ts) |
 | `/fixtures`                                   | Get upcoming fixtures                       | None | [`Fixture`](../schemas/fixture.schema.ts), [`FixtureSchema`](../schemas/fixture.schema.ts) |
-| `/standings/seasons/{seasonId}`               | Get league standings                        | None                                 | [`Standing`](../schemas/standing.schema.ts), [`standingSchema`](../schemas/standing.schema.ts) |
+| `/standings/seasons/{seasonId}`               | Get league standings                        | `league;round;group;stage;form;details.type;rule.type:name;participant` | [`Standing`](../schemas/standing.schema.ts), [`standingSchema`](../schemas/standing.schema.ts) |
 | `/teams/{teamId}`                             | Get team statistics                         | None | [`TeamStatistics`](../schemas/team-statistics.schema.ts), [`teamStatisticsSchema`](../schemas/team-statistics.schema.ts) |
+| `/leagues/{leagueId}`                         | Get league information                      | `country;currentseason` | [`League`](../schemas/league.schema.ts), [`leagueSchema`](../schemas/league.schema.ts) |
+| `/fixtures` (with date range filters)        | Get fixtures by date range                  | `participants;scores;state;predictions.type;league.country` | [`Fixture`](../schemas/fixture.schema.ts), [`FixtureSchema`](../schemas/fixture.schema.ts) |
 | `/countries`                                   | Get all countries                          | None                                 | [`Country`](../schemas/country.schema.ts), [`countrySchema`](../schemas/country.schema.ts) |
 | `/countries/{id}`                              | Get specific country                       | None                                 | [`Country`](../schemas/country.schema.ts), [`countrySchema`](../schemas/country.schema.ts) |
 | `/countries/search/{query}`                    | Get countries by search                     | None                                 | [`Country`](../schemas/country.schema.ts), [`countrySchema`](../schemas/country.schema.ts) |
@@ -240,3 +242,93 @@ const searchResults = await sportmonks.getCountriesBySearch('United', {
 ```
 
 **Resulting URL:** `/countries/search/United?include=continent&select=name,iso2,iso3`
+
+## 6. League Page API Usage
+
+### League Information
+**Usage:**
+```typescript
+const league = await sportmonks.getLeagueById(leagueId, {
+  includes: ['country', 'currentseason']
+});
+```
+
+**Resulting URL:** `/leagues/{leagueId}?include=country;currentseason`
+
+### League Standings
+**Usage:**
+```typescript
+const standings = await sportmonks.getLeagueStandings(seasonId, {
+  includes: ['league', 'round', 'group', 'stage', 'form', 'details.type', 'rule.type:name', 'participant'],
+  filters: { standingLeagues: leagueId }
+});
+```
+
+**Resulting URL:** `/standings/seasons/{seasonId}?include=league;round;group;stage;form;details.type;rule.type:name;participant&filters=standingLeagues:{leagueId}`
+
+### League Fixtures by Date Range
+**Usage:**
+```typescript
+const fixtures = await sportmonks.getFixturesByDateRange(startDate, endDate, {
+  includes: ['participants', 'scores', 'state', 'predictions.type', 'league.country'],
+  filters: { fixtureLeagues: leagueId },
+  per_page: 50
+});
+```
+
+**Resulting URL:** `/fixtures?include=participants;scores;state;predictions.type;league.country&filters=fixtureLeagues:{leagueId}&per_page=50&dateFrom={startDate}&dateTo={endDate}`
+
+### Data Structure for Standings
+The standings API returns data in this structure:
+```typescript
+interface Standing {
+  id: number;
+  participant: Team;
+  position: number;
+  points: number;
+  details: Array<{
+    type: { code: string };
+    value: number;
+  }>;
+  form: Array<{
+    form: 'W' | 'D' | 'L';
+    sort_order: number;
+  }>;
+}
+```
+
+### Helper Functions for Standings Data
+```typescript
+// Extract specific statistics from details array
+function getStandingStat(details: unknown[], statType: string): number | null {
+  if (!Array.isArray(details)) return null;
+  const stat = details.find((d: unknown) => {
+    const detail = d as { type?: { code?: string }; value?: number };
+    return detail.type?.code === statType;
+  });
+  return (stat as { value?: number })?.value ?? null;
+}
+
+// Convert form array to string
+function getFormString(formArray: unknown[] | string | null | undefined): string {
+  if (typeof formArray === 'string') return formArray;
+  if (!Array.isArray(formArray)) return '';
+  return formArray
+    .sort((a: unknown, b: unknown) => {
+      const aOrder = (a as { sort_order?: number }).sort_order || 0;
+      const bOrder = (b as { sort_order?: number }).sort_order || 0;
+      return aOrder - bOrder;
+    })
+    .map((f: unknown) => (f as { form?: string }).form || '')
+    .join('');
+}
+```
+
+### Common Stat Type Codes
+- `overall-matches-played`: Games played
+- `overall-won`: Wins
+- `overall-draw`: Draws
+- `overall-lost`: Losses
+- `overall-goals-for`: Goals for
+- `overall-goals-against`: Goals against
+- `goal-difference`: Goal difference

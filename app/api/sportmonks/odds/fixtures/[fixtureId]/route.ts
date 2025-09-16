@@ -3,9 +3,9 @@ import { sportmonks } from '@/lib/sportmonks';
 
 export async function GET(
   _request: Request,
-  { params }: { params: { fixtureId: string } }
+  { params }: { params: Promise<{ fixtureId: string }> }
 ) {
-  const { fixtureId } = params || {};
+  const { fixtureId } = await params || {};
   if (!fixtureId) {
     return NextResponse.json(
       { success: false, message: 'fixtureId is required' },

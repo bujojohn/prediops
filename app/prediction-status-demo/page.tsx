@@ -7,7 +7,8 @@ import { PredictionStatusBadge } from '../components/predictions/PredictionStatu
 import { PredictionStatusDashboard } from '../components/predictions/PredictionStatusDashboard';
 import { EnhancedPredictionCard } from '../components/predictions/EnhancedPredictionCard';
 // import { usePredictionStatus } from '@/lib/hooks/usePredictionStatus';
-import { type Prediction, type Fixture } from '@/schemas';
+import { type Prediction } from '@/schemas/predictions.schema';
+import { type Fixture } from '@/schemas';
 import { 
   RefreshCw, 
   Play, 

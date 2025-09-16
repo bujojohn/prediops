@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { EnhancedPredictionCard } from './EnhancedPredictionCard';
 import { calculatePredictionStatus, type PredictionStatus } from '@/lib/utils/prediction-status';
-import { type Prediction, type Fixture } from '@/schemas';
+import { type Prediction } from '@/schemas/predictions.schema';
+import { type Fixture } from '@/schemas';
 import { 
   TrendingUp, 
   Clock, 
