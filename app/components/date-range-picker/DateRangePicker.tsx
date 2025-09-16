@@ -5,7 +5,7 @@ import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { format, addDays, subDays, startOfDay, isSameDay, isBefore, isAfter } from 'date-fns';
+import { format, addDays, startOfDay, isSameDay, isBefore, isAfter } from 'date-fns';
 
 interface DateRangePickerProps {
   startDate: Date;
@@ -33,7 +33,6 @@ export function DateRangePicker({
 
   const today = startOfDay(new Date());
   // Allow unlimited past dates, but limit future to maxDays from today
-  const minDate = null; // No limit on past dates
   const maxDate = addDays(today, maxDays);
 
   const handleDateClick = (date: Date) => {
@@ -116,7 +115,6 @@ export function DateRangePicker({
   const generateCalendarDays = () => {
     const days = [];
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
     
     // Add days from previous month
     const startDate = new Date(startOfMonth);
