@@ -37,6 +37,7 @@ Welcome to the comprehensive documentation for Prediops! This documentation syst
 - **[ValueBet Feature](VALUEBET_FEATURE.md)** - Value betting system
 - **[Live Scores](generated/component-library.md#live-scores)** - Real-time score updates
 - **[Search System](generated/component-library.md#search)** - Global search functionality
+- **[API Limitations](API_LIMITATIONS_AND_CHANGES.md)** - Subscription limitations and recent changes
 
 ### 📈 Planning & Strategy
 - **[Post-Launch Expansion](POST_LAUNCH_EXPANSION_PLAN.md)** - Future roadmap

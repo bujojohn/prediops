@@ -2,17 +2,21 @@
   "name": "prediops",
   "version": "2.7.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "docs:generate": "node scripts/generate-docs.js",
+    "docs:generate-enhanced": "node scripts/generate-enhanced-docs.js",
+    "docs:user": "node scripts/generate-enhanced-docs.js",
+    "docs:user-docs": "node scripts/generate-user-docs.js",
     "docs:typedoc": "typedoc",
     "docs:storybook": "storybook dev -p 6006",
     "docs:build-storybook": "storybook build",
-    "docs:serve": "http-server docs/generated -p 8080",
-    "docs:clean": "rm -rf docs/generated"
+    "docs:serve": "http-server docs/user-docs -p 8080",
+    "docs:clean": "rm -rf docs/generated && rm -rf docs/user-docs && rm -rf public/docs"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",

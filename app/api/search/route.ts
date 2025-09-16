@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
       try {
         const fixturesResponse = await sportmonks.getUpcomingFixtures({
           filters: `name:${query}`,
-          include: 'participants;league;venue',
+          include: 'participants;league',
           per_page: Math.min(limit, 5)
         });
         
@@ -124,7 +124,6 @@ export async function GET(request: NextRequest) {
             url: `/fixtures/${fixture.id}`,
             metadata: {
               date: fixture.starting_at,
-              venue: fixture.venue?.name,
               league: fixture.league?.name
             }
           })));

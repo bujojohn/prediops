@@ -1,9 +1,8 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { Suspense } from 'react';
 import { Navbar } from './Navbar';
-import Sidebar  from './Sidebar';
+import { SidebarStatic } from './SidebarStatic';
 
 interface SidebarWrapperProps {
   children: React.ReactNode;
@@ -18,9 +17,8 @@ export function SidebarWrapper({ children }: SidebarWrapperProps) {
       {/* Desktop Sidebar - Hidden on home page */}
       {!isHomePage && (
         <div className="hidden md:block">
-          <Suspense fallback={<div>Loading Sidebar...</div>}>
-            <Sidebar />
-          </Suspense>
+          {/* Always show static shell immediately, then hydrate with dynamic content */}
+          <SidebarStatic />
         </div>
       )}
       

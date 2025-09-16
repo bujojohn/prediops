@@ -134,6 +134,8 @@ const allContinents = await sportmonks.getContinents({
 - `continent`, `leagues`, `regions` (for countries)
 - `countries` (for continents)
 
+**Note**: `venue` include parameter is not available in Prediops subscription and should not be used.
+
 ### Commonly Used Select Fields
 - `name`, `id`, `starting_at`, `result_info`, `length`, `has_odds`
 - `name`, `official_name`, `fifa_name`, `iso2`, `iso3`, `latitude`, `longitude`, `image_path` (for countries)

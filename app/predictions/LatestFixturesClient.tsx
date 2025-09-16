@@ -12,6 +12,7 @@ import {
   HorizontalDatePicker, 
   useDatePickerWithFixtures 
 } from '@/app/components/date-picker';
+import { createLeagueGroupTitle } from '@/lib/utils/league-utils';
 
 function groupByDate(fixtures: Fixture[]): FixtureGroup[] {
   const map = new Map<string, { title: string; fixtures: Fixture[] }>();
@@ -28,9 +29,7 @@ function groupByDate(fixtures: Fixture[]): FixtureGroup[] {
 function groupByLeague(fixtures: Fixture[]): Array<{ id: string; title: string; fixtures: Fixture[] }>{
   const map = new Map<string, { title: string; fixtures: Fixture[] }>();
   for (const f of fixtures) {
-    const country = f.league?.country?.name || 'Other';
-    const league = f.league?.name || 'League';
-    const key = `${country} - ${league}`;
+    const key = createLeagueGroupTitle(f.league || undefined);
     const entry = map.get(key) || { title: key, fixtures: [] };
     entry.fixtures.push(f);
     map.set(key, entry);
@@ -305,19 +304,82 @@ function PredictionsContent({ initialFixtures }: { initialFixtures: Fixture[] })
         </>
       ) : (
         <Card className="p-8">
-          <div className="text-center">
-            <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Fixtures Found</h3>
-            <p className="text-gray-600 mb-4">
-              No fixtures with predictions found for the selected date.
-            </p>
-            <button
-              onClick={() => loadFixturesForDate(selectedDate)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              <RefreshCw className="w-4 h-4" />
-              Refresh
-            </button>
+          <div className="text-center max-w-md mx-auto space-y-6">
+            {/* Icon and Main Message */}
+            <div className="space-y-3">
+              <Calendar className="w-16 h-16 text-gray-400 mx-auto" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">No Fixtures Found</h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                No fixtures with predictions found for the selected date.
+              </p>
+            </div>
+
+            {/* Suggested Actions */}
+            <div className="space-y-4">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="font-medium mb-2">Try these options:</p>
+                <ul className="space-y-1 text-left">
+                  <li className="flex items-center gap-2">
+                    <span className="text-blue-500">•</span>
+                    <span>Select a different date using the date picker above</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-blue-500">•</span>
+                    <span>Check if there are matches scheduled for nearby dates</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-blue-500">•</span>
+                    <span>Look for live matches or recent results</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <button
+                  onClick={() => {
+                    const today = new Date();
+                    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+                    const nextWeekStr = nextWeek.toISOString().split('T')[0];
+                    handleDateSelect(nextWeekStr);
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
+                >
+                  <Calendar className="w-4 h-4" />
+                  Try Next Week
+                </button>
+                <button
+                  onClick={() => {
+                    const today = new Date().toISOString().split('T')[0];
+                    handleDateSelect(today);
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <Calendar className="w-4 h-4" />
+                  View Today
+                </button>
+                <button
+                  onClick={() => loadFixturesForDate(selectedDate)}
+                  className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Refresh
+                </button>
+              </div>
+            </div>
+
+            {/* Date Info */}
+            <div className="text-xs text-gray-500 bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+              <p><strong>Selected Date:</strong> {new Date(selectedDate).toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              })}</p>
+              <p className="mt-1">
+                <strong>Tip:</strong> Some leagues may have breaks or off-seasons. Try selecting nearby dates.
+              </p>
+            </div>
           </div>
         </Card>
       )}

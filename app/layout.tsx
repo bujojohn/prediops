@@ -26,6 +26,7 @@ export const metadata: Metadata = {
   description: "AI-powered sports predictions and value betting opportunities across 111+ leagues worldwide",
 };
 
+
 export default function RootLayout({
   children,
 }: Readonly<{

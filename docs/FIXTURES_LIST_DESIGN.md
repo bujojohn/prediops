@@ -81,7 +81,7 @@ Use a responsive layout that adapts gracefully across breakpoints:
 - **API Configuration**:  
 ```javascript
 ApiConfig = {
-  include: 'participants;scores;state;predictions;league',
+  include: 'participants;scores;state;predictions.type;league',
   sortBy: 'starting_at',
   order: 'desc',
   filters: 'todayDate',
@@ -100,7 +100,7 @@ ApiConfig = {
 - **API Configuration**:  
 ```javascript
 ApiConfig = {
-  include: 'participants;scores;state;predictions',
+  include: 'participants;scores;state;predictions.type',
   sortBy: 'starting_at',
   order: 'desc',
   filters: 'inplay',

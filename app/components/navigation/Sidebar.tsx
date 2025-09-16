@@ -43,7 +43,7 @@ const Sidebar = memo(function Sidebar() {
   const [expandedCountries, setExpandedCountries] = useState<Set<number>>(new Set());
   const [countryLeagues, setCountryLeagues] = useState<Map<number, League[]>>(new Map());
   const [loadingStates, setLoadingStates] = useState<Map<number, boolean>>(new Map());
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading] = useState(false); // Start with false to show skeleton immediately
   const pathname = usePathname();
   const searchParams = useSearchParams();
   // Keep a ref in sync with countryLeagues to allow a stable callback without depending on state
@@ -64,7 +64,7 @@ const Sidebar = memo(function Sidebar() {
   const [leagueTodayCounts, setLeagueTodayCounts] = useState<Map<number, number>>(new Map());
   const [countsLoadingCountries, setCountsLoadingCountries] = useState<Set<number>>(new Set());
   const today = React.useMemo(() => new Date().toISOString().split('T')[0], []);
-  const storageKey = React.useMemo(() => `sidebar-counts-${today}`, [today]);
+  const storageKey = React.useMemo(() => `sidebar-counts-7days-${today}`, [today]);
   const [visibleCountryBadges, setVisibleCountryBadges] = useState<Set<number>>(new Set());
   const [visibleLeagueBadges, setVisibleLeagueBadges] = useState<Set<number>>(new Set());
   // Regions (continents, world) handling
@@ -123,9 +123,9 @@ const Sidebar = memo(function Sidebar() {
   }, [storageKey]);
   
   // Load countries with leagues using API route
-    const loadCountriesWithLeagues = async () => {
-      try {
-      setIsLoading(true);
+  const loadCountriesWithLeagues = async () => {
+    try {
+      // Don't set loading to true initially to avoid blocking render
       const response = await fetch('/api/sportmonks/countries/with-leagues');
       const data = await response.json();
       
@@ -152,9 +152,8 @@ const Sidebar = memo(function Sidebar() {
         console.error('Error loading countries with leagues:', error);
           setAllCountries([]);
           setFilteredCountries([]);
-    } finally {
-      setIsLoading(false);
     }
+    // No need to set loading false since we start with false
   };
 
   // Load leagues for a specific country using API route
@@ -195,21 +194,37 @@ const Sidebar = memo(function Sidebar() {
     }
   }, []);
 
-  // Fetch today's fixtures for a country and compute per-league counts
+  // Fetch fixtures for the next 7 days for a country and compute per-league counts
   const fetchCountryTodayCounts = React.useCallback(async (countryId: number) => {
     if (countryTodayCounts.has(countryId)) return;
     try {
       setCountsLoadingCountries(prev => new Set(prev).add(countryId));
-      const url = `/api/sportmonks/fixtures/date-country?date=${today}&countryId=${countryId}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      const fixtures = data?.success ? (data.data || []) : [];
+      
+      // Fetch fixtures for the next 7 days instead of just today
+      const allFixtures = [];
+      for (let i = 0; i < 7; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() + i);
+        const dateStr = date.toISOString().split('T')[0];
+        
+        try {
+          const url = `/api/sportmonks/fixtures/date-country?date=${dateStr}&countryId=${countryId}`;
+          const res = await fetch(url);
+          const data = await res.json();
+          if (data?.success && data.data) {
+            allFixtures.push(...data.data);
+          }
+        } catch (err) {
+          console.warn(`Failed to fetch fixtures for ${dateStr}:`, err);
+        }
+      }
+      
       // Build next maps and persist
       const nextCountryMap = new Map(countryTodayCounts);
-      nextCountryMap.set(countryId, fixtures.length);
+      nextCountryMap.set(countryId, allFixtures.length);
 
       const perLeague = new Map<number, number>();
-      for (const f of fixtures) {
+      for (const f of allFixtures) {
         const lid = f?.league?.id;
         if (typeof lid === 'number') {
           perLeague.set(lid, (perLeague.get(lid) || 0) + 1);
@@ -251,7 +266,7 @@ const Sidebar = memo(function Sidebar() {
         return next;
       });
     }
-  }, [countryTodayCounts, leagueTodayCounts, today, storageKey]);
+  }, [countryTodayCounts, leagueTodayCounts, storageKey]);
 
   // Toggle country expansion with accordion behavior (only one country expanded at a time)
   const toggleCountry = (countryId: number) => {
@@ -432,7 +447,8 @@ const Sidebar = memo(function Sidebar() {
     }
   }, [pathname]);
 
-  if (isLoading) {
+  // Show skeleton while data is loading (but don't block initial render)
+  if (isLoading || allCountries.length === 0) {
     return (
       <SidebarTheme>
         <div className="flex flex-col h-full">
@@ -842,7 +858,7 @@ const Sidebar = memo(function Sidebar() {
                                               ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
                                               : 'bg-muted text-muted-foreground'
                                           }`}
-                                          title={lc > 0 ? `${lc} fixtures today` : 'No fixtures today'}
+                                          title={lc > 0 ? `${lc} fixtures in next 7 days` : 'No fixtures in next 7 days'}
                                         >
                                           {lc}
                                         </Badge>

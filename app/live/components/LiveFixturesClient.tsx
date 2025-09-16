@@ -6,13 +6,12 @@ import { FixtureList, type FixtureGroup } from '@/app/components/fixtures/Fixtur
 import { useQuery } from '@tanstack/react-query';
 import { FixturesProvider, useFixtures } from '@/app/contexts/FixturesContext';
 import { ErrorBoundary } from '@/app/components/error-boundary/ErrorBoundary';
+import { createLeagueGroupTitle } from '@/lib/utils/league-utils';
 
 function groupByLeague(fixtures: Fixture[]): FixtureGroup[] {
   const map = new Map<string, Fixture[]>();
   for (const f of fixtures) {
-    const country = f.league?.country?.name || 'Other';
-    const league = f.league?.name || 'League';
-    const key = `${country} - ${league}`;
+    const key = createLeagueGroupTitle(f.league || undefined);
     const arr = map.get(key) || [];
     arr.push(f);
     map.set(key, arr);
