@@ -205,8 +205,15 @@ export default async function LeaguePredictionsPage({
       || (league as League & { currentseason?: { id?: number } | null; currentSeason?: { id?: number } | null })?.currentSeason?.id;
     if (seasonId) {
       try {
-        const standingsResp = await sportmonks.getLeagueStandings(String(seasonId), { include: 'participant' });
+        console.log(`Attempting to fetch standings for league: ${league.name} seasonId: ${seasonId} leagueId: ${league.id}`);
+        const standingsResp = await sportmonks.getLeagueStandings(String(seasonId), 
+        { 
+          include: 'league;round;group;stage;form;details.type;rule.type:name;participant',
+          filters: { standingLeagues: league.id },
+        });
         standings = (standingsResp as { data?: Standing[] })?.data ?? [];
+        console.log(`Successfully fetched ${standings.length} standings using league.id: ${league.id}`);
+        
         // Derive teams from standings participants (unique by participant.id)
         const seen = new Set<number>();
         teams = (standings || [])
@@ -220,6 +227,7 @@ export default async function LeaguePredictionsPage({
             seen.add(team.id!);
             return true;
           });
+        console.log(`Derived ${teams.length} unique teams from standings`);
       } catch (err) {
         console.warn('Failed to fetch standings for season', seasonId, err);
       }
