@@ -186,10 +186,18 @@ export function LeaguePredictionsClient({
       {/* Main Content Tabs */}
       <Tabs defaultValue="fixtures" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="fixtures">Fixtures & Predictions</TabsTrigger>
-          <TabsTrigger value="standings">Standings</TabsTrigger>
-          <TabsTrigger value="teams">Teams</TabsTrigger>
-          <TabsTrigger value="statistics">Statistics</TabsTrigger>
+          <TabsTrigger value="fixtures" id="fixtures">
+            Fixtures & Predictions
+          </TabsTrigger>
+          <TabsTrigger value="standings" id="standings">
+            Standings
+          </TabsTrigger>
+          <TabsTrigger value="teams" id="teams">
+            Teams
+          </TabsTrigger>
+          <TabsTrigger value="statistics" id="statistics">
+            Statistics
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="fixtures" className="space-y-4">
