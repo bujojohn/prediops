@@ -22,8 +22,8 @@ export function DateRangePicker({
   maxDays = 21,
   className = ''
 }: DateRangePickerProps) {
-  const [selectedStart, setSelectedStart] = useState<Date>(startOfDay(startDate));
-  const [selectedEnd, setSelectedEnd] = useState<Date>(startOfDay(endDate));
+  const [selectedStart, setSelectedStart] = useState<Date | null>(startOfDay(startDate));
+  const [selectedEnd, setSelectedEnd] = useState<Date | null>(startOfDay(endDate));
 
   // Update internal state when props change
   useEffect(() => {
