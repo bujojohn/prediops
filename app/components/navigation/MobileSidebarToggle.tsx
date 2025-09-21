@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
-import Sidebar from './Sidebar';
+import { SidebarStatic } from './SidebarStatic';
 
 interface MobileSidebarToggleProps {
   className?: string;
@@ -35,7 +35,7 @@ export function MobileSidebarToggle({ className }: MobileSidebarToggleProps) {
           
           {/* Sidebar */}
           <div className="absolute left-0 top-0 h-full w-80 max-w-[80vw]">
-            <Sidebar />
+            <SidebarStatic />
           </div>
         </div>
       )}
