@@ -9,7 +9,8 @@ import {
   ChevronRight, 
   ExternalLink,
   Star,
-  StarOff
+  StarOff,
+  Globe
 } from 'lucide-react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { SidebarTheme } from './SidebarTheme';
@@ -93,28 +94,76 @@ function SidebarContent({ searchTerm }: { searchTerm: string }) {
   const [countryTodayCounts] = useState<Map<number, number>>(new Map());
   const [leagueTodayCounts] = useState<Map<number, number>>(new Map());
 
-  const isRegion = React.useCallback((country: CountryWithLeagues) => {
+  // Define known continental/tournament entities by ID and patterns
+  const KNOWN_TOURNAMENTS = React.useMemo(() => new Set([
+    41,   // Europe
+    147,  // Africa  
+    11240938, // Asia (AFC)
+    // Add more known tournament IDs as we discover them
+  ]), []);
+
+  const isTournament = React.useCallback((country: CountryWithLeagues) => {
+    // Check by known ID first
+    if (KNOWN_TOURNAMENTS.has(country.id)) return true;
+    
     const name = (country.name || country.fifa_name || country.official_name || '').trim().toLowerCase();
     if (!name) return false;
-    const regions = new Set([
+    
+    // Continental/regional organizations and tournaments (not real countries)
+    const continents = new Set([
       'africa', 'europe', 'asia', 'north america', 'south america', 'oceania', 'antarctica', 'world', 'international'
     ]);
-    if (regions.has(name)) return true;
-    // Also treat aggregated scopes like "uefa", "caf" etc. as regions if present in short_code/fifa_name
-    const code = (country.fifa_name || country.official_name || '').trim().toLowerCase();
+    if (continents.has(name)) return true;
+    
+    // Continental football organizations
     const orgs = ['uefa', 'caf', 'afc', 'conmebol', 'concacaf', 'ofc', 'fifa'];
-    return orgs.some(org => name.includes(org) || code.includes(org));
-  }, []);
+    
+    // Check in name and codes
+    const code = (country.fifa_name || country.official_name || '').trim().toLowerCase();
+    if (orgs.some(org => name.includes(org) || code.includes(org))) return true;
+    
+    // Check for tournament-specific patterns
+    if (name.includes('continental') || name.includes('regional') || name.includes('intercontinental')) return true;
+    
+    // Check for specific tournament keywords
+    const tournamentKeywords = [
+      'champions league', 'europa league', 'europa conference league', 'conference league',
+      'african cup', 'asian cup', 'copa america', 'gold cup', 'oceanian cup',
+      'nations league', 'confederations cup', 'club world cup', 'super cup',
+      'world cup', 'euro', 'copa libertadores', 'copa sudamericana'
+    ];
+    
+    if (tournamentKeywords.some(keyword => name.includes(keyword))) return true;
+    
+    return false;
+  }, [KNOWN_TOURNAMENTS]);
 
-  // Split filtered list into countries and regions
-  const { countryItems } = React.useMemo(() => {
+  // Split filtered list into countries and tournaments
+  const { countryItems, tournamentItems } = React.useMemo(() => {
     const countries: CountryWithLeagues[] = [];
-    const regions: CountryWithLeagues[] = [];
+    const tournaments: CountryWithLeagues[] = [];
+    
     for (const c of filteredCountries) {
-      if (isRegion(c)) regions.push(c); else countries.push(c);
+      if (isTournament(c)) {
+        tournaments.push(c);
+      } else {
+        countries.push(c);
+      }
     }
-    return { countryItems: countries };
-  }, [filteredCountries, isRegion]);
+    return { countryItems: countries, tournamentItems: tournaments };
+  }, [filteredCountries, isTournament]);
+
+  // Define top leagues data
+  const topLeagues = React.useMemo(() => [
+    { id: 8, name: 'Premier League', country: 'England', short_code: 'EPL' },
+    { id: 564, name: 'La Liga', country: 'Spain', short_code: 'LL' },
+    { id: 82, name: 'Serie A', country: 'Italy', short_code: 'SA' },
+    { id: 78, name: 'Bundesliga', country: 'Germany', short_code: 'BL' },
+    { id: 61, name: 'Ligue 1', country: 'France', short_code: 'L1' },
+    { id: 564, name: 'Championship', country: 'England', short_code: 'CH' },
+    { id: 564, name: 'Eredivisie', country: 'Netherlands', short_code: 'ED' },
+    { id: 564, name: 'Primeira Liga', country: 'Portugal', short_code: 'PL' },
+  ], []);
 
   // Load countries with leagues using API route
   const loadCountriesWithLeagues = async () => {
@@ -211,129 +260,317 @@ function SidebarContent({ searchTerm }: { searchTerm: string }) {
 
   return (
     <div className="p-1">
-      {/* Countries Section */}
-      <div className="space-y-0.5">
-        {countryItems.map((country) => {
-          const isExpanded = expandedCountries.has(country.id);
-          const leagues = countryLeagues.get(country.id) || [];
-          const isLoadingLeagues = loadingStates.get(country.id) || false;
-
-          return (
-            <div key={country.id} className="space-y-0.5" id={`country-${country.id}`}>
-              {/* Country Header */}
-              <div className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
-                <button
-                  onClick={() => toggleCountry(country.id)}
-                  className="flex items-center gap-1.5 flex-1 text-left"
-                >
-                  {isExpanded ? (
-                    <ChevronDown className="h-3.5 w-3.5" />
-                  ) : (
-                    <ChevronRight className="h-3.5 w-3.5" />
-                  )}
-                  <span className={`font-medium truncate text-sm ${
-                    (country.leaguesCount || 0) === 0 ? 'text-muted-foreground italic' : ''
-                  }`}>
-                    {country.name || country.fifa_name || country.official_name}
-                  </span>
-                  <Badge
-                    variant="outline"
-                    className={`text-[10px] ml-1 transition-opacity duration-300 ${
-                      countryTodayCounts.get(country.id) ?? 0 > 0
-                        ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
-                        : 'bg-muted text-muted-foreground'
-                    }`}
-                  >
-                    {countryTodayCounts.get(country.id) ?? 0}
-                  </Badge>
-                </button>
-                
-                <div className="flex items-center gap-1.5">
-                  {/* Favorite Star */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setFavorites(prev => {
-                        const newSet = new Set(prev);
-                        if (newSet.has(country.id)) {
-                          newSet.delete(country.id);
-                        } else {
-                          newSet.add(country.id);
-                        }
-                        return newSet;
-                      });
-                    }}
-                    className={`transition-colors ${
-                      favorites.has(country.id)
-                        ? 'text-yellow-500 hover:text-yellow-600'
-                        : 'text-muted-foreground hover:text-yellow-500'
-                    }`}
-                    title={favorites.has(country.id) ? 'Remove from favorites' : 'Add to favorites'}
-                  >
-                    {favorites.has(country.id) ? (
-                      <Star className="h-3.5 w-3.5 fill-current" />
-                    ) : (
-                      <StarOff className="h-3.5 w-3.5" />
-                    )}
-                  </button>
-                  <a
-                    href={getCountryPredictionsUrl(country)}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                    title="View all leagues"
-                  >
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </a>
-                </div>
-              </div>
-
-              {/* Leagues List */}
-              {isExpanded && (
-                <div className="ml-4 space-y-0.5">
-                  {isLoadingLeagues ? (
-                    <div className="p-1.5 text-xs text-muted-foreground">
-                      Loading leagues...
-                    </div>
-                  ) : leagues.length > 0 ? (
-                    leagues.map((league) => {
-                      const active = pathname?.startsWith('/predictions/league') && searchParams?.get('id') === String(league.id);
-                      return (
-                        <div key={league.id} className={`flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors ${active ? 'bg-accent/60' : ''}`}>
-                          <a
-                            href={`/predictions/league/${generateLeagueSlug(league)}?id=${league.id}`}
-                            className={`flex items-center gap-1.5 flex-1 text-xs ${active ? 'text-primary font-medium' : ''}`}
-                            title={`League ID: ${league.id}`}
-                          >
-                            <span className="truncate">{league.name}</span>
-                            {league.short_code && (
-                              <Badge variant="outline" className={`text-xs px-1 py-0.5 ${active ? 'border-primary text-primary' : ''}`}>
-                                {league.short_code}
-                              </Badge>
-                            )}
-                            <Badge
-                              variant="outline"
-                              className={`text-[10px] transition-opacity duration-300 ${
-                                leagueTodayCounts.get(league.id) ?? 0 > 0
-                                  ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
-                                  : 'bg-muted text-muted-foreground'
-                              }`}
-                            >
-                              {leagueTodayCounts.get(league.id) ?? 0}
-                            </Badge>
-                          </a>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <div className="p-1.5 text-xs text-muted-foreground">
-                      No active leagues found
-                    </div>
-                  )}
-                </div>
-              )}
+      
+      {/* 1. Top Leagues Section */}
+      <div className="mb-3">
+        <div className="px-1 py-1 text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1 mb-2">
+          <Star className="h-3 w-3" />
+          Top Leagues
+        </div>
+        <div className="space-y-0.5">
+          {topLeagues.map((league) => (
+            <div key={league.id} className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
+              <a
+                href={`/predictions/league/${generateLeagueSlug({ name: league.name })}/?id=${league.id}`}
+                className="flex items-center gap-1.5 flex-1 text-left min-w-0"
+              >
+                <span className="font-medium text-sm truncate max-w-[120px]" title={`${league.name} (${league.country})`}>
+                  {league.name}
+                </span>
+                <Badge variant="outline" className="text-[9px] px-1 flex-shrink-0">
+                  {league.short_code}
+                </Badge>
+              </a>
+              <a
+                href={`/predictions/league/${generateLeagueSlug({ name: league.name })}/?id=${league.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1 text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+                title="Open predictions page"
+              >
+                <ExternalLink className="h-3 w-3" />
+              </a>
             </div>
-          );
-        })}
+          ))}
+        </div>
       </div>
+
+      {/* 2. Countries Section */}
+      <div className="mb-3">
+        <div className="px-1 py-1 text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1 mb-2">
+          <Globe className="h-3 w-3" />
+          Countries ({countryItems.length})
+        </div>
+        <div className="space-y-0.5">
+          {countryItems.map((country) => {
+            const isExpanded = expandedCountries.has(country.id);
+            const leagues = countryLeagues.get(country.id) || [];
+            const isLoadingLeagues = loadingStates.get(country.id) || false;
+            const countryName = country.name || country.fifa_name || country.official_name || '';
+
+            return (
+              <div key={country.id} className="space-y-0.5" id={`country-${country.id}`}>
+                {/* Country Header */}
+                <div className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
+                  <button
+                    onClick={() => toggleCountry(country.id)}
+                    className="flex items-center gap-1.5 flex-1 text-left min-w-0"
+                  >
+                    {isExpanded ? (
+                      <ChevronDown className="h-3.5 w-3.5 flex-shrink-0" />
+                    ) : (
+                      <ChevronRight className="h-3.5 w-3.5 flex-shrink-0" />
+                    )}
+                    <span 
+                      className={`font-medium truncate text-sm max-w-[120px] ${
+                        (country.leaguesCount || 0) === 0 ? 'text-muted-foreground italic' : ''
+                      }`} 
+                      title={countryName}
+                    >
+                      {countryName}
+                    </span>
+                    <Badge
+                      variant="outline"
+                      className={`text-[10px] ml-1 flex-shrink-0 ${
+                        countryTodayCounts.get(country.id) ?? 0 > 0
+                          ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
+                          : 'bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      {countryTodayCounts.get(country.id) ?? 0}
+                    </Badge>
+                  </button>
+                  
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {/* Favorite Star */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFavorites(prev => {
+                          const newSet = new Set(prev);
+                          if (newSet.has(country.id)) {
+                            newSet.delete(country.id);
+                          } else {
+                            newSet.add(country.id);
+                          }
+                          return newSet;
+                        });
+                      }}
+                      className={`p-1 rounded transition-colors ${
+                        favorites.has(country.id)
+                          ? 'text-yellow-500 hover:text-yellow-600'
+                          : 'text-muted-foreground hover:text-yellow-500'
+                      }`}
+                      title={favorites.has(country.id) ? 'Remove from favorites' : 'Add to favorites'}
+                    >
+                      {favorites.has(country.id) ? (
+                        <Star className="h-3 w-3 fill-current" />
+                      ) : (
+                        <StarOff className="h-3 w-3" />
+                      )}
+                    </button>
+                    <a
+                      href={getCountryPredictionsUrl(country)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+                      title="Open predictions page"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
+                </div>
+
+                {/* Leagues List */}
+                {isExpanded && (
+                  <div className="ml-4 space-y-0.5">
+                    {isLoadingLeagues ? (
+                      <div className="p-1.5 text-xs text-muted-foreground">
+                        Loading leagues...
+                      </div>
+                    ) : leagues.length > 0 ? (
+                      leagues.map((league) => {
+                        const active = pathname?.startsWith('/predictions/league') && searchParams?.get('id') === String(league.id);
+                        return (
+                          <div key={league.id} className={`flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors ${active ? 'bg-accent/60' : ''}`}>
+                            <a
+                              href={`/predictions/league/${generateLeagueSlug({ name: league.name })}?id=${league.id}`}
+                              className={`flex items-center gap-1.5 flex-1 text-xs min-w-0 ${active ? 'text-primary font-medium' : ''}`}
+                              title={`League ID: ${league.id}`}
+                            >
+                              <span className="truncate max-w-[100px]" title={league.name}>{league.name}</span>
+                              {league.short_code && (
+                                <Badge variant="outline" className={`text-xs px-1 py-0.5 flex-shrink-0 ${active ? 'border-primary text-primary' : ''}`}>
+                                  {league.short_code}
+                                </Badge>
+                              )}
+                              <Badge
+                                variant="outline"
+                                className={`text-[10px] flex-shrink-0 transition-opacity duration-300 ${
+                                  leagueTodayCounts.get(league.id) ?? 0 > 0
+                                    ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
+                                    : 'bg-muted text-muted-foreground'
+                                }`}
+                              >
+                                {leagueTodayCounts.get(league.id) ?? 0}
+                              </Badge>
+                            </a>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="p-1.5 text-xs text-muted-foreground">
+                        No active leagues found
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 3. Tournaments Section */}
+      {tournamentItems.length > 0 && (
+        <div>
+          <div className="px-1 py-1 text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1 mb-2">
+            <Globe className="h-3 w-3" />
+            Tournaments ({tournamentItems.length})
+          </div>
+          <div className="space-y-0.5">
+            {tournamentItems.map((tournament) => {
+              const isExpanded = expandedCountries.has(tournament.id);
+              const leagues = countryLeagues.get(tournament.id) || [];
+              const isLoadingLeagues = loadingStates.get(tournament.id) || false;
+              const tournamentName = tournament.name || tournament.fifa_name || tournament.official_name || '';
+
+              return (
+                <div key={tournament.id} className="space-y-0.5" id={`country-${tournament.id}`}>
+                  {/* Tournament Header */}
+                  <div className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
+                    <button
+                      onClick={() => toggleCountry(tournament.id)}
+                      className="flex items-center gap-1.5 flex-1 text-left min-w-0"
+                    >
+                      {isExpanded ? (
+                        <ChevronDown className="h-3.5 w-3.5 flex-shrink-0" />
+                      ) : (
+                        <ChevronRight className="h-3.5 w-3.5 flex-shrink-0" />
+                      )}
+                      <span 
+                        className={`font-medium truncate text-sm max-w-[100px] ${
+                          (tournament.leaguesCount || 0) === 0 ? 'text-muted-foreground italic' : ''
+                        }`} 
+                        title={tournamentName}
+                      >
+                        {tournamentName}
+                      </span>
+                      <Badge variant="outline" className="text-[10px] ml-1 flex-shrink-0 bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800">
+                        Tournament
+                      </Badge>
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] ml-1 flex-shrink-0 ${
+                          countryTodayCounts.get(tournament.id) ?? 0 > 0
+                            ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
+                            : 'bg-muted text-muted-foreground'
+                        }`}
+                      >
+                        {countryTodayCounts.get(tournament.id) ?? 0}
+                      </Badge>
+                    </button>
+                    
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {/* Favorite Star */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFavorites(prev => {
+                            const newSet = new Set(prev);
+                            if (newSet.has(tournament.id)) {
+                              newSet.delete(tournament.id);
+                            } else {
+                              newSet.add(tournament.id);
+                            }
+                            return newSet;
+                          });
+                        }}
+                        className={`p-1 rounded transition-colors ${
+                          favorites.has(tournament.id)
+                            ? 'text-yellow-500 hover:text-yellow-600'
+                            : 'text-muted-foreground hover:text-yellow-500'
+                        }`}
+                        title={favorites.has(tournament.id) ? 'Remove from favorites' : 'Add to favorites'}
+                      >
+                        {favorites.has(tournament.id) ? (
+                          <Star className="h-3 w-3 fill-current" />
+                        ) : (
+                          <StarOff className="h-3 w-3" />
+                        )}
+                      </button>
+                      <a
+                        href={getCountryPredictionsUrl(tournament)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+                        title="Open predictions page"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Leagues List */}
+                  {isExpanded && (
+                    <div className="ml-4 space-y-0.5">
+                      {isLoadingLeagues ? (
+                        <div className="p-1.5 text-xs text-muted-foreground">
+                          Loading leagues...
+                        </div>
+                      ) : leagues.length > 0 ? (
+                        leagues.map((league) => {
+                          const active = pathname?.startsWith('/predictions/league') && searchParams?.get('id') === String(league.id);
+                          return (
+                            <div key={league.id} className={`flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors ${active ? 'bg-accent/60' : ''}`}>
+                              <a
+                                href={`/predictions/league/${generateLeagueSlug({ name: league.name })}?id=${league.id}`}
+                                className={`flex items-center gap-1.5 flex-1 text-xs min-w-0 ${active ? 'text-primary font-medium' : ''}`}
+                                title={`League ID: ${league.id}`}
+                              >
+                                <span className="truncate max-w-[100px]" title={league.name}>{league.name}</span>
+                                {league.short_code && (
+                                  <Badge variant="outline" className={`text-xs px-1 py-0.5 flex-shrink-0 ${active ? 'border-primary text-primary' : ''}`}>
+                                    {league.short_code}
+                                  </Badge>
+                                )}
+                                <Badge
+                                  variant="outline"
+                                  className={`text-[10px] flex-shrink-0 transition-opacity duration-300 ${
+                                    leagueTodayCounts.get(league.id) ?? 0 > 0
+                                      ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
+                                      : 'bg-muted text-muted-foreground'
+                                  }`}
+                                >
+                                  {leagueTodayCounts.get(league.id) ?? 0}
+                                </Badge>
+                              </a>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="p-1.5 text-xs text-muted-foreground">
+                          No active leagues found
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
