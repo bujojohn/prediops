@@ -594,7 +594,7 @@ function getPredictionOptions(prediction: Prediction): Array<{ code: string; val
   if ('scores' in pred && pred.scores) {
     return Object.entries(pred.scores).map(([code, value]) => ({
       code,
-      value
+      value: typeof value === 'number' ? value : null
     }));
   }
 
