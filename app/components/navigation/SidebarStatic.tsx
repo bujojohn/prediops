@@ -88,11 +88,17 @@ function SidebarContent({ searchTerm }: { searchTerm: string }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   
-  // Favorites and filtering state
-  const [favorites, setFavorites] = useState<Set<number>>(new Set());
+  // Favorites and filtering state - load from localStorage
+  const [favorites, setFavorites] = useState<Set<number>>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('sidebar-favorites');
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    }
+    return new Set();
+  });
   // Today fixture counts
-  const [countryTodayCounts] = useState<Map<number, number>>(new Map());
-  const [leagueTodayCounts] = useState<Map<number, number>>(new Map());
+  const [countryTodayCounts, setCountryTodayCounts] = useState<Map<number, number>>(new Map());
+  const [loadingCounts, setLoadingCounts] = useState<Set<number>>(new Set());
   
   // Section collapse state
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
@@ -106,6 +112,27 @@ function SidebarContent({ searchTerm }: { searchTerm: string }) {
       } else {
         newSet.add(sectionId);
       }
+      return newSet;
+    });
+  };
+
+  // Save favorites to localStorage
+  const saveFavorites = (newFavorites: Set<number>) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sidebar-favorites', JSON.stringify(Array.from(newFavorites)));
+    }
+  };
+
+  // Toggle favorite status
+  const toggleFavorite = (id: number) => {
+    setFavorites(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      saveFavorites(newSet);
       return newSet;
     });
   };
@@ -249,17 +276,60 @@ function SidebarContent({ searchTerm }: { searchTerm: string }) {
     });
   }, [loadCountryLeagues]);
 
+  // Load today's fixture counts for a country
+  const loadTodayFixtureCounts = React.useCallback(async (countryId: number) => {
+    if (loadingCounts.has(countryId) || countryTodayCounts.has(countryId)) {
+      return; // Already loading or loaded
+    }
+
+    setLoadingCounts(prev => new Set(prev).add(countryId));
+
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const response = await fetch(`/api/sportmonks/fixtures/country/${countryId}?date=${today}`);
+      const data = await response.json();
+      
+      if (data.success && data.data) {
+        const count = data.data.length || 0;
+        setCountryTodayCounts(prev => new Map(prev).set(countryId, count));
+      } else {
+        setCountryTodayCounts(prev => new Map(prev).set(countryId, 0));
+      }
+    } catch (error) {
+      console.error('Error loading fixture counts for country:', countryId, error);
+      setCountryTodayCounts(prev => new Map(prev).set(countryId, 0));
+    } finally {
+      setLoadingCounts(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(countryId);
+        return newSet;
+      });
+    }
+  }, [countryTodayCounts, loadingCounts]);
+
   // Load countries on mount
   useEffect(() => {
     loadCountriesWithLeagues();
   }, []);
 
+  // Load fixture counts for visible countries
+  useEffect(() => {
+    // Load counts for first 10 countries to avoid performance issues
+    const visibleCountries = filteredCountries.slice(0, 10);
+    visibleCountries.forEach(country => {
+      if (country.leaguesCount > 0) {
+        loadTodayFixtureCounts(country.id);
+      }
+    });
+  }, [filteredCountries, loadTodayFixtureCounts]);
+
   // Enhanced search functionality - countries, leagues, and teams
   const [searchResults, setSearchResults] = useState<{
     countries: CountryWithLeagues[];
     leagues: { country: CountryWithLeagues; league: League }[];
+    teams: { country: CountryWithLeagues; team: { id: number; name: string } }[];
     hasResults: boolean;
-  }>({ countries: [], leagues: [], hasResults: false });
+  }>({ countries: [], leagues: [], teams: [], hasResults: false });
 
   // Debounced search to improve performance
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
@@ -276,7 +346,7 @@ function SidebarContent({ searchTerm }: { searchTerm: string }) {
   useEffect(() => {
     if (!debouncedSearchTerm.trim()) {
       setFilteredCountries(allCountries);
-      setSearchResults({ countries: [], leagues: [], hasResults: false });
+      setSearchResults({ countries: [], leagues: [], teams: [], hasResults: false });
       return;
     }
 
@@ -284,6 +354,7 @@ function SidebarContent({ searchTerm }: { searchTerm: string }) {
     const searchResults = {
       countries: [] as CountryWithLeagues[],
       leagues: [] as { country: CountryWithLeagues; league: League }[],
+      teams: [] as { country: CountryWithLeagues; team: { id: number; name: string } }[],
       hasResults: false
     };
 
@@ -310,7 +381,7 @@ function SidebarContent({ searchTerm }: { searchTerm: string }) {
       }
     }
 
-    searchResults.hasResults = searchResults.countries.length > 0 || searchResults.leagues.length > 0;
+    searchResults.hasResults = searchResults.countries.length > 0 || searchResults.leagues.length > 0 || searchResults.teams.length > 0;
     
     setFilteredCountries(matchingCountries);
     setSearchResults(searchResults);
@@ -353,20 +424,48 @@ function SidebarContent({ searchTerm }: { searchTerm: string }) {
             </div>
           )}
           {searchResults.leagues.length > 0 && (
-            <div>
+            <div className="mb-2">
               <div className="text-[10px] font-medium text-blue-600 dark:text-blue-400 mb-1">
                 Leagues ({searchResults.leagues.length})
               </div>
               <div className="space-y-1">
                 {searchResults.leagues.slice(0, 3).map((item, index) => (
-                  <div key={`${item.country.id}-${item.league.id}-${index}`} className="flex items-center gap-1 text-xs">
+                  <a
+                    key={`${item.country.id}-${item.league.id}-${index}`}
+                    href={`/predictions/league/${generateLeagueSlug({ name: item.league.name, id: item.league.id })}/?id=${item.league.id}`}
+                    className="flex items-center gap-1 text-xs hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+                  >
                     <span className="truncate">{item.league.name}</span>
                     <span className="text-[10px] text-muted-foreground">({item.country.name})</span>
-                  </div>
+                  </a>
                 ))}
                 {searchResults.leagues.length > 3 && (
                   <div className="text-[10px] text-blue-600 dark:text-blue-400">
                     +{searchResults.leagues.length - 3} more leagues
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          {searchResults.teams.length > 0 && (
+            <div>
+              <div className="text-[10px] font-medium text-blue-600 dark:text-blue-400 mb-1">
+                Teams ({searchResults.teams.length})
+              </div>
+              <div className="space-y-1">
+                {searchResults.teams.slice(0, 3).map((item, index) => (
+                  <a
+                    key={`${item.country.id}-${item.team.id}-${index}`}
+                    href={`/team/${item.team.id}/${item.team.name.toLowerCase().replace(/\s+/g, '-')}`}
+                    className="flex items-center gap-1 text-xs hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+                  >
+                    <span className="truncate">{item.team.name}</span>
+                    <span className="text-[10px] text-muted-foreground">({item.country.name})</span>
+                  </a>
+                ))}
+                {searchResults.teams.length > 3 && (
+                  <div className="text-[10px] text-blue-600 dark:text-blue-400">
+                    +{searchResults.teams.length - 3} more teams
                   </div>
                 )}
               </div>
@@ -471,16 +570,21 @@ function SidebarContent({ searchTerm }: { searchTerm: string }) {
                     >
                       {countryName}
                     </span>
-                    <Badge
-                      variant="outline"
-                      className={`text-[10px] ml-1 flex-shrink-0 ${
-                        countryTodayCounts.get(country.id) ?? 0 > 0
-                          ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
-                          : 'bg-muted text-muted-foreground'
-                      }`}
-                    >
-                      {countryTodayCounts.get(country.id) ?? 0}
-                    </Badge>
+                    {loadingCounts.has(country.id) ? (
+                      <div className="ml-1 h-4 w-6 bg-muted animate-pulse rounded flex-shrink-0" />
+                    ) : (
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] ml-1 flex-shrink-0 ${
+                          (countryTodayCounts.get(country.id) ?? 0) > 0
+                            ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
+                            : 'bg-muted text-muted-foreground'
+                        }`}
+                        title={(countryTodayCounts.get(country.id) ?? 0) > 0 ? `${countryTodayCounts.get(country.id)} fixtures today` : 'No fixtures today'}
+                      >
+                        {countryTodayCounts.get(country.id) ?? 0}
+                      </Badge>
+                    )}
                   </button>
                   
                   <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -488,15 +592,7 @@ function SidebarContent({ searchTerm }: { searchTerm: string }) {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setFavorites(prev => {
-                          const newSet = new Set(prev);
-                          if (newSet.has(country.id)) {
-                            newSet.delete(country.id);
-                          } else {
-                            newSet.add(country.id);
-                          }
-                          return newSet;
-                        });
+                        toggleFavorite(country.id);
                       }}
                       className={`p-1 rounded transition-colors ${
                         favorites.has(country.id)
@@ -548,13 +644,9 @@ function SidebarContent({ searchTerm }: { searchTerm: string }) {
                               )}
                               <Badge
                                 variant="outline"
-                                className={`text-[10px] flex-shrink-0 transition-opacity duration-300 ${
-                                  leagueTodayCounts.get(league.id) ?? 0 > 0
-                                    ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
-                                    : 'bg-muted text-muted-foreground'
-                                }`}
+                                className="text-[10px] flex-shrink-0 bg-muted text-muted-foreground"
                               >
-                                {leagueTodayCounts.get(league.id) ?? 0}
+                                0
                               </Badge>
                             </a>
                           </div>
@@ -627,16 +719,21 @@ function SidebarContent({ searchTerm }: { searchTerm: string }) {
                       <Badge variant="outline" className="text-[10px] ml-1 flex-shrink-0 bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800">
                         Tournament
                       </Badge>
-                      <Badge
-                        variant="outline"
-                        className={`text-[10px] ml-1 flex-shrink-0 ${
-                          countryTodayCounts.get(tournament.id) ?? 0 > 0
-                            ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
-                            : 'bg-muted text-muted-foreground'
-                        }`}
-                      >
-                        {countryTodayCounts.get(tournament.id) ?? 0}
-                      </Badge>
+                      {loadingCounts.has(tournament.id) ? (
+                        <div className="ml-1 h-4 w-6 bg-muted animate-pulse rounded flex-shrink-0" />
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] ml-1 flex-shrink-0 ${
+                            (countryTodayCounts.get(tournament.id) ?? 0) > 0
+                              ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
+                              : 'bg-muted text-muted-foreground'
+                          }`}
+                          title={(countryTodayCounts.get(tournament.id) ?? 0) > 0 ? `${countryTodayCounts.get(tournament.id)} fixtures today` : 'No fixtures today'}
+                        >
+                          {countryTodayCounts.get(tournament.id) ?? 0}
+                        </Badge>
+                      )}
                     </button>
                     
                     <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -644,15 +741,7 @@ function SidebarContent({ searchTerm }: { searchTerm: string }) {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          setFavorites(prev => {
-                            const newSet = new Set(prev);
-                            if (newSet.has(tournament.id)) {
-                              newSet.delete(tournament.id);
-                            } else {
-                              newSet.add(tournament.id);
-                            }
-                            return newSet;
-                          });
+                          toggleFavorite(tournament.id);
                         }}
                         className={`p-1 rounded transition-colors ${
                           favorites.has(tournament.id)
@@ -704,13 +793,9 @@ function SidebarContent({ searchTerm }: { searchTerm: string }) {
                                 )}
                                 <Badge
                                   variant="outline"
-                                  className={`text-[10px] flex-shrink-0 transition-opacity duration-300 ${
-                                    leagueTodayCounts.get(league.id) ?? 0 > 0
-                                      ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
-                                      : 'bg-muted text-muted-foreground'
-                                  }`}
+                                  className="text-[10px] flex-shrink-0 bg-muted text-muted-foreground"
                                 >
-                                  {leagueTodayCounts.get(league.id) ?? 0}
+                                  0
                                 </Badge>
                               </a>
                             </div>
