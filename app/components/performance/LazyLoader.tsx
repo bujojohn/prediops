@@ -8,7 +8,7 @@ export const LazyFixtureCard = lazy(() => import('@/app/components/fixtures/Fixt
 
 export const LazyPredictionMarkets = lazy(() => import('@/app/components/fixtures/PredictionMarkets').then(module => ({ default: module.PredictionMarkets })));
 
-export const LazySidebar = lazy(() => import('@/app/components/navigation/Sidebar'));
+export const LazySidebar = lazy(() => import('@/app/components/navigation/SidebarStatic').then(module => ({ default: module.SidebarStatic })));
 
 // Wrapper components with Suspense
 export function SuspenseWrapper({ 

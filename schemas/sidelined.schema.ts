@@ -41,8 +41,8 @@ export const SidelinedSchema: z.ZodType<Sidelined> = z.lazy(() =>
     fixture_id: z.number().int().nullable().optional(),
     season_id: z.number().int().nullable().optional(),
     type_id: z.number().int().nullable().optional(),
-    start_date: z.string().datetime({ precision: 0, message: "Invalid datetime string" }).nullable().optional(),
-    end_date: z.string().datetime({ precision: 0, message: "Invalid datetime string" }).nullable().optional(),
+    start_date: z.string().nullable().optional(),
+    end_date: z.string().nullable().optional(),
     description: z.string().nullable().optional(),
     category: z.string().nullable().optional(),
     sideline_detail: z.object({

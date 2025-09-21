@@ -60,3 +60,7 @@ export { TrophiesSchema, type Trophies } from './trophies.schema';
 export { TVStationSchema, type TVStation } from './tvstation.schema';
 export { TypeSchema, type Type } from './type.schema';
 export { VenueSchema, type Venue } from './venue.schema';
+export { TeamSchema, type Team } from './team.schema';
+export { TeamDetailedSchema, type TeamDetailed} from './team-detailed.schema';
+export { SocialSchema, type Social } from './social.schema';
+export { RankingSchema, type Ranking } from './ranking.schema';

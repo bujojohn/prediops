@@ -29,10 +29,24 @@ const api = axios.create({
 
         const encodedParameterName = encodeURIComponent(parameterName);
         const rawValueString = String(parameterValue);
-        const encodedButSafeValue = encodeURIComponent(rawValueString)
-          .replace(/%3B/g, ";")
-          .replace(/%2C/g, ",")
-          .replace(/%3A/g, ":");
+        
+        // Handle different parameter types with appropriate encoding
+        let encodedButSafeValue: string;
+        if (parameterName === 'select' || parameterName === 'include') {
+          // For select and include parameters, preserve commas and field names as-is
+          // Only encode spaces and other special characters, but keep commas unencoded
+          encodedButSafeValue = rawValueString
+            .replace(/\s+/g, '%20') // Encode spaces
+            .replace(/,/g, ',') // Keep commas as-is
+            .replace(/;/g, ';') // Keep semicolons as-is
+            .replace(/:/g, ':'); // Keep colons as-is
+        } else {
+          // For other parameters, use the existing logic
+          encodedButSafeValue = encodeURIComponent(rawValueString)
+            .replace(/%3B/g, ";")
+            .replace(/%2C/g, ",")
+            .replace(/%3A/g, ":");
+        }
 
         serializedParts.push(`${encodedParameterName}=${encodedButSafeValue}`);
       }
@@ -40,6 +54,52 @@ const api = axios.create({
     },
   },
 });
+
+// Add response interceptor to log detailed SportMonks API errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.data) {
+      const errorData = error.response.data;
+      
+      // Build the complete URL that was sent to SportMonks
+      const baseURL = error.config?.baseURL || api.defaults.baseURL;
+      const url = error.config?.url;
+      const params = error.config?.params;
+      
+      // Use our custom serializer to show the actual URL that was sent
+      let completeURL = `${baseURL}${url}`;
+      if (params) {
+        const serializer = api.defaults.paramsSerializer;
+        let serializedParams: string | undefined;
+        
+        if (serializer && typeof serializer === 'object' && 'serialize' in serializer && serializer.serialize) {
+          serializedParams = serializer.serialize(params);
+        } else if (typeof serializer === 'function') {
+          serializedParams = serializer(params);
+        }
+        
+        if (serializedParams) {
+          completeURL += `?${serializedParams}`;
+        }
+      }
+      
+      console.error('SportMonks API Error:', {
+        message: errorData.message,
+        code: errorData.code,
+        link: errorData.link,
+        status: error.response.status,
+        method: error.config?.method,
+        endpoint: error.config?.url,
+        completeURL: completeURL,
+        params: params,
+      });
+    } else {
+      console.error('Network/Request Error:', error.message);
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Types for API configuration
 export interface ApiConfig {
@@ -478,8 +538,43 @@ export const sportmonks = {
 
   // Get specific team with configurable options
   async getTeam(teamId: string, config?: ApiConfig) {
+      const url = `/teams/${teamId}`;
+      const response = await api.get(url, { params: makeParams(config) });
+      return response.data;
+  },
+
+  // Get teams by country with configurable options
+  async getTeamsByCountry(countryId: string, config?: ApiConfig): Promise<ApiListResponse<Team>> {
+    const url = `/teams`;
+    const filters = typeof config?.filters === 'object' && config.filters 
+      ? { ...config.filters, countries: countryId }
+      : { countries: countryId };
+    const response = await api.get(url, { 
+      params: makeParams({ ...config, filters }) 
+    });
+    return response.data;
+  },
+
+  // Get teams by league with configurable options
+  async getTeamsByLeague(leagueId: string, config?: ApiConfig): Promise<ApiListResponse<Team>> {
+    const url = `/teams`;
+    const filters = typeof config?.filters === 'object' && config.filters 
+      ? { ...config.filters, leagues: leagueId }
+      : { leagues: leagueId };
+    const response = await api.get(url, { 
+      params: makeParams({ ...config, filters }) 
+    });
+    return response.data;
+  },
+
+  // Get team with detailed information (all includes)
+  async getTeamWithDetails(teamId: string, config?: ApiConfig) {
+    const defaultIncludes = "country;coaches;rivals;players;latest;upcoming;seasons;activeSeasons;sidelined;sidelinedHistory;trophies;socials";
+    const includes = config?.include || defaultIncludes;
     const url = `/teams/${teamId}`;
-    const response = await api.get(url, { params: makeParams(config) });
+    const response = await api.get(url, { 
+      params: makeParams({ ...config, include: includes }) 
+    });
     return response.data;
   },
 

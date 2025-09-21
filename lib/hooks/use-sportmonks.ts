@@ -12,7 +12,11 @@ export const sportmonksKeys = {
   fixtures: () => [...sportmonksKeys.all, 'fixtures'] as const,
   standings: (seasonId: string) => [...sportmonksKeys.all, 'standings', seasonId] as const,
   teams: () => [...sportmonksKeys.all, 'teams'] as const,
-  team: (teamId: string) => [...sportmonksKeys.all, 'team', teamId] as const,
+  team: (teamId: string, include?: string) => include ? 
+    [...sportmonksKeys.all, 'team', teamId, include] as const :
+    [...sportmonksKeys.all, 'team', teamId] as const,
+  teamsByCountry: (countryId: string) => [...sportmonksKeys.all, 'teams', 'country', countryId] as const,
+  teamsByLeague: (leagueId: string) => [...sportmonksKeys.all, 'teams', 'league', leagueId] as const,
   seasons: () => [...sportmonksKeys.all, 'seasons'] as const,
   leagues: () => [...sportmonksKeys.all, 'leagues'] as const,
   players: () => [...sportmonksKeys.all, 'players'] as const,
@@ -166,6 +170,58 @@ export const useTeams = (config?: ApiConfig) => {
     },
     staleTime: 30 * 60 * 1000, // 30 minutes
     gcTime: 2 * 60 * 60 * 1000, // 2 hours
+  });
+};
+
+export const useTeam = (teamId: string, config?: ApiConfig) => {
+  return useQuery({
+    queryKey: sportmonksKeys.team(teamId),
+    queryFn: async () => {
+      const data = await sportmonks.getTeam(teamId, config);
+      return data;
+    },
+    staleTime: 15 * 60 * 1000, // 15 minutes
+    gcTime: 2 * 60 * 60 * 1000, // 2 hours
+    enabled: !!teamId,
+  });
+};
+
+export const useTeamWithDetails = (teamId: string, config?: ApiConfig) => {
+  return useQuery({
+    queryKey: sportmonksKeys.team(teamId, config?.include),
+    queryFn: async () => {
+      const data = await sportmonks.getTeamWithDetails(teamId, config);
+      return data;
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 2 * 60 * 60 * 1000, // 2 hours
+    enabled: !!teamId,
+  });
+};
+
+export const useTeamsByCountry = (countryId: string, config?: ApiConfig) => {
+  return useQuery({
+    queryKey: sportmonksKeys.teamsByCountry(countryId),
+    queryFn: async () => {
+      const data = await sportmonks.getTeamsByCountry(countryId, config);
+      return data;
+    },
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    gcTime: 2 * 60 * 60 * 1000, // 2 hours
+    enabled: !!countryId,
+  });
+};
+
+export const useTeamsByLeague = (leagueId: string, config?: ApiConfig) => {
+  return useQuery({
+    queryKey: sportmonksKeys.teamsByLeague(leagueId),
+    queryFn: async () => {
+      const data = await sportmonks.getTeamsByLeague(leagueId, config);
+      return data;
+    },
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    gcTime: 2 * 60 * 60 * 1000, // 2 hours
+    enabled: !!leagueId,
   });
 };
 

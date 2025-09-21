@@ -51,8 +51,8 @@ export const StageSchema: z.ZodType<Stage> = z.lazy(() =>
     sort_order: z.number().int().nullable().optional(),
     finished: z.boolean().nullable().optional(),
     is_current: z.boolean().nullable().optional(),
-    starting_at: z.string().datetime({ precision: 0, message: "Invalid datetime string" }).nullable().optional(),
-    ending_at: z.string().datetime({ precision: 0, message: "Invalid datetime string" }).nullable().optional(),
+    starting_at: z.string().nullable().optional(),
+    ending_at: z.string().nullable().optional(),
     games_in_current_week: z.boolean().nullable().optional(),
 
     // Relations

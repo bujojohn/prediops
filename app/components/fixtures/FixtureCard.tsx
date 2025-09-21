@@ -533,7 +533,7 @@ export const FixtureCard = memo(function FixtureCard({
       .filter(s => s.score?.participant === participant && s.score?.goals !== null && s.score?.goals !== undefined)
       .sort((a, b) => (b.score?.goals || 0) - (a.score?.goals || 0));
     
-    return participantScores[0]?.score?.goals || null;
+    return participantScores[0]?.score?.goals ?? null;
   }, [fixture.state?.short_name]);
   
   const scoreHome = useMemo(
@@ -1013,10 +1013,10 @@ export const FixtureCard = memo(function FixtureCard({
                 ) : (
                   <>
                     <div className="text-[12px] font-bold text-blue-600 dark:text-blue-400 tabular-nums">
-                      {scoreHome !== null ? scoreHome : "-"}
+                      {scoreHome !== null && scoreHome !== undefined ? scoreHome : "-"}
                     </div>
                     <div className="text-[12px] font-bold text-blue-600 dark:text-blue-400 tabular-nums">
-                      {scoreAway !== null ? scoreAway : "-"}
+                      {scoreAway !== null && scoreAway !== undefined ? scoreAway : "-"}
                     </div>
                   </>
                 )}
@@ -1120,7 +1120,7 @@ export const FixtureCard = memo(function FixtureCard({
               </span>
             </div>
             <div className="flex items-center justify-center gap-2">
-              {scoreHome != null && scoreAway != null ? (
+              {scoreHome !== null && scoreHome !== undefined && scoreAway !== null && scoreAway !== undefined ? (
                 <>
                   <div className="text-lg font-bold text-blue-600 tabular-nums">
                     {scoreHome}

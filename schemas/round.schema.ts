@@ -40,8 +40,8 @@ export const RoundSchema: z.ZodType<Round> = z.lazy(() =>
     name: z.string().nullable().optional(),
     finished: z.boolean().nullable().optional(),
     is_current: z.boolean().nullable().optional(),
-    starting_at: z.string().datetime({ precision: 0, message: "Invalid datetime string. Must be UTC and in YYYY-MM-DD HH:MM:SS format." }).nullable().optional(),
-    ending_at: z.string().datetime({ precision: 0, message: "Invalid datetime string. Must be UTC and in YYYY-MM-DD HH:MM:SS format." }).nullable().optional(),
+    starting_at: z.string().nullable().optional(),
+    ending_at: z.string().nullable().optional(),
     games_in_current_week: z.boolean().nullable().optional(),
 
     // Relations
