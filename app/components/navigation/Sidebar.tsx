@@ -70,12 +70,12 @@ const Sidebar = memo(function Sidebar() {
   const [hideTournaments, setHideTournaments] = useState(false);
 
   // Define known continental/tournament entities by ID and patterns
-  const KNOWN_TOURNAMENTS = new Set([
+  const KNOWN_TOURNAMENTS = React.useMemo(() => new Set([
     41,   // Europe
     147,  // Africa  
     11240938, // Asia (AFC)
     // Add more known tournament IDs as we discover them
-  ]);
+  ]), []);
 
   const isTournament = React.useCallback((country: CountryWithLeagues) => {
     // Check by known ID first
@@ -670,16 +670,54 @@ const Sidebar = memo(function Sidebar() {
           </div>
         </div>
 
-        {/* Lists */}
+        {/* Three Sections: Top Leagues, Countries, Tournaments */}
         <div className="flex-1 overflow-y-auto">
-          {/* Countries Section */}
+          
+          {/* 1. Top Leagues Section */}
           <div className="p-1">
-            <div className="px-1 py-1 text-[11px] uppercase tracking-wide text-muted-foreground">Countries</div>
+            <div className="px-1 py-1 text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+              <Star className="h-3 w-3" />
+              Top Leagues
+            </div>
+            <div className="space-y-0.5">
+              {topLeagues.map((league) => (
+                <div key={league.id} className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
+                  <a
+                    href={`/predictions/league/${generateLeagueSlug({ name: league.name })}/?id=${league.id}`}
+                    className="flex items-center gap-1.5 flex-1 text-left min-w-0"
+                  >
+                    <span className="font-medium text-sm truncate max-w-[120px]" title={`${league.name} (${league.country})`}>
+                      {league.name}
+                    </span>
+                    <Badge variant="outline" className="text-[9px] px-1 flex-shrink-0">
+                      {league.short_code}
+                    </Badge>
+                  </a>
+                  <a
+                    href={`/predictions/league/${generateLeagueSlug({ name: league.name })}/?id=${league.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1 text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+                    title="Open predictions page"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* 2. Countries Section */}
+          <div className="p-1 mt-2">
+            <div className="px-1 py-1 text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+              <Globe className="h-3 w-3" />
+              Countries ({countryItems.length})
+            </div>
             <div className="space-y-0.5">
             {countryItems.map((country) => {
               const isExpanded = expandedCountries.has(country.id);
               const leagues = countryLeagues.get(country.id) || [];
               const isLoadingLeagues = loadingStates.get(country.id) || false;
+              const countryName = country.name || country.fifa_name || country.official_name || '';
 
               return (
                  <div key={country.id} className="space-y-0.5" id={`country-${country.id}`}>
@@ -687,32 +725,30 @@ const Sidebar = memo(function Sidebar() {
                   <div className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
                     <button
                       onClick={() => toggleCountry(country.id)}
-                      className="flex items-center gap-1.5 flex-1 text-left"
+                      className="flex items-center gap-1.5 flex-1 text-left min-w-0"
                     >
                       {isExpanded ? (
-                        <ChevronDown className="h-3.5 w-3.5" />
+                        <ChevronDown className="h-3.5 w-3.5 flex-shrink-0" />
                       ) : (
-                        <ChevronRight className="h-3.5 w-3.5" />
+                        <ChevronRight className="h-3.5 w-3.5 flex-shrink-0" />
                       )}
-                      <span className={`font-medium truncate text-sm max-w-[180px] ${
-                        (country.leaguesCount || 0) === 0 ? 'text-muted-foreground italic' : ''
-                      }`} title={country.name || country.fifa_name || country.official_name || ''}>
-                        {country.name || country.fifa_name || country.official_name}
+                      <span 
+                        className={`font-medium truncate text-sm max-w-[120px] ${
+                          (country.leaguesCount || 0) === 0 ? 'text-muted-foreground italic' : ''
+                        }`} 
+                        title={countryName}
+                      >
+                        {countryName}
                       </span>
-                      {isRegion(country) && (
-                        <Badge variant="outline" className="text-[10px] ml-1">
-                          Tournament
-                        </Badge>
-                      )}
                       {countsLoadingCountries.has(country.id) ? (
-                        <Skeleton title="Fetching..." className="ml-1 inline-block h-3 w-6" />
+                        <Skeleton title="Fetching..." className="ml-1 inline-block h-3 w-6 flex-shrink-0" />
                       ) : (
                         (() => {
                           const c = countryTodayCounts.get(country.id) ?? 0;
                           return (
                             <Badge
                               variant="outline"
-                              className={`text-[10px] ml-1 ${
+                              className={`text-[10px] ml-1 flex-shrink-0 ${
                                 c > 0
                                   ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
                                   : 'bg-muted text-muted-foreground'
@@ -726,11 +762,11 @@ const Sidebar = memo(function Sidebar() {
                       )}
                     </button>
                     
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
                       {/* Favorite Star */}
                       <button
                         onClick={(e) => toggleFavorite(country.id, e)}
-                        className={`transition-colors ${
+                        className={`p-1 rounded transition-colors ${
                           favorites.has(country.id)
                             ? 'text-yellow-500 hover:text-yellow-600'
                             : 'text-muted-foreground hover:text-yellow-500'
@@ -738,17 +774,20 @@ const Sidebar = memo(function Sidebar() {
                         title={favorites.has(country.id) ? 'Remove from favorites' : 'Add to favorites'}
                       >
                         {favorites.has(country.id) ? (
-                          <Star className="h-3.5 w-3.5 fill-current" />
+                          <Star className="h-3 w-3 fill-current" />
                         ) : (
-                          <StarOff className="h-3.5 w-3.5" />
+                          <StarOff className="h-3 w-3" />
                         )}
                       </button>
                       <a
-                        href={getCountryPredictionsUrl(country)}
-                        className="text-muted-foreground hover:text-foreground transition-colors"
-                        title="View all leagues"
+                        href={getCountryPredictionsUrl(country, countryName)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+                        title="Open predictions page"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <ExternalLink className="h-3.5 w-3.5" />
+                        <ExternalLink className="h-3 w-3" />
                       </a>
                     </div>
                   </div>
