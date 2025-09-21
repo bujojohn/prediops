@@ -395,82 +395,85 @@ function SidebarContent({ searchTerm }: { searchTerm: string }) {
   return (
     <div className="p-1">
       
-      {/* Search Results Display */}
+      {/* Search Results Display - Compact and Integrated */}
       {searchResults.hasResults && debouncedSearchTerm.trim() && (
-        <div className="mb-4 p-2 rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
-          <div className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-2">
-            Search results for &ldquo;{debouncedSearchTerm}&rdquo;
+        <div className="mb-3 p-2 rounded-md bg-primary/5 border border-primary/20">
+          <div className="text-xs font-medium text-primary mb-2 flex items-center gap-1">
+            <Search className="h-3 w-3" />
+            Results for &ldquo;{debouncedSearchTerm}&rdquo;
           </div>
-          {searchResults.countries.length > 0 && (
-            <div className="mb-2">
-              <div className="text-[10px] font-medium text-blue-600 dark:text-blue-400 mb-1">
-                Countries ({searchResults.countries.length})
+          <div className="space-y-2">
+            {searchResults.countries.length > 0 && (
+              <div>
+                <div className="text-[10px] font-medium text-muted-foreground mb-1">
+                  Countries ({searchResults.countries.length})
+                </div>
+                <div className="space-y-0.5">
+                  {searchResults.countries.slice(0, 2).map((country) => (
+                    <div key={country.id} className="flex items-center gap-1 text-xs p-1 rounded hover:bg-accent transition-colors">
+                      <span className="truncate flex-1">{country.name || country.fifa_name}</span>
+                      <Badge variant="outline" className="text-[9px] px-1 flex-shrink-0">
+                        {country.leaguesCount || 0}
+                      </Badge>
+                    </div>
+                  ))}
+                  {searchResults.countries.length > 2 && (
+                    <div className="text-[10px] text-muted-foreground px-1">
+                      +{searchResults.countries.length - 2} more
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="space-y-1">
-                {searchResults.countries.slice(0, 3).map((country) => (
-                  <div key={country.id} className="flex items-center gap-1 text-xs">
-                    <span className="truncate">{country.name || country.fifa_name}</span>
-                    <Badge variant="outline" className="text-[9px] px-1">
-                      {country.leaguesCount || 0}
-                    </Badge>
-                  </div>
-                ))}
-                {searchResults.countries.length > 3 && (
-                  <div className="text-[10px] text-blue-600 dark:text-blue-400">
-                    +{searchResults.countries.length - 3} more countries
-                  </div>
-                )}
+            )}
+            {searchResults.leagues.length > 0 && (
+              <div>
+                <div className="text-[10px] font-medium text-muted-foreground mb-1">
+                  Leagues ({searchResults.leagues.length})
+                </div>
+                <div className="space-y-0.5">
+                  {searchResults.leagues.slice(0, 2).map((item, index) => (
+                    <a
+                      key={`${item.country.id}-${item.league.id}-${index}`}
+                      href={`/predictions/league/${generateLeagueSlug({ name: item.league.name, id: item.league.id })}/?id=${item.league.id}`}
+                      className="flex items-center gap-1 text-xs p-1 rounded hover:bg-accent transition-colors"
+                    >
+                      <span className="truncate flex-1">{item.league.name}</span>
+                      <span className="text-[10px] text-muted-foreground flex-shrink-0">({item.country.name})</span>
+                    </a>
+                  ))}
+                  {searchResults.leagues.length > 2 && (
+                    <div className="text-[10px] text-muted-foreground px-1">
+                      +{searchResults.leagues.length - 2} more
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
-          {searchResults.leagues.length > 0 && (
-            <div className="mb-2">
-              <div className="text-[10px] font-medium text-blue-600 dark:text-blue-400 mb-1">
-                Leagues ({searchResults.leagues.length})
+            )}
+            {searchResults.teams.length > 0 && (
+              <div>
+                <div className="text-[10px] font-medium text-muted-foreground mb-1">
+                  Teams ({searchResults.teams.length})
+                </div>
+                <div className="space-y-0.5">
+                  {searchResults.teams.slice(0, 2).map((item, index) => (
+                    <a
+                      key={`${item.country.id}-${item.team.id}-${index}`}
+                      href={`/team/${item.team.id}/${item.team.name.toLowerCase().replace(/\s+/g, '-')}`}
+                      className="flex items-center gap-1 text-xs p-1 rounded hover:bg-accent transition-colors"
+                    >
+                      <span className="truncate flex-1">{item.team.name}</span>
+                      <span className="text-[10px] text-muted-foreground flex-shrink-0">({item.country.name})</span>
+                    </a>
+                  ))}
+                  {searchResults.teams.length > 2 && (
+                    <div className="text-[10px] text-muted-foreground px-1">
+                      +{searchResults.teams.length - 2} more
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="space-y-1">
-                {searchResults.leagues.slice(0, 3).map((item, index) => (
-                  <a
-                    key={`${item.country.id}-${item.league.id}-${index}`}
-                    href={`/predictions/league/${generateLeagueSlug({ name: item.league.name, id: item.league.id })}/?id=${item.league.id}`}
-                    className="flex items-center gap-1 text-xs hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
-                  >
-                    <span className="truncate">{item.league.name}</span>
-                    <span className="text-[10px] text-muted-foreground">({item.country.name})</span>
-                  </a>
-                ))}
-                {searchResults.leagues.length > 3 && (
-                  <div className="text-[10px] text-blue-600 dark:text-blue-400">
-                    +{searchResults.leagues.length - 3} more leagues
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-          {searchResults.teams.length > 0 && (
-            <div>
-              <div className="text-[10px] font-medium text-blue-600 dark:text-blue-400 mb-1">
-                Teams ({searchResults.teams.length})
-              </div>
-              <div className="space-y-1">
-                {searchResults.teams.slice(0, 3).map((item, index) => (
-                  <a
-                    key={`${item.country.id}-${item.team.id}-${index}`}
-                    href={`/team/${item.team.id}/${item.team.name.toLowerCase().replace(/\s+/g, '-')}`}
-                    className="flex items-center gap-1 text-xs hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
-                  >
-                    <span className="truncate">{item.team.name}</span>
-                    <span className="text-[10px] text-muted-foreground">({item.country.name})</span>
-                  </a>
-                ))}
-                {searchResults.teams.length > 3 && (
-                  <div className="text-[10px] text-blue-600 dark:text-blue-400">
-                    +{searchResults.teams.length - 3} more teams
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
       
