@@ -66,72 +66,79 @@ const Sidebar = memo(function Sidebar() {
   const today = React.useMemo(() => new Date().toISOString().split('T')[0], []);
   const storageKey = React.useMemo(() => `sidebar-counts-7days-${today}`, [today]);
   const [visibleLeagueBadges, setVisibleLeagueBadges] = useState<Set<number>>(new Set());
-  // Regions (continents, world) handling - show by default for better UX
-  const [hideRegions, setHideRegions] = useState(false);
+  // Tournaments handling - show by default for better UX
+  const [hideTournaments, setHideTournaments] = useState(false);
 
-  const isRegion = React.useCallback((country: CountryWithLeagues) => {
+  // Define known continental/tournament entities by ID and patterns
+  const KNOWN_TOURNAMENTS = new Set([
+    41,   // Europe
+    147,  // Africa  
+    11240938, // Asia (AFC)
+    // Add more known tournament IDs as we discover them
+  ]);
+
+  const isTournament = React.useCallback((country: CountryWithLeagues) => {
+    // Check by known ID first
+    if (KNOWN_TOURNAMENTS.has(country.id)) return true;
+    
     const name = (country.name || country.fifa_name || country.official_name || '').trim().toLowerCase();
     if (!name) return false;
     
     // Continental/regional organizations and tournaments (not real countries)
-    const regions = new Set([
+    const continents = new Set([
       'africa', 'europe', 'asia', 'north america', 'south america', 'oceania', 'antarctica', 'world', 'international'
     ]);
-    if (regions.has(name)) return true;
+    if (continents.has(name)) return true;
     
     // Continental football organizations
     const orgs = ['uefa', 'caf', 'afc', 'conmebol', 'concacaf', 'ofc', 'fifa'];
     
-    // Major continental tournaments
-    const tournaments = [
+    // Check in name and codes
+    const code = (country.fifa_name || country.official_name || '').trim().toLowerCase();
+    if (orgs.some(org => name.includes(org) || code.includes(org))) return true;
+    
+    // Check for tournament-specific patterns
+    if (name.includes('continental') || name.includes('regional') || name.includes('intercontinental')) return true;
+    
+    // Check for specific tournament keywords
+    const tournamentKeywords = [
       'champions league', 'europa league', 'europa conference league', 'conference league',
       'african cup', 'asian cup', 'copa america', 'gold cup', 'oceanian cup',
       'nations league', 'confederations cup', 'club world cup', 'super cup',
-      'world cup', 'euro', 'copa libertadores', 'copa sudamericana', 'libertadores',
-      'sudamericana', 'champions', 'europa', 'conference'
+      'world cup', 'euro', 'copa libertadores', 'copa sudamericana'
     ];
     
-    // Check in name
-    if (orgs.some(org => name.includes(org))) return true;
-    if (tournaments.some(tournament => name.includes(tournament))) return true;
-    
-    // Check in codes
-    const code = (country.fifa_name || country.official_name || '').trim().toLowerCase();
-    if (orgs.some(org => code.includes(org))) return true;
-    
-    // Additional checks for common continental tournament patterns
-    if (name.includes('continental') || name.includes('regional') || name.includes('intercontinental')) return true;
-    
-    // Check for tournament-specific keywords
-    if (name.includes('league') || name.includes('cup') || name.includes('championship')) {
-      // But exclude country-specific leagues (e.g., "England League" vs "Champions League")
-      if (name.includes('champions') || name.includes('europa') || name.includes('conference')) return true;
-    }
-    
-    // Check for specific patterns that indicate continental/regional entities
-    if (name.includes('continental') || name.includes('regional') || name.includes('intercontinental')) return true;
-    
-    // Check if it's a known continental entity by ID or other indicators
-    // Some continental entities have specific patterns in their data
-    // Note: country.type is not available in CountryWithLeagues interface
+    if (tournamentKeywords.some(keyword => name.includes(keyword))) return true;
     
     return false;
-  }, []);
+  }, [KNOWN_TOURNAMENTS]);
 
-  // Split filtered list into countries and regions
-  const { countryItems, regionItems } = React.useMemo(() => {
+  // Split filtered list into countries and tournaments
+  const { countryItems, tournamentItems } = React.useMemo(() => {
     const countries: CountryWithLeagues[] = [];
-    const regions: CountryWithLeagues[] = [];
+    const tournaments: CountryWithLeagues[] = [];
     
     for (const c of filteredCountries) {
-      if (isRegion(c)) {
-        regions.push(c);
+      if (isTournament(c)) {
+        tournaments.push(c);
       } else {
         countries.push(c);
       }
     }
-    return { countryItems: countries, regionItems: regions };
-  }, [filteredCountries, isRegion]);
+    return { countryItems: countries, tournamentItems: tournaments };
+  }, [filteredCountries, isTournament]);
+
+  // Define top leagues data (this could be fetched from API in the future)
+  const topLeagues = React.useMemo(() => [
+    { id: 8, name: 'Premier League', country: 'England', short_code: 'EPL' },
+    { id: 564, name: 'La Liga', country: 'Spain', short_code: 'LL' },
+    { id: 82, name: 'Serie A', country: 'Italy', short_code: 'SA' },
+    { id: 78, name: 'Bundesliga', country: 'Germany', short_code: 'BL' },
+    { id: 61, name: 'Ligue 1', country: 'France', short_code: 'L1' },
+    { id: 564, name: 'Championship', country: 'England', short_code: 'CH' },
+    { id: 564, name: 'Eredivisie', country: 'Netherlands', short_code: 'ED' },
+    { id: 564, name: 'Primeira Liga', country: 'Portugal', short_code: 'PL' },
+  ], []);
 
   // Debounced search input
   const [debouncedSearch, setDebouncedSearch] = useState(searchTerm);
@@ -532,7 +539,7 @@ const Sidebar = memo(function Sidebar() {
                   onClick={() => {
                     setSearchTerm('');
                     setShowOnlyFavorites(false);
-                    setHideRegions(false);
+                    setHideTournaments(false);
                   }}
                   className="text-muted-foreground hover:text-foreground transition-colors"
                   title="Clear all filters"
@@ -551,11 +558,11 @@ const Sidebar = memo(function Sidebar() {
                     Favorites Only ({favorites.size})
                   </Badge>
                 )}
-                {hideRegions && (
-                  <Badge variant="secondary" className="text-xs">
-                    Tournaments Hidden
-                  </Badge>
-                )}
+          {hideTournaments && (
+            <Badge variant="secondary" className="text-xs">
+              Tournaments Hidden
+            </Badge>
+          )}
               </div>
             </div>
           )}
@@ -586,16 +593,16 @@ const Sidebar = memo(function Sidebar() {
             </button>
 
             <button
-              onClick={() => setHideRegions(!hideRegions)}
+              onClick={() => setHideTournaments(!hideTournaments)}
               className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
-                hideRegions
+                hideTournaments
                   ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
-              title={hideRegions ? 'Show continental tournaments (UEFA, CAF, etc.)' : 'Hide continental tournaments'}
+              title={hideTournaments ? 'Show tournaments' : 'Hide tournaments'}
             >
               <Globe className="h-3 w-3" />
-              <span>{hideRegions ? 'Show tournaments' : 'Hide tournaments'}</span>
+              <span>{hideTournaments ? 'Show tournaments' : 'Hide tournaments'}</span>
             </button>
             
             <button
@@ -650,9 +657,9 @@ const Sidebar = memo(function Sidebar() {
             <div className="flex items-center gap-1 text-xs opacity-75" title="Only one country can be expanded at a time">
               <Info className="h-3 w-3" />
             </div>
-            {regionItems.length > 0 && !hideRegions && (
+            {tournamentItems.length > 0 && !hideTournaments && (
               <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800">
-                {regionItems.length} tournaments
+                {tournamentItems.length} tournaments
               </Badge>
             )}
             {allCountries.length > 0 && (
@@ -962,7 +969,7 @@ const Sidebar = memo(function Sidebar() {
               </div>
               <div className="flex justify-between">
                 <span>Tournaments:</span>
-                <span className="font-medium">{regionItems.length}</span>
+                <span className="font-medium">{tournamentItems.length}</span>
               </div>
               <div className="flex justify-between">
                 <span>Favorites:</span>
