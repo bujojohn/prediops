@@ -123,17 +123,13 @@ const Sidebar = memo(function Sidebar() {
     const countries: CountryWithLeagues[] = [];
     const regions: CountryWithLeagues[] = [];
     
-    // Debug logging
-    console.log('Filtering countries:', filteredCountries.length);
     for (const c of filteredCountries) {
       if (isRegion(c)) {
-        console.log('Region detected:', c.name || c.fifa_name || c.official_name);
         regions.push(c);
       } else {
         countries.push(c);
       }
     }
-    console.log('Regions found:', regions.length, 'Countries found:', countries.length);
     return { countryItems: countries, regionItems: regions };
   }, [filteredCountries, isRegion]);
 
