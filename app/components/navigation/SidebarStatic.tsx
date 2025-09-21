@@ -160,9 +160,9 @@ function SidebarContent({ searchTerm }: { searchTerm: string }) {
     { id: 82, name: 'Serie A', country: 'Italy', short_code: 'SA' },
     { id: 78, name: 'Bundesliga', country: 'Germany', short_code: 'BL' },
     { id: 61, name: 'Ligue 1', country: 'France', short_code: 'L1' },
-    { id: 564, name: 'Championship', country: 'England', short_code: 'CH' },
-    { id: 564, name: 'Eredivisie', country: 'Netherlands', short_code: 'ED' },
-    { id: 564, name: 'Primeira Liga', country: 'Portugal', short_code: 'PL' },
+    { id: 565, name: 'Championship', country: 'England', short_code: 'CH' },
+    { id: 566, name: 'Eredivisie', country: 'Netherlands', short_code: 'ED' },
+    { id: 567, name: 'Primeira Liga', country: 'Portugal', short_code: 'PL' },
   ], []);
 
   // Load countries with leagues using API route
