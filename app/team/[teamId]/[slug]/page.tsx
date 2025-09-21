@@ -66,7 +66,7 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
             console.warn('Invalid fixture data:', error);
             return null;
           }
-        }).filter((fixture: any): fixture is NonNullable<typeof fixture> => fixture !== null);
+        }).filter((fixture: unknown): fixture is NonNullable<typeof fixture> => fixture !== null);
       }
     } catch (error) {
       console.warn('Error fetching team fixtures:', error);
