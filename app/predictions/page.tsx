@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
-import { LatestFixturesClient } from './LatestFixturesClient';
+import { PredictionsContentWithQuery } from './components/PredictionsContentWithQuery';
+import { PredictionsSkeleton } from './components/PredictionsSkeleton';
 import { sportmonks } from '@/lib/sportmonks';
 
 export default async function PredictionsPage({
@@ -31,8 +32,8 @@ export default async function PredictionsPage({
 
   return (
     <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
-      <Suspense fallback={<div>Loading predictions...</div>}>
-        <LatestFixturesClient 
+      <Suspense fallback={<PredictionsSkeleton />}>
+        <PredictionsContentWithQuery 
           initialFixtures={initialFixtures}
           initialDate={dateToLoad}
         />

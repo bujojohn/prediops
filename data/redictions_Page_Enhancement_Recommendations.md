@@ -37,7 +37,7 @@ Based on my analysis of the `/predictions` page structure, here are my recommend
 // - Mixed concerns (data fetching + UI logic)
 // - Duplicate grouping logic across components
 
-// Recommended structure:
+// Recommended structure (Note: Project use App Router for navigation): 
 app/predictions/
 ├── components/
 │   ├── PredictionsHeader.tsx
@@ -58,7 +58,7 @@ app/predictions/
 
 #### **5. Technical Debt Issues**
 - **🔧 Fix TODO Comments**: Address the TODO in line 61 about date collapse logic
-- **📝 Type Safety**: Improve type definitions and reduce `any` usage
+- **📝 Type Safety**: Improve type definitions and reduce `any` usage (Note: `any` really not useful)
 - **🔄 API Error Handling**: Standardize error handling across all API calls
 - **🧪 Testing**: Add unit tests for utility functions and components
 
@@ -66,9 +66,9 @@ app/predictions/
 
 #### **6. Visual Improvements**
 - **📊 Prediction Visualization**: Charts showing prediction probabilities
-- **🏆 League Standings Integration**: Show current standings alongside fixtures
-- **⏰ Time Zone Support**: Better time zone handling and display
-- **🎯 Value Bet Highlighting**: Prominently display high-value predictions
+- **🏆 League Standings Integration**: Show current standings alongside fixtures (Note: I assume this is a different feature from tha t implemented in leagues pages )
+- **⏰ Time Zone Support**: Better time zone handling and display (Note: current setup seems to be working acurately)
+- **🎯 Value Bet Highlighting**: Prominently display high-value predictions (Note: current setup seems to be working acurately unless useful enhancement is made)
 
 #### **7. Accessibility & SEO**
 - **♿ ARIA Labels**: Improve screen reader support
