@@ -153,16 +153,16 @@ function SidebarContent({ searchTerm }: { searchTerm: string }) {
     return { countryItems: countries, tournamentItems: tournaments };
   }, [filteredCountries, isTournament]);
 
-  // Define top leagues data
+  // Define top leagues data - using country IDs for now, will be replaced with actual league IDs from API
   const topLeagues = React.useMemo(() => [
-    { id: 8, name: 'Premier League', country: 'England', short_code: 'EPL' },
-    { id: 564, name: 'La Liga', country: 'Spain', short_code: 'LL' },
-    { id: 82, name: 'Serie A', country: 'Italy', short_code: 'SA' },
-    { id: 78, name: 'Bundesliga', country: 'Germany', short_code: 'BL' },
-    { id: 61, name: 'Ligue 1', country: 'France', short_code: 'L1' },
-    { id: 565, name: 'Championship', country: 'England', short_code: 'CH' },
-    { id: 566, name: 'Eredivisie', country: 'Netherlands', short_code: 'ED' },
-    { id: 567, name: 'Primeira Liga', country: 'Portugal', short_code: 'PL' },
+    { name: 'Premier League', country: 'England', short_code: 'EPL', countryId: 462 },
+    { name: 'La Liga', country: 'Spain', short_code: 'LL', countryId: 32 },
+    { name: 'Serie A', country: 'Italy', short_code: 'SA', countryId: 251 },
+    { name: 'Bundesliga', country: 'Germany', short_code: 'BL', countryId: 11 },
+    { name: 'Ligue 1', country: 'France', short_code: 'L1', countryId: 17 },
+    { name: 'Championship', country: 'England', short_code: 'CH', countryId: 462 },
+    { name: 'Eredivisie', country: 'Netherlands', short_code: 'ED', countryId: 38 },
+    { name: 'Primeira Liga', country: 'Portugal', short_code: 'PL', countryId: 20 },
   ], []);
 
   // Load countries with leagues using API route
@@ -268,10 +268,10 @@ function SidebarContent({ searchTerm }: { searchTerm: string }) {
           Top Leagues
         </div>
         <div className="space-y-0.5">
-          {topLeagues.map((league) => (
-            <div key={league.id} className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
+          {topLeagues.map((league, index) => (
+            <div key={`top-league-${index}`} className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
               <a
-                href={`/predictions/league/${generateLeagueSlug({ name: league.name })}/?id=${league.id}`}
+                href={`/predictions/country/${league.country.toLowerCase().replace(/\s+/g, '-')}/?id=${league.countryId}`}
                 className="flex items-center gap-1.5 flex-1 text-left min-w-0"
               >
                 <span className="font-medium text-sm truncate max-w-[120px]" title={`${league.name} (${league.country})`}>
@@ -282,7 +282,7 @@ function SidebarContent({ searchTerm }: { searchTerm: string }) {
                 </Badge>
               </a>
               <a
-                href={`/predictions/league/${generateLeagueSlug({ name: league.name })}/?id=${league.id}`}
+                href={`/predictions/country/${league.country.toLowerCase().replace(/\s+/g, '-')}/?id=${league.countryId}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-1 text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
