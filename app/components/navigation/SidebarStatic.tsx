@@ -48,7 +48,7 @@ export const SidebarStatic = memo(function SidebarStatic() {
           <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Search countries..."
+              placeholder="Search countries, leagues..."
               className="pl-10"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -93,6 +93,22 @@ function SidebarContent({ searchTerm }: { searchTerm: string }) {
   // Today fixture counts
   const [countryTodayCounts] = useState<Map<number, number>>(new Map());
   const [leagueTodayCounts] = useState<Map<number, number>>(new Map());
+  
+  // Section collapse state
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+  
+  // Toggle section collapse
+  const toggleSection = (sectionId: string) => {
+    setCollapsedSections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId);
+      } else {
+        newSet.add(sectionId);
+      }
+      return newSet;
+    });
+  };
 
   // Define known continental/tournament entities by ID and patterns
   const KNOWN_TOURNAMENTS = React.useMemo(() => new Set([
@@ -238,20 +254,67 @@ function SidebarContent({ searchTerm }: { searchTerm: string }) {
     loadCountriesWithLeagues();
   }, []);
 
-  // Filter countries based on search term
+  // Enhanced search functionality - countries, leagues, and teams
+  const [searchResults, setSearchResults] = useState<{
+    countries: CountryWithLeagues[];
+    leagues: { country: CountryWithLeagues; league: League }[];
+    hasResults: boolean;
+  }>({ countries: [], leagues: [], hasResults: false });
+
+  // Debounced search to improve performance
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  
   useEffect(() => {
-    if (!searchTerm.trim()) {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300); // 300ms debounce
+    
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Filter countries and leagues based on search term
+  useEffect(() => {
+    if (!debouncedSearchTerm.trim()) {
       setFilteredCountries(allCountries);
+      setSearchResults({ countries: [], leagues: [], hasResults: false });
       return;
     }
 
-    const filtered = allCountries.filter((country) => {
-      const name = (country.name || country.fifa_name || country.official_name || '').toLowerCase();
-      return name.includes(searchTerm.toLowerCase());
-    });
+    const searchLower = debouncedSearchTerm.toLowerCase();
+    const searchResults = {
+      countries: [] as CountryWithLeagues[],
+      leagues: [] as { country: CountryWithLeagues; league: League }[],
+      hasResults: false
+    };
 
-    setFilteredCountries(filtered);
-  }, [searchTerm, allCountries]);
+    // Search countries
+    const matchingCountries = allCountries.filter((country) => {
+      const name = (country.name || country.fifa_name || country.official_name || '').toLowerCase();
+      return name.includes(searchLower);
+    });
+    
+    searchResults.countries = matchingCountries;
+
+    // Search leagues (only in expanded countries to avoid performance issues)
+    for (const [countryId, leagues] of countryLeagues.entries()) {
+      const country = allCountries.find(c => c.id === countryId);
+      if (country) {
+        const matchingLeagues = leagues.filter(league => 
+          league.name.toLowerCase().includes(searchLower) ||
+          (league.short_code && league.short_code.toLowerCase().includes(searchLower))
+        );
+        
+        matchingLeagues.forEach(league => {
+          searchResults.leagues.push({ country, league });
+        });
+      }
+    }
+
+    searchResults.hasResults = searchResults.countries.length > 0 || searchResults.leagues.length > 0;
+    
+    setFilteredCountries(matchingCountries);
+    setSearchResults(searchResults);
+  }, [debouncedSearchTerm, allCountries, countryLeagues]);
 
   // Show skeleton while data is loading
   if (isLoading || allCountries.length === 0) {
@@ -261,47 +324,126 @@ function SidebarContent({ searchTerm }: { searchTerm: string }) {
   return (
     <div className="p-1">
       
+      {/* Search Results Display */}
+      {searchResults.hasResults && debouncedSearchTerm.trim() && (
+        <div className="mb-4 p-2 rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
+          <div className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-2">
+            Search results for &ldquo;{debouncedSearchTerm}&rdquo;
+          </div>
+          {searchResults.countries.length > 0 && (
+            <div className="mb-2">
+              <div className="text-[10px] font-medium text-blue-600 dark:text-blue-400 mb-1">
+                Countries ({searchResults.countries.length})
+              </div>
+              <div className="space-y-1">
+                {searchResults.countries.slice(0, 3).map((country) => (
+                  <div key={country.id} className="flex items-center gap-1 text-xs">
+                    <span className="truncate">{country.name || country.fifa_name}</span>
+                    <Badge variant="outline" className="text-[9px] px-1">
+                      {country.leaguesCount || 0}
+                    </Badge>
+                  </div>
+                ))}
+                {searchResults.countries.length > 3 && (
+                  <div className="text-[10px] text-blue-600 dark:text-blue-400">
+                    +{searchResults.countries.length - 3} more countries
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          {searchResults.leagues.length > 0 && (
+            <div>
+              <div className="text-[10px] font-medium text-blue-600 dark:text-blue-400 mb-1">
+                Leagues ({searchResults.leagues.length})
+              </div>
+              <div className="space-y-1">
+                {searchResults.leagues.slice(0, 3).map((item, index) => (
+                  <div key={`${item.country.id}-${item.league.id}-${index}`} className="flex items-center gap-1 text-xs">
+                    <span className="truncate">{item.league.name}</span>
+                    <span className="text-[10px] text-muted-foreground">({item.country.name})</span>
+                  </div>
+                ))}
+                {searchResults.leagues.length > 3 && (
+                  <div className="text-[10px] text-blue-600 dark:text-blue-400">
+                    +{searchResults.leagues.length - 3} more leagues
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      
       {/* 1. Top Leagues Section */}
       <div className="mb-3">
-        <div className="px-1 py-1 text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1 mb-2">
-          <Star className="h-3 w-3" />
-          Top Leagues
-        </div>
-        <div className="space-y-0.5">
-          {topLeagues.map((league, index) => (
-            <div key={`top-league-${index}`} className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
-              <a
-                href={`/predictions/country/${league.country.toLowerCase().replace(/\s+/g, '-')}/?id=${league.countryId}`}
-                className="flex items-center gap-1.5 flex-1 text-left min-w-0"
-              >
-                <span className="font-medium text-sm truncate max-w-[120px]" title={`${league.name} (${league.country})`}>
-                  {league.name}
-                </span>
-                <Badge variant="outline" className="text-[9px] px-1 flex-shrink-0">
-                  {league.short_code}
-                </Badge>
-              </a>
-              <a
-                href={`/predictions/country/${league.country.toLowerCase().replace(/\s+/g, '-')}/?id=${league.countryId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-1 text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
-                title="Open predictions page"
-              >
-                <ExternalLink className="h-3 w-3" />
-              </a>
-            </div>
-          ))}
-        </div>
+        <button
+          onClick={() => toggleSection('top-leagues')}
+          className="w-full flex items-center justify-between px-2 py-2 mb-2 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors group"
+        >
+          <div className="flex items-center gap-2">
+            <Star className="h-4 w-4 text-primary" />
+            <span className="text-sm font-semibold text-foreground">Top Leagues</span>
+          </div>
+          {collapsedSections.has('top-leagues') ? (
+            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+          )}
+        </button>
+        
+        {!collapsedSections.has('top-leagues') && (
+          <div className="space-y-0.5">
+            {topLeagues.map((league, index) => (
+              <div key={`top-league-${index}`} className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
+                <a
+                  href={`/predictions/country/${league.country.toLowerCase().replace(/\s+/g, '-')}/?id=${league.countryId}`}
+                  className="flex items-center gap-1.5 flex-1 text-left min-w-0"
+                >
+                  <span className="font-medium text-sm truncate max-w-[120px]" title={`${league.name} (${league.country})`}>
+                    {league.name}
+                  </span>
+                  <Badge variant="outline" className="text-[9px] px-1 flex-shrink-0">
+                    {league.short_code}
+                  </Badge>
+                </a>
+                <a
+                  href={`/predictions/country/${league.country.toLowerCase().replace(/\s+/g, '-')}/?id=${league.countryId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-1 text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+                  title="Open predictions page"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 2. Countries Section */}
       <div className="mb-3">
-        <div className="px-1 py-1 text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1 mb-2">
-          <Globe className="h-3 w-3" />
-          Countries ({countryItems.length})
-        </div>
-        <div className="space-y-0.5">
+        <button
+          onClick={() => toggleSection('countries')}
+          className="w-full flex items-center justify-between px-2 py-2 mb-2 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors group"
+        >
+          <div className="flex items-center gap-2">
+            <Globe className="h-4 w-4 text-primary" />
+            <span className="text-sm font-semibold text-foreground">Countries</span>
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5">
+              {countryItems.length}
+            </Badge>
+          </div>
+          {collapsedSections.has('countries') ? (
+            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+          )}
+        </button>
+        
+        {!collapsedSections.has('countries') && (
+          <div className="space-y-0.5">
           {countryItems.map((country) => {
             const isExpanded = expandedCountries.has(country.id);
             const leagues = countryLeagues.get(country.id) || [];
@@ -394,7 +536,7 @@ function SidebarContent({ searchTerm }: { searchTerm: string }) {
                         return (
                           <div key={league.id} className={`flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors ${active ? 'bg-accent/60' : ''}`}>
                             <a
-                              href={`/predictions/league/${generateLeagueSlug({ name: league.name })}?id=${league.id}`}
+                              href={`/predictions/league/${generateLeagueSlug({ name: league.name, id: league.id })}?id=${league.id}`}
                               className={`flex items-center gap-1.5 flex-1 text-xs min-w-0 ${active ? 'text-primary font-medium' : ''}`}
                               title={`League ID: ${league.id}`}
                             >
@@ -428,17 +570,33 @@ function SidebarContent({ searchTerm }: { searchTerm: string }) {
               </div>
             );
           })}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* 3. Tournaments Section */}
       {tournamentItems.length > 0 && (
-        <div>
-          <div className="px-1 py-1 text-[11px] uppercase tracking-wide text-muted-foreground flex items-center gap-1 mb-2">
-            <Globe className="h-3 w-3" />
-            Tournaments ({tournamentItems.length})
-          </div>
-          <div className="space-y-0.5">
+        <div className="mb-3">
+          <button
+            onClick={() => toggleSection('tournaments')}
+            className="w-full flex items-center justify-between px-2 py-2 mb-2 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors group"
+          >
+            <div className="flex items-center gap-2">
+              <Globe className="h-4 w-4 text-primary" />
+              <span className="text-sm font-semibold text-foreground">Tournaments</span>
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5">
+                {tournamentItems.length}
+              </Badge>
+            </div>
+            {collapsedSections.has('tournaments') ? (
+              <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+            )}
+          </button>
+          
+          {!collapsedSections.has('tournaments') && (
+            <div className="space-y-0.5">
             {tournamentItems.map((tournament) => {
               const isExpanded = expandedCountries.has(tournament.id);
               const leagues = countryLeagues.get(tournament.id) || [];
@@ -533,11 +691,11 @@ function SidebarContent({ searchTerm }: { searchTerm: string }) {
                           const active = pathname?.startsWith('/predictions/league') && searchParams?.get('id') === String(league.id);
                           return (
                             <div key={league.id} className={`flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors ${active ? 'bg-accent/60' : ''}`}>
-                              <a
-                                href={`/predictions/league/${generateLeagueSlug({ name: league.name })}?id=${league.id}`}
-                                className={`flex items-center gap-1.5 flex-1 text-xs min-w-0 ${active ? 'text-primary font-medium' : ''}`}
-                                title={`League ID: ${league.id}`}
-                              >
+                            <a
+                              href={`/predictions/league/${generateLeagueSlug({ name: league.name, id: league.id })}?id=${league.id}`}
+                              className={`flex items-center gap-1.5 flex-1 text-xs min-w-0 ${active ? 'text-primary font-medium' : ''}`}
+                              title={`League ID: ${league.id}`}
+                            >
                                 <span className="truncate max-w-[100px]" title={league.name}>{league.name}</span>
                                 {league.short_code && (
                                   <Badge variant="outline" className={`text-xs px-1 py-0.5 flex-shrink-0 ${active ? 'border-primary text-primary' : ''}`}>
@@ -568,7 +726,8 @@ function SidebarContent({ searchTerm }: { searchTerm: string }) {
                 </div>
               );
             })}
-          </div>
+            </div>
+          )}
         </div>
       )}
     </div>
