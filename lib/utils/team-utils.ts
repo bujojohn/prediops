@@ -3,7 +3,7 @@ import type { Team } from '@/schemas/team.schema';
 /**
  * Generate a URL-friendly slug from a team object
  */
-export function generateTeamSlug(team: Team): string {
+export function generateTeamSlug(team: Team | { id: number; name?: string | null }): string {
   if (!team.name) return `team-${team.id}`;
   
   return team.name

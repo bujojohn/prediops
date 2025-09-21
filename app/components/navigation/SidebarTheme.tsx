@@ -17,10 +17,11 @@ export function SidebarTheme({ children, className }: SidebarThemeProps) {
   return (
     <div className={cn(
       // Base sidebar styling using shadcn/ui variables
-      "flex flex-col h-full",
+      "flex flex-col h-full w-80 min-w-80 max-w-80", // Fixed width to prevent expansion
       "bg-sidebar text-sidebar-foreground",
       "border-r border-sidebar-border",
       "transition-all duration-300",
+      "overflow-hidden", // Prevent content from expanding sidebar
       className
     )}>
       {children}

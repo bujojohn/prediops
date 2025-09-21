@@ -36,7 +36,7 @@ export const CountrySchema: z.ZodType<Country> = z.lazy(() =>
     latitude: z.string().nullable().optional(),
     longitude: z.string().nullable().optional(),
     borders: z.array(z.string()).nullable().optional(),
-    image_path: z.string().url().nullable().optional(),
+    image_path: z.string().nullable().optional(),
 
     // Relations
     continent: z.lazy(() => ContinentSchema).nullable().optional(),

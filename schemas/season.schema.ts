@@ -46,9 +46,9 @@ export const SeasonSchema: z.ZodType<Season> = z.lazy(() =>
     finished: z.boolean().nullable().optional(),
     pending: z.boolean().nullable().optional(),
     is_current: z.boolean().nullable().optional(),
-    starting_at: z.string().datetime({ precision: 0, message: "Invalid datetime string" }).nullable().optional(),
-    ending_at: z.string().datetime({ precision: 0, message: "Invalid datetime string" }).nullable().optional(),
-    standings_recalculated_at: z.string().datetime({ precision: 0, message: "Invalid datetime string" }).nullable().optional(),
+    starting_at: z.string().nullable().optional(),
+    ending_at: z.string().nullable().optional(),
+    standings_recalculated_at: z.string().nullable().optional(),
     games_in_current_week: z.boolean().nullable().optional(),
 
     // Relations

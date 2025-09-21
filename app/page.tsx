@@ -11,7 +11,6 @@ import {
   Clock, 
   BarChart3, 
   ArrowRight,
-  Play,
   CheckCircle
 } from 'lucide-react';
 
@@ -282,15 +281,9 @@ export default function Home() {
             Ready to Get Started?
           </h2>
           <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            Test your API connection and start exploring professional sports predictions today
+            Start exploring professional sports predictions and value betting opportunities today
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button asChild size="lg" variant="secondary" className="px-8 py-4 text-lg">
-              <Link href="/test">
-                <Play className="mr-2 h-5 w-5" />
-                Test API Connection
-              </Link>
-            </Button>
             <Button asChild size="lg" variant="outline" className="px-8 py-4 text-lg border-white text-white hover:bg-white hover:text-blue-600">
               <Link href="/predictions">
                 <ArrowRight className="mr-2 h-5 w-5" />

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { 
   Users, 
   Trophy, 
@@ -18,14 +19,57 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import type { TeamDetailed } from '@/schemas/team-detailed.schema';
+import type { Fixture } from '@/schemas/fixture.schema';
 import { formatFoundedYear, getTeamTypeDisplay } from '@/lib/utils/team-utils';
+import { TeamPredictionsContent } from './team-predictions-content';
 
 interface TeamDetailClientProps {
   team: TeamDetailed;
+  initialFixtures?: Fixture[];
 }
 
-export function TeamDetailClient({ team }: TeamDetailClientProps) {
+export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClientProps) {
   const [activeTab, setActiveTab] = useState('overview');
+  const [isClient, setIsClient] = useState(false);
+
+  // Ensure we're on the client side to prevent hydration issues
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Safe date formatting utility to prevent hydration issues
+  const formatDate = (dateString: string | null | undefined): string => {
+    if (!dateString) return 'TBD';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'TBD';
+      return date.toLocaleDateString();
+    } catch {
+      return 'TBD';
+    }
+  };
+
+  const formatTime = (dateString: string | null | undefined): string => {
+    if (!dateString) return 'TBD';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'TBD';
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return 'TBD';
+    }
+  };
+
+  const formatYear = (dateString: string | null | undefined): string => {
+    if (!dateString) return 'Unknown';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Unknown';
+      return date.getFullYear().toString();
+    } catch {
+      return 'Unknown';
+    }
+  };
 
   // Helper functions
   const getActiveCoach = () => {
@@ -33,11 +77,27 @@ export function TeamDetailClient({ team }: TeamDetailClientProps) {
   };
 
   const getCurrentPlayers = () => {
-    return team.players?.filter(player => !player.end || new Date(player.end) > new Date()) || [];
+    return team.players?.filter(player => {
+      if (!player.end) return true;
+      try {
+        const endDate = new Date(player.end);
+        return !isNaN(endDate.getTime()) && endDate > new Date();
+      } catch {
+        return true;
+      }
+    }) || [];
   };
 
   const getSidelinedPlayers = () => {
-    return team.sidelined?.filter(player => !player.end_date || new Date(player.end_date) > new Date()) || [];
+    return team.sidelined?.filter(player => {
+      if (!player.end_date) return true;
+      try {
+        const endDate = new Date(player.end_date);
+        return !isNaN(endDate.getTime()) && endDate > new Date();
+      } catch {
+        return true;
+      }
+    }) || [];
   };
 
   const getUpcomingFixtures = () => {
@@ -64,9 +124,11 @@ export function TeamDetailClient({ team }: TeamDetailClientProps) {
         <div className="flex flex-col items-center lg:items-start space-y-4">
           <div className="w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
             {team.image_path ? (
-              <img
+              <Image
                 src={team.image_path}
                 alt={team.name || 'Team'}
+                width={96}
+                height={96}
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.display = 'none';
@@ -121,7 +183,28 @@ export function TeamDetailClient({ team }: TeamDetailClientProps) {
             <CardContent className="p-4 text-center">
               <Users className="w-8 h-8 text-blue-500 mx-auto mb-2" />
               <div className="text-2xl font-bold">{getCurrentPlayers().length}</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Players</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Active Players</div>
+              <div className="text-xs text-gray-500 mt-1">
+                {getSidelinedPlayers().length > 0 && `${getSidelinedPlayers().length} sidelined`}
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4 text-center">
+              <Activity className="w-8 h-8 text-green-500 mx-auto mb-2" />
+              <div className="text-2xl font-bold">{getRecentFixtures().length}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Recent Matches</div>
+              <div className="text-xs text-gray-500 mt-1">Last 5 results</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4 text-center">
+              <Calendar className="w-8 h-8 text-orange-500 mx-auto mb-2" />
+              <div className="text-2xl font-bold">{getUpcomingFixtures().length}</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Upcoming</div>
+              <div className="text-xs text-gray-500 mt-1">Next 5 fixtures</div>
             </CardContent>
           </Card>
           
@@ -129,34 +212,21 @@ export function TeamDetailClient({ team }: TeamDetailClientProps) {
             <CardContent className="p-4 text-center">
               <Trophy className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
               <div className="text-2xl font-bold">{getTrophies().length}</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Trophies</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4 text-center">
-              <Calendar className="w-8 h-8 text-green-500 mx-auto mb-2" />
-              <div className="text-2xl font-bold">{getUpcomingFixtures().length}</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Upcoming</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4 text-center">
-              <Star className="w-8 h-8 text-purple-500 mx-auto mb-2" />
-              <div className="text-2xl font-bold">{getRivals().length}</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Rivals</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Achievements</div>
+              <div className="text-xs text-gray-500 mt-1">Total trophies</div>
             </CardContent>
           </Card>
         </div>
       </div>
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-6">
+      {/* Tabs - Only render on client to prevent hydration issues */}
+      {isClient ? (
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="squad">Squad</TabsTrigger>
           <TabsTrigger value="fixtures">Fixtures</TabsTrigger>
+          <TabsTrigger value="predictions">Predictions</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
           <TabsTrigger value="statistics">Statistics</TabsTrigger>
           <TabsTrigger value="rivals">Rivals</TabsTrigger>
@@ -182,7 +252,7 @@ export function TeamDetailClient({ team }: TeamDetailClientProps) {
                     <div>
                       <div className="font-semibold">Coach #{getActiveCoach()?.coach_id}</div>
                       <div className="text-sm text-gray-600 dark:text-gray-400">
-                        {getActiveCoach()?.start && `Since ${new Date(getActiveCoach()!.start!).getFullYear()}`}
+                        {getActiveCoach()?.start && `Since ${formatYear(getActiveCoach()!.start)}`}
                       </div>
                     </div>
                   </div>
@@ -237,7 +307,7 @@ export function TeamDetailClient({ team }: TeamDetailClientProps) {
                       <div className="flex-1">
                         <div className="font-medium text-sm">{fixture.name}</div>
                         <div className="text-xs text-gray-600 dark:text-gray-400">
-                          {fixture.starting_at ? new Date(fixture.starting_at).toLocaleDateString() : 'TBD'}
+                          {formatDate(fixture.starting_at)}
                         </div>
                       </div>
                       <div className="text-xs text-gray-500">
@@ -267,12 +337,12 @@ export function TeamDetailClient({ team }: TeamDetailClientProps) {
                       <div className="flex-1">
                         <div className="font-medium text-sm">{fixture.name}</div>
                         <div className="text-xs text-gray-600 dark:text-gray-400">
-                          {fixture.starting_at ? new Date(fixture.starting_at).toLocaleDateString() : 'TBD'}
+                          {formatDate(fixture.starting_at)}
                         </div>
                       </div>
                       <div className="text-xs text-blue-600 dark:text-blue-400">
                         <Clock className="w-3 h-3 inline mr-1" />
-                        {fixture.starting_at ? new Date(fixture.starting_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'TBD'}
+                        {formatTime(fixture.starting_at)}
                       </div>
                     </div>
                   ))}
@@ -287,14 +357,89 @@ export function TeamDetailClient({ team }: TeamDetailClientProps) {
 
         {/* Squad Tab */}
         <TabsContent value="squad" className="space-y-6">
+          {/* Squad Overview Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="p-4 text-center">
+                <Users className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                <div className="text-2xl font-bold">{getCurrentPlayers().length}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Total Players</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <Star className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
+                <div className="text-2xl font-bold">
+                  {getCurrentPlayers().filter(p => p.captain).length}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Captains</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <UserX className="w-8 h-8 text-red-500 mx-auto mb-2" />
+                <div className="text-2xl font-bold">{getSidelinedPlayers().length}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Sidelined</div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Key Players Section */}
+          {getCurrentPlayers().filter(p => p.captain || p.jersey_number <= 11).length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Star className="w-5 h-5" />
+                  Key Players
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {getCurrentPlayers()
+                    .filter(p => p.captain || (p.jersey_number && p.jersey_number <= 11))
+                    .slice(0, 6)
+                    .map((player) => (
+                    <div key={player.id} className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border rounded-lg">
+                      <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center border-2 border-blue-200 dark:border-blue-700">
+                        <span className="text-sm font-bold text-blue-700 dark:text-blue-300">
+                          {player.jersey_number || '?'}
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-medium text-sm">
+                          Player #{player.player_id}
+                          {player.captain && (
+                            <Badge variant="default" className="ml-2 text-xs bg-yellow-500">Captain</Badge>
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">
+                          Position: {player.position_id}
+                        </div>
+                        {player.start && (
+                          <div className="text-xs text-green-600 dark:text-green-400">
+                            Since {formatYear(player.start)}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Full Squad */}
           <Card>
             <CardHeader>
-              <CardTitle>Current Squad</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Complete Squad
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {getCurrentPlayers().map((player) => (
-                  <div key={player.id} className="flex items-center gap-3 p-3 border rounded-lg">
+                  <div key={player.id} className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                     <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                       <span className="text-sm font-bold">
                         {player.jersey_number || '?'}
@@ -310,6 +455,11 @@ export function TeamDetailClient({ team }: TeamDetailClientProps) {
                       <div className="text-xs text-gray-600 dark:text-gray-400">
                         Position: {player.position_id}
                       </div>
+                      {player.start && (
+                        <div className="text-xs text-gray-500">
+                          Joined: {formatYear(player.start)}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -319,31 +469,122 @@ export function TeamDetailClient({ team }: TeamDetailClientProps) {
               </div>
             </CardContent>
           </Card>
+
+          {/* Sidelined Players */}
+          {getSidelinedPlayers().length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UserX className="w-5 h-5" />
+                  Sidelined Players
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {getSidelinedPlayers().map((player) => (
+                    <div key={player.id} className="flex items-center gap-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                      <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900 flex items-center justify-center">
+                        <UserX className="w-5 h-5 text-red-600 dark:text-red-400" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-medium text-sm">
+                          Player #{player.player_id}
+                        </div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">
+                          {player.category || 'Injured'}
+                        </div>
+                        {player.start_date && (
+                          <div className="text-xs text-red-600 dark:text-red-400">
+                            Since: {formatDate(player.start_date)}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* Fixtures Tab */}
         <TabsContent value="fixtures" className="space-y-6">
+          {/* Form Summary */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-green-600">W</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Wins</div>
+                <div className="text-xs text-gray-500">
+                  Last 5: {getRecentFixtures().filter(f => f.result_info?.includes('W')).length}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-yellow-600">D</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Draws</div>
+                <div className="text-xs text-gray-500">
+                  Last 5: {getRecentFixtures().filter(f => f.result_info?.includes('D')).length}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-red-600">L</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Losses</div>
+                <div className="text-xs text-gray-500">
+                  Last 5: {getRecentFixtures().filter(f => f.result_info?.includes('L')).length}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <Activity className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                <div className="text-2xl font-bold">{getUpcomingFixtures().length}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Upcoming</div>
+              </CardContent>
+            </Card>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Recent Fixtures */}
             <Card>
               <CardHeader>
-                <CardTitle>Recent Fixtures</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="w-5 h-5" />
+                  Recent Form (Last 5)
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   {getRecentFixtures().map((fixture) => (
-                    <div key={fixture.id} className="p-3 border rounded-lg">
-                      <div className="font-medium text-sm mb-1">{fixture.name}</div>
-                      <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">
-                        {fixture.starting_at ? new Date(fixture.starting_at).toLocaleDateString() : 'TBD'}
+                    <div key={fixture.id} className="p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="font-medium text-sm">{fixture.name}</div>
+                        {fixture.result_info && (
+                          <Badge 
+                            variant={fixture.result_info.includes('W') ? 'default' : 
+                                   fixture.result_info.includes('D') ? 'secondary' : 'destructive'}
+                            className="text-xs"
+                          >
+                            {fixture.result_info}
+                          </Badge>
+                        )}
                       </div>
-                      {fixture.result_info && (
-                        <Badge variant="outline" className="text-xs">
-                          {fixture.result_info}
-                        </Badge>
+                      <div className="text-xs text-gray-600 dark:text-gray-400">
+                        {fixture.starting_at ? formatDate(fixture.starting_at) : 'TBD'}
+                      </div>
+                      {fixture.league && (
+                        <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                          {fixture.league.name}
+                        </div>
                       )}
                     </div>
                   ))}
+                  {getRecentFixtures().length === 0 && (
+                    <p className="text-center text-gray-500 text-sm">No recent fixtures available</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -351,26 +592,56 @@ export function TeamDetailClient({ team }: TeamDetailClientProps) {
             {/* Upcoming Fixtures */}
             <Card>
               <CardHeader>
-                <CardTitle>Upcoming Fixtures</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5" />
+                  Upcoming Fixtures (Next 5)
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   {getUpcomingFixtures().map((fixture) => (
-                    <div key={fixture.id} className="p-3 border rounded-lg">
-                      <div className="font-medium text-sm mb-1">{fixture.name}</div>
-                      <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">
-                        {fixture.starting_at ? new Date(fixture.starting_at).toLocaleDateString() : 'TBD'}
+                    <div key={fixture.id} className="p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                      <div className="font-medium text-sm mb-2">{fixture.name}</div>
+                      <div className="flex items-center justify-between">
+                        <div className="text-xs text-gray-600 dark:text-gray-400">
+                          {fixture.starting_at ? formatDate(fixture.starting_at) : 'TBD'}
+                        </div>
+                        <div className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400">
+                          <Clock className="w-3 h-3" />
+                          {formatTime(fixture.starting_at)}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400">
-                        <Clock className="w-3 h-3" />
-                        {fixture.starting_at ? new Date(fixture.starting_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'TBD'}
+                      {fixture.league && (
+                        <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                          {fixture.league.name}
+                        </div>
+                      )}
+                      {/* Placeholder for prediction indicators */}
+                      <div className="flex items-center gap-2 mt-2">
+                        <Badge variant="outline" className="text-xs">
+                          Prediction Ready
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          Value Bet Potential
+                        </Badge>
                       </div>
                     </div>
                   ))}
+                  {getUpcomingFixtures().length === 0 && (
+                    <p className="text-center text-gray-500 text-sm">No upcoming fixtures available</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        {/* Predictions Tab */}
+        <TabsContent value="predictions" className="space-y-6">
+          <TeamPredictionsContent 
+            teamName={team.name} 
+            initialFixtures={initialFixtures}
+          />
         </TabsContent>
 
         {/* History Tab */}
@@ -460,9 +731,11 @@ export function TeamDetailClient({ team }: TeamDetailClientProps) {
                   <div key={rival.id} className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                     <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
                       {rival.image_path ? (
-                        <img
+                        <Image
                           src={rival.image_path}
                           alt={rival.name}
+                          width={40}
+                          height={40}
                           className="w-full h-full object-cover"
                           onError={(e) => {
                             (e.target as HTMLImageElement).style.display = 'none';
@@ -490,6 +763,14 @@ export function TeamDetailClient({ team }: TeamDetailClientProps) {
           </Card>
         </TabsContent>
       </Tabs>
+      ) : (
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-sm text-muted-foreground">Loading team details...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

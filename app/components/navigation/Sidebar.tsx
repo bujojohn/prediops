@@ -65,31 +65,75 @@ const Sidebar = memo(function Sidebar() {
   const [countsLoadingCountries, setCountsLoadingCountries] = useState<Set<number>>(new Set());
   const today = React.useMemo(() => new Date().toISOString().split('T')[0], []);
   const storageKey = React.useMemo(() => `sidebar-counts-7days-${today}`, [today]);
-  const [visibleCountryBadges, setVisibleCountryBadges] = useState<Set<number>>(new Set());
   const [visibleLeagueBadges, setVisibleLeagueBadges] = useState<Set<number>>(new Set());
-  // Regions (continents, world) handling
+  // Regions (continents, world) handling - show by default for better UX
   const [hideRegions, setHideRegions] = useState(false);
 
   const isRegion = React.useCallback((country: CountryWithLeagues) => {
     const name = (country.name || country.fifa_name || country.official_name || '').trim().toLowerCase();
     if (!name) return false;
+    
+    // Continental/regional organizations and tournaments (not real countries)
     const regions = new Set([
       'africa', 'europe', 'asia', 'north america', 'south america', 'oceania', 'antarctica', 'world', 'international'
     ]);
     if (regions.has(name)) return true;
-    // Also treat aggregated scopes like "uefa", "caf" etc. as regions if present in short_code/fifa_name
-    const code = (country.fifa_name || country.official_name || '').trim().toLowerCase();
+    
+    // Continental football organizations
     const orgs = ['uefa', 'caf', 'afc', 'conmebol', 'concacaf', 'ofc', 'fifa'];
-    return orgs.some(org => name.includes(org) || code.includes(org));
+    
+    // Major continental tournaments
+    const tournaments = [
+      'champions league', 'europa league', 'europa conference league', 'conference league',
+      'african cup', 'asian cup', 'copa america', 'gold cup', 'oceanian cup',
+      'nations league', 'confederations cup', 'club world cup', 'super cup',
+      'world cup', 'euro', 'copa libertadores', 'copa sudamericana', 'libertadores',
+      'sudamericana', 'champions', 'europa', 'conference'
+    ];
+    
+    // Check in name
+    if (orgs.some(org => name.includes(org))) return true;
+    if (tournaments.some(tournament => name.includes(tournament))) return true;
+    
+    // Check in codes
+    const code = (country.fifa_name || country.official_name || '').trim().toLowerCase();
+    if (orgs.some(org => code.includes(org))) return true;
+    
+    // Additional checks for common continental tournament patterns
+    if (name.includes('continental') || name.includes('regional') || name.includes('intercontinental')) return true;
+    
+    // Check for tournament-specific keywords
+    if (name.includes('league') || name.includes('cup') || name.includes('championship')) {
+      // But exclude country-specific leagues (e.g., "England League" vs "Champions League")
+      if (name.includes('champions') || name.includes('europa') || name.includes('conference')) return true;
+    }
+    
+    // Check for specific patterns that indicate continental/regional entities
+    if (name.includes('continental') || name.includes('regional') || name.includes('intercontinental')) return true;
+    
+    // Check if it's a known continental entity by ID or other indicators
+    // Some continental entities have specific patterns in their data
+    // Note: country.type is not available in CountryWithLeagues interface
+    
+    return false;
   }, []);
 
   // Split filtered list into countries and regions
   const { countryItems, regionItems } = React.useMemo(() => {
     const countries: CountryWithLeagues[] = [];
     const regions: CountryWithLeagues[] = [];
+    
+    // Debug logging
+    console.log('Filtering countries:', filteredCountries.length);
     for (const c of filteredCountries) {
-      if (isRegion(c)) regions.push(c); else countries.push(c);
+      if (isRegion(c)) {
+        console.log('Region detected:', c.name || c.fifa_name || c.official_name);
+        regions.push(c);
+      } else {
+        countries.push(c);
+      }
     }
+    console.log('Regions found:', regions.length, 'Countries found:', countries.length);
     return { countryItems: countries, regionItems: regions };
   }, [filteredCountries, isRegion]);
 
@@ -109,7 +153,6 @@ const Sidebar = memo(function Sidebar() {
         if (parsed?.countries?.length) {
           const map = new Map<number, number>(parsed.countries);
           setCountryTodayCounts(map);
-          setVisibleCountryBadges(new Set(Array.from(map.keys())));
         }
         if (parsed?.leagues?.length) {
           const lmap = new Map<number, number>(parsed.leagues);
@@ -246,16 +289,14 @@ const Sidebar = memo(function Sidebar() {
         );
       } catch {}
 
-      setTimeout(() => {
-        setVisibleCountryBadges(prev => new Set(prev).add(countryId));
-        if (perLeague.size > 0) {
-          setVisibleLeagueBadges(prev => {
-            const next = new Set(prev);
-            perLeague.forEach((_, lid) => next.add(lid));
-            return next;
-          });
-        }
-      }, 0);
+      // Show league badges after counts are set
+      if (perLeague.size > 0) {
+        setVisibleLeagueBadges(prev => {
+          const next = new Set(prev);
+          perLeague.forEach((_, lid) => next.add(lid));
+          return next;
+        });
+      }
     } catch (e) {
       // Non-fatal: leave counts absent
       console.error('Failed fetching today\'s fixtures for country', countryId, e);
@@ -420,7 +461,6 @@ const Sidebar = memo(function Sidebar() {
     try { localStorage.removeItem(storageKey); } catch {}
     setCountryTodayCounts(new Map());
     setLeagueTodayCounts(new Map());
-    setVisibleCountryBadges(new Set());
     setVisibleLeagueBadges(new Set());
     await loadCountriesWithLeagues();
     // If a country is expanded, refetch counts for it
@@ -487,6 +527,43 @@ const Sidebar = memo(function Sidebar() {
               />
             </div>
           
+          {/* Active Filters Display */}
+          {(debouncedSearch.trim() || showOnlyFavorites || hideRegions) && (
+            <div className="mb-3 p-2 bg-muted/50 rounded text-xs">
+              <div className="flex items-center justify-between mb-1">
+                <div className="font-medium">Active Filters:</div>
+                <button
+                  onClick={() => {
+                    setSearchTerm('');
+                    setShowOnlyFavorites(false);
+                    setHideRegions(false);
+                  }}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  title="Clear all filters"
+                >
+                  Clear All
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {debouncedSearch.trim() && (
+                  <Badge variant="secondary" className="text-xs">
+                    Search: &ldquo;{debouncedSearch}&rdquo;
+                  </Badge>
+                )}
+                {showOnlyFavorites && (
+                  <Badge variant="secondary" className="text-xs">
+                    Favorites Only ({favorites.size})
+                  </Badge>
+                )}
+                {hideRegions && (
+                  <Badge variant="secondary" className="text-xs">
+                    Tournaments Hidden
+                  </Badge>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Controls Row */}
           <div className="flex items-center gap-2 mb-3">
             <button
@@ -519,10 +596,10 @@ const Sidebar = memo(function Sidebar() {
                   ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
-              title={hideRegions ? 'Show regions' : 'Hide regions'}
+              title={hideRegions ? 'Show continental tournaments (UEFA, CAF, etc.)' : 'Hide continental tournaments'}
             >
               <Globe className="h-3 w-3" />
-              <span>{hideRegions ? 'Regions hidden' : 'Hide regions'}</span>
+              <span>{hideRegions ? 'Show tournaments' : 'Hide tournaments'}</span>
             </button>
             
             <button
@@ -578,8 +655,8 @@ const Sidebar = memo(function Sidebar() {
               <Info className="h-3 w-3" />
             </div>
             {regionItems.length > 0 && !hideRegions && (
-              <Badge variant="outline" className="text-xs">
-                {regionItems.length} regions
+              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800">
+                {regionItems.length} tournaments
               </Badge>
             )}
             {allCountries.length > 0 && (
@@ -614,14 +691,14 @@ const Sidebar = memo(function Sidebar() {
                       ) : (
                         <ChevronRight className="h-3.5 w-3.5" />
                       )}
-                      <span className={`font-medium truncate text-sm ${
+                      <span className={`font-medium truncate text-sm max-w-[180px] ${
                         (country.leaguesCount || 0) === 0 ? 'text-muted-foreground italic' : ''
-                      }`}>
+                      }`} title={country.name || country.fifa_name || country.official_name || ''}>
                         {country.name || country.fifa_name || country.official_name}
                       </span>
                       {isRegion(country) && (
                         <Badge variant="outline" className="text-[10px] ml-1">
-                          Region
+                          Tournament
                         </Badge>
                       )}
                       {countsLoadingCountries.has(country.id) ? (
@@ -629,13 +706,10 @@ const Sidebar = memo(function Sidebar() {
                       ) : (
                         (() => {
                           const c = countryTodayCounts.get(country.id) ?? 0;
-                          const isVisible = visibleCountryBadges.has(country.id);
                           return (
                             <Badge
                               variant="outline"
-                              className={`text-[10px] ml-1 transition-opacity duration-300 ${
-                                isVisible ? 'opacity-100' : 'opacity-0'
-                              } ${
+                              className={`text-[10px] ml-1 ${
                                 c > 0
                                   ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
                                   : 'bg-muted text-muted-foreground'
@@ -739,10 +813,10 @@ const Sidebar = memo(function Sidebar() {
           </div>
           </div>
 
-          {/* Regions Section */}
+          {/* Continental Tournaments Section */}
           {!hideRegions && regionItems.length > 0 && (
             <div className="p-1 mt-2">
-              <div className="px-1 py-1 text-[11px] uppercase tracking-wide text-muted-foreground">Regions</div>
+              <div className="px-1 py-1 text-[11px] uppercase tracking-wide text-muted-foreground">Continental Tournaments</div>
               <div className="space-y-0.5">
               {regionItems.map((country) => {
                 const isExpanded = expandedCountries.has(country.id);
@@ -762,24 +836,21 @@ const Sidebar = memo(function Sidebar() {
                         ) : (
                           <ChevronRight className="h-3.5 w-3.5" />
                         )}
-                        <span className={`font-medium truncate text-sm ${
+                        <span className={`font-medium truncate text-sm max-w-[180px] ${
                           (country.leaguesCount || 0) === 0 ? 'text-muted-foreground italic' : ''
-                        }`}>
+                        }`} title={country.name || country.fifa_name || country.official_name || ''}>
                           {country.name || country.fifa_name || country.official_name}
                         </span>
-                        <Badge variant="outline" className="text-[10px] ml-1">Region</Badge>
+                        <Badge variant="outline" className="text-[10px] ml-1">Tournament</Badge>
                         {countsLoadingCountries.has(country.id) ? (
                           <Skeleton title="Fetching..." className="ml-1 inline-block h-3 w-6" />
                         ) : (
                           (() => {
                             const c = countryTodayCounts.get(country.id) ?? 0;
-                            const isVisible = visibleCountryBadges.has(country.id);
                             return (
                               <Badge
                                 variant="outline"
-                                className={`text-[10px] ml-1 transition-opacity duration-300 ${
-                                  isVisible ? 'opacity-100' : 'opacity-0'
-                                } ${
+                                className={`text-[10px] ml-1 ${
                                   c > 0
                                     ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
                                     : 'bg-muted text-muted-foreground'
@@ -884,7 +955,54 @@ const Sidebar = memo(function Sidebar() {
           )}
           </div>
 
-        {/* Footer removed */}
+        {/* Sidebar Footer */}
+        <div className="mt-auto border-t border-border bg-muted/30 p-3">
+          <div className="space-y-2">
+            {/* Quick Stats */}
+            <div className="text-xs text-muted-foreground">
+              <div className="flex justify-between">
+                <span>Countries:</span>
+                <span className="font-medium">{countryItems.length}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Tournaments:</span>
+                <span className="font-medium">{regionItems.length}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Favorites:</span>
+                <span className="font-medium">{favorites.size}</span>
+              </div>
+            </div>
+            
+            {/* Quick Actions */}
+            <div className="flex gap-1">
+              <button
+                onClick={() => {
+                  setExpandedCountries(new Set());
+                  setSearchTerm('');
+                  setShowOnlyFavorites(false);
+                }}
+                className="flex-1 px-2 py-1 text-xs bg-background border border-border rounded hover:bg-muted transition-colors"
+                title="Collapse all and clear filters"
+              >
+                Reset
+              </button>
+              <button
+                onClick={refreshData}
+                disabled={isRefreshing}
+                className="flex-1 px-2 py-1 text-xs bg-background border border-border rounded hover:bg-muted transition-colors disabled:opacity-50"
+                title="Refresh data"
+              >
+                {isRefreshing ? <RefreshCw className="h-3 w-3 animate-spin mx-auto" /> : 'Refresh'}
+              </button>
+            </div>
+            
+            {/* Version Info */}
+            <div className="text-[10px] text-muted-foreground text-center pt-1 border-t border-border">
+              Prediops v2.7.0
+            </div>
+          </div>
+        </div>
       </div>
     </SidebarTheme>
   );

@@ -2,6 +2,8 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import Image from 'next/image';
 import { Search, Grid, List, SortAsc, SortDesc } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +11,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Team } from '@/schemas/team.schema';
-import { formatFoundedYear, getTeamTypeDisplay } from '@/lib/utils/team-utils';
+import { formatFoundedYear, getTeamTypeDisplay, generateTeamSlug } from '@/lib/utils/team-utils';
 
 interface TeamsClientProps {
   initialTeams: Team[];
@@ -276,109 +278,121 @@ export function TeamsClient({
 
 // Team Card Component
 function TeamCard({ team }: { team: Team }) {
+  const teamSlug = generateTeamSlug(team);
+  
   return (
-    <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
-      <CardContent className="p-4">
-        <div className="flex flex-col items-center text-center space-y-3">
-          {/* Team Logo */}
-          <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
-            {team.image_path ? (
-              <img
-                src={team.image_path}
-                alt={team.name || 'Team'}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
-            ) : (
-              <span className="text-2xl font-bold text-gray-400">
-                {team.name?.charAt(0) || 'T'}
-              </span>
-            )}
-          </div>
-
-          {/* Team Info */}
-          <div className="space-y-1">
-            <h3 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-              {team.name || 'Unknown Team'}
-            </h3>
-            
-            {team.short_code && (
-              <Badge variant="secondary" className="text-xs">
-                {team.short_code}
-              </Badge>
-            )}
-            
-            <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-              {team.country && (
-                <p>📍 {team.country.name}</p>
-              )}
-              {team.founded && (
-                <p>🏛️ {formatFoundedYear(team.founded)}</p>
-              )}
-              {team.type && (
-                <p>🏆 {getTeamTypeDisplay(team.type)}</p>
+    <Link href={`/team/${team.id}/${teamSlug}`} className="block">
+      <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
+        <CardContent className="p-4">
+          <div className="flex flex-col items-center text-center space-y-3">
+            {/* Team Logo */}
+            <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
+              {team.image_path ? (
+                <Image
+                  src={team.image_path}
+                  alt={team.name || 'Team'}
+                  width={64}
+                  height={64}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              ) : (
+                <span className="text-2xl font-bold text-gray-400">
+                  {team.name?.charAt(0) || 'T'}
+                </span>
               )}
             </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 
-// Team List Item Component
-function TeamListItem({ team }: { team: Team }) {
-  return (
-    <Card className="hover:shadow-md transition-shadow cursor-pointer group">
-      <CardContent className="p-4">
-        <div className="flex items-center space-x-4">
-          {/* Team Logo */}
-          <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden flex-shrink-0">
-            {team.image_path ? (
-              <img
-                src={team.image_path}
-                alt={team.name || 'Team'}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
-            ) : (
-              <span className="text-lg font-bold text-gray-400">
-                {team.name?.charAt(0) || 'T'}
-              </span>
-            )}
-          </div>
-
-          {/* Team Info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
+            {/* Team Info */}
+            <div className="space-y-1">
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                 {team.name || 'Unknown Team'}
               </h3>
+              
               {team.short_code && (
                 <Badge variant="secondary" className="text-xs">
                   {team.short_code}
                 </Badge>
               )}
-            </div>
-            
-            <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-              {team.country && (
-                <span>📍 {team.country.name}</span>
-              )}
-              {team.founded && (
-                <span>🏛️ {formatFoundedYear(team.founded)}</span>
-              )}
-              {team.type && (
-                <span>🏆 {getTeamTypeDisplay(team.type)}</span>
-              )}
+              
+              <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                {team.country && (
+                  <p>📍 {team.country.name}</p>
+                )}
+                {team.founded && (
+                  <p>🏛️ {formatFoundedYear(team.founded)}</p>
+                )}
+                {team.type && (
+                  <p>🏆 {getTeamTypeDisplay(team.type)}</p>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+}
+
+// Team List Item Component
+function TeamListItem({ team }: { team: Team }) {
+  const teamSlug = generateTeamSlug(team);
+  
+  return (
+    <Link href={`/team/${team.id}/${teamSlug}`} className="block">
+      <Card className="hover:shadow-md transition-shadow cursor-pointer group">
+        <CardContent className="p-4">
+          <div className="flex items-center space-x-4">
+            {/* Team Logo */}
+            <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden flex-shrink-0">
+              {team.image_path ? (
+                <Image
+                  src={team.image_path}
+                  alt={team.name || 'Team'}
+                  width={64}
+                  height={64}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              ) : (
+                <span className="text-lg font-bold text-gray-400">
+                  {team.name?.charAt(0) || 'T'}
+                </span>
+              )}
+            </div>
+
+            {/* Team Info */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
+                  {team.name || 'Unknown Team'}
+                </h3>
+                {team.short_code && (
+                  <Badge variant="secondary" className="text-xs">
+                    {team.short_code}
+                  </Badge>
+                )}
+              </div>
+              
+              <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                {team.country && (
+                  <span>📍 {team.country.name}</span>
+                )}
+                {team.founded && (
+                  <span>🏛️ {formatFoundedYear(team.founded)}</span>
+                )}
+                {team.type && (
+                  <span>🏆 {getTeamTypeDisplay(team.type)}</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
   );
 }

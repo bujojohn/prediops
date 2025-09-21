@@ -62,7 +62,7 @@ export const ParticipantSchema: z.ZodType<Participant> = z.lazy(() =>
     founded: z.number().int().nullable().optional(),
     type: z.string().nullable().optional(),
     placeholder: z.boolean().nullable().optional(),
-    last_played_at: z.string().datetime({ precision: 0, message: "Invalid datetime string" }).nullable().optional(),
+    last_played_at: z.string().nullable().optional(),
     national_team: z.boolean().nullable().optional(),
     meta: z
       .object({

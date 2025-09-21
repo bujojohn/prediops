@@ -54,11 +54,11 @@ import { SidelinedSchema } from "./sidelined.schema";
 
 // Social media schema
 export const SocialSchema = z.object({
-  id: z.number(),
-  entity_type: z.string(),
-  entity_id: z.number(),
-  social_network_id: z.number(),
-  url: z.string(),
+  id: z.number().optional(),
+  entity_type: z.string().optional(),
+  entity_id: z.number().optional(),
+  social_network_id: z.number().optional(),
+  url: z.string().optional(),
 });
 
 // Enhanced Team schema with all includes
@@ -77,18 +77,18 @@ export const TeamDetailedSchema = z.object({
   last_played_at: z.string().nullable().describe("Datetime of the team's last match."),
   
   // Relations
-  country: CountrySchema.nullable().describe("Country the team belongs to."),
-  coaches: z.array(TeamCoachSchema).nullable().describe("Current and historical coaching staff."),
-  rivals: z.array(RivalTeamSchema).nullable().describe("Traditional rival teams."),
-  players: z.array(TeamPlayerSchema).nullable().describe("Current squad players."),
-  latest: z.array(FixtureSchema).nullable().describe("Recent fixtures."),
-  upcoming: z.array(FixtureSchema).nullable().describe("Upcoming fixtures."),
-  seasons: z.array(SeasonSchema).nullable().describe("Historical seasons."),
-  activeSeasons: z.array(SeasonSchema).nullable().describe("Currently active seasons."),
-  sidelined: z.array(SidelinedSchema).nullable().describe("Currently sidelined players."),
-  sidelinedHistory: z.array(SidelinedSchema).nullable().describe("Historical sidelined players."),
-  trophies: z.array(TeamTrophySchema).nullable().describe("Team achievements and trophies."),
-  socials: z.array(SocialSchema).nullable().describe("Social media links."),
+  country: CountrySchema.nullable().optional().describe("Country the team belongs to."),
+  coaches: z.array(TeamCoachSchema).nullable().optional().describe("Current and historical coaching staff."),
+  rivals: z.array(RivalTeamSchema).nullable().optional().describe("Traditional rival teams."),
+  players: z.array(TeamPlayerSchema).nullable().optional().describe("Current squad players."),
+  latest: z.array(FixtureSchema).nullable().optional().describe("Recent fixtures."),
+  upcoming: z.array(FixtureSchema).nullable().optional().describe("Upcoming fixtures."),
+  seasons: z.array(SeasonSchema).nullable().optional().describe("Historical seasons."),
+  activeSeasons: z.array(SeasonSchema).nullable().optional().describe("Currently active seasons."),
+  sidelined: z.array(SidelinedSchema).nullable().optional().describe("Currently sidelined players."),
+  sidelinedHistory: z.array(SidelinedSchema).nullable().optional().describe("Historical sidelined players."),
+  trophies: z.array(TeamTrophySchema).nullable().optional().describe("Team achievements and trophies."),
+  socials: z.array(SocialSchema).nullable().optional().describe("Social media links."),
 });
 
 export type TeamDetailed = z.infer<typeof TeamDetailedSchema>;

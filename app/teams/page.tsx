@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { sportmonks } from '@/lib/sportmonks';
-import { TeamSchema } from '@/schemas/team.schema';
+import { TeamSchema, Team } from '@/schemas/team.schema';
 import { TeamsClient } from './teams-client';
 
 interface TeamsPageProps {
@@ -21,7 +21,7 @@ export default async function TeamsPage({ searchParams }: TeamsPageProps) {
   // Build API config from search params
   const config = {
     include: 'country',
-    select: 'id,name,short_code,image_path,founded,type,country',
+    select: 'name,short_code,image_path,founded,type',
     filters: {
       ...(params.country && { countries: params.country }),
       ...(params.league && { leagues: params.league }),
@@ -37,11 +37,13 @@ export default async function TeamsPage({ searchParams }: TeamsPageProps) {
     const teamsResponse = await sportmonks.getTeams(config);
     
     // Validate the response data
-    const teams = teamsResponse.data?.map((team: unknown) => {
+    const teams = teamsResponse.data?.map((team: Team) => {
       try {
         return TeamSchema.parse(team);
       } catch (error) {
-        console.warn('Invalid team data:', error);
+        console.error('Schema validation failed for team:', team.id, team.name);
+        console.error('Validation error:', error);
+        console.error('Team data:', team);
         return null;
       }
     }).filter((team): team is NonNullable<typeof team> => team !== null) || [];

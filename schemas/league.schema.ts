@@ -42,7 +42,7 @@ export const LeagueSchema: z.ZodType<League> = z.lazy(() =>
     image_path: z.string().url().nullable().optional(),
     type: z.string().nullable().optional(),
     sub_type: z.string().nullable().optional(),
-    last_played_at: z.string().datetime({ precision: 0, message: "Invalid datetime string" }).nullable().optional(),
+    last_played_at: z.string().nullable().optional(),
     category: z.number().int().nullable().optional(),
     has_jerseys: z.boolean().nullable().optional(),
     sort_order: z.number().nullable().optional(), 

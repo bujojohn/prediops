@@ -91,7 +91,7 @@ export const FixtureSchema: z.ZodType<Fixture> = z.lazy(() =>
     state_id: z.number().nullable().optional().describe("The ID of the current state of the fixture."),
     venue_id: z.number().nullable().optional().describe("The ID of the venue where the fixture will be played."),
     name: z.string().nullable().optional().describe("The name of the fixture, usually a concatenation of participant names."),
-    starting_at: z.string().datetime({ precision: 0, message: "Invalid datetime string. Must be UTC and in YYYY-MM-DD HH:MM:SS format." }).nullable().optional().describe("The UTC datetime when the fixture is scheduled to start."),
+    starting_at: z.string().nullable().optional().describe("The UTC datetime when the fixture is scheduled to start."),
     result_info: z.string().nullable().optional().describe("Information about the result (e.g., FT, AET, PEN)."),
     leg: z.string().nullable().optional().describe("The leg of the fixture (e.g., 1/2, 2/2)."),
     details: z.any().nullable().optional().describe("Additional details or metadata about the fixture. Structure may vary."),
