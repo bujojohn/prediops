@@ -22,6 +22,7 @@ import type { TeamDetailed } from '@/schemas/team-detailed.schema';
 import type { Fixture } from '@/schemas/fixture.schema';
 import { formatFoundedYear, getTeamTypeDisplay } from '@/lib/utils/team-utils';
 import { TeamPredictionsContent } from './team-predictions-content';
+import { TeamFixturesDisplay } from '@/app/components/team/TeamFixturesDisplay';
 
 interface TeamDetailClientProps {
   team: TeamDetailed;
@@ -547,93 +548,23 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
             </Card>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Recent Fixtures */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="w-5 h-5" />
-                  Recent Form (Last 5)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {getRecentFixtures().map((fixture) => (
-                    <div key={fixture.id} className="p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="font-medium text-sm">{fixture.name}</div>
-                        {fixture.result_info && (
-                          <Badge 
-                            variant={fixture.result_info.includes('W') ? 'default' : 
-                                   fixture.result_info.includes('D') ? 'secondary' : 'destructive'}
-                            className="text-xs"
-                          >
-                            {fixture.result_info}
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="text-xs text-gray-600 dark:text-gray-400">
-                        {fixture.starting_at ? formatDate(fixture.starting_at) : 'TBD'}
-                      </div>
-                      {fixture.league && (
-                        <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                          {fixture.league.name}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  {getRecentFixtures().length === 0 && (
-                    <p className="text-center text-gray-500 text-sm">No recent fixtures available</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Upcoming Fixtures */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="w-5 h-5" />
-                  Upcoming Fixtures (Next 5)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {getUpcomingFixtures().map((fixture) => (
-                    <div key={fixture.id} className="p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                      <div className="font-medium text-sm mb-2">{fixture.name}</div>
-                      <div className="flex items-center justify-between">
-                        <div className="text-xs text-gray-600 dark:text-gray-400">
-                          {fixture.starting_at ? formatDate(fixture.starting_at) : 'TBD'}
-                        </div>
-                        <div className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400">
-                          <Clock className="w-3 h-3" />
-                          {formatTime(fixture.starting_at)}
-                        </div>
-                      </div>
-                      {fixture.league && (
-                        <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                          {fixture.league.name}
-                        </div>
-                      )}
-                      {/* Placeholder for prediction indicators */}
-                      <div className="flex items-center gap-2 mt-2">
-                        <Badge variant="outline" className="text-xs">
-                          Prediction Ready
-                        </Badge>
-                        <Badge variant="outline" className="text-xs">
-                          Value Bet Potential
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                  {getUpcomingFixtures().length === 0 && (
-                    <p className="text-center text-gray-500 text-sm">No upcoming fixtures available</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          {/* Team Fixtures Display */}
+          <TeamFixturesDisplay
+            teamId={team.id.toString()}
+            initialFixtures={initialFixtures}
+            variant="detailed"
+            showSearchAndFilter={true}
+            searchAndFilterVariant="compact"
+            searchAndFilterOptions={{
+              showSearch: false, // Not needed on team page
+              showLeagueFilter: true,
+              showTeamFilter: false, // Not needed on team page
+              showStatusFilter: true,
+              showDateFilter: true,
+              showPredictionsFilter: true,
+              showValueBetsFilter: true,
+            }}
+          />
         </TabsContent>
 
         {/* Predictions Tab */}

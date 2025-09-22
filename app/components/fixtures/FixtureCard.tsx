@@ -1028,7 +1028,6 @@ export const FixtureCard = memo(function FixtureCard({
                   state={valueBetState} 
                   size="sm" 
                   showGlow={valueBetState === "value"}
-                  showExplanations={settings.showValueBetExplanations}
                   valueBetData={valueBetInfo}
                 />
                 <Button
@@ -1139,7 +1138,6 @@ export const FixtureCard = memo(function FixtureCard({
                 state={valueBetState} 
                 size="sm" 
                 showGlow={valueBetState === "value"}
-                showExplanations={settings.showValueBetExplanations}
                 valueBetData={valueBetInfo}
               />
             </div>

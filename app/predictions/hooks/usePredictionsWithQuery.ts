@@ -1,57 +1,72 @@
 'use client';
 
+import { useCallback } from 'react';
 import type { Fixture } from '@/schemas/fixture.schema';
-import { useFixturesByDate, useInfiniteFixtures } from './usePredictionsQuery';
+import { useFixtureManagement } from '@/app/hooks/useFixtureManagement';
 
 export interface UsePredictionsWithQueryOptions {
   initialFixtures: Fixture[];
-  selectedDate: string;
 }
 
 export interface UsePredictionsWithQueryReturn {
   fixtures: Fixture[];
-  isLoading: boolean;
-  isError: boolean;
-  error: Error | null;
-  refetch: () => void;
+  page: number;
+  isLoadingDateFixtures: boolean;
+  isLoadingMore: boolean;
+  hasMore: boolean;
+  error: string | null;
+  loadFixturesForDate: (date: string) => Promise<void>;
+  loadNextPage: () => Promise<void>;
+  setFixtures: React.Dispatch<React.SetStateAction<Fixture[]>>;
+  clearError: () => void;
 }
 
 /**
- * Hook for managing predictions/fixtures state using React Query
- * This replaces the manual state management with React Query for better caching and error handling
+ * Specialized hook for predictions that extends the generic fixture management
+ * Provides predictions-specific functionality while maintaining reusability
  */
 export function usePredictionsWithQuery({ 
-  initialFixtures, 
-  selectedDate 
+  initialFixtures 
 }: UsePredictionsWithQueryOptions): UsePredictionsWithQueryReturn {
-  
-  // Use React Query to fetch fixtures by date
   const {
-    data: fixturesByDate = [],
-    isLoading: isLoadingByDate,
-    isError: isErrorByDate,
-    error: errorByDate,
-    refetch: refetchByDate,
-  } = useFixturesByDate(selectedDate);
+    fixtures,
+    page,
+    isLoading,
+    isLoadingMore,
+    hasMore,
+    error,
+    loadFixturesForDate,
+    loadNextPage,
+    setFixtures,
+    clearError,
+  } = useFixtureManagement({
+    initialFixtures,
+    apiEndpoint: '/api/sportmonks/fixtures',
+    enableInfiniteScroll: true,
+    enableDateFiltering: true,
+    pageSize: 50, // Maximum allowed by API
+  });
 
-  // Use infinite query for pagination (if needed in the future)
-  const {
-    isError: isErrorInfinite,
-    error: errorInfinite,
-  } = useInfiniteFixtures(initialFixtures);
-
-  // Determine which data source to use
-  const fixtures = fixturesByDate.length > 0 ? fixturesByDate : initialFixtures;
-  const isLoading = isLoadingByDate;
-  const isError = isErrorByDate || isErrorInfinite;
-  const error = errorByDate || errorInfinite;
-  const refetch = refetchByDate;
+  // Predictions-specific date loading with enhanced error handling
+  const loadPredictionsForDate = useCallback(async (date: string) => {
+    try {
+      await loadFixturesForDate(date);
+    } catch (err) {
+      console.error('Error loading predictions for date:', date, err);
+      throw err;
+    }
+  }, [loadFixturesForDate]);
 
   return {
     fixtures,
-    isLoading,
-    isError,
+    page,
+    isLoadingDateFixtures: isLoading,
+    isLoadingMore,
+    hasMore,
     error,
-    refetch,
+    loadFixturesForDate: loadPredictionsForDate,
+    loadNextPage,
+    setFixtures,
+    clearError,
   };
 }

@@ -1,10 +1,10 @@
 'use client';
 
 import type { Fixture } from '@/schemas/fixture.schema';
-import { usePredictions } from '../hooks/usePredictions';
+import { usePredictionsWithQuery } from '../hooks/usePredictionsWithQuery';
 import { useDateSelection } from '../hooks/useDateSelection';
 import { PredictionsHeader } from './PredictionsHeader';
-import { FixturesDisplay } from './FixturesDisplay';
+import { ReusableFixtureDisplay } from '@/app/components/fixtures/ReusableFixtureDisplay';
 import { 
   DatePickerProvider, 
   useDatePickerWithFixtures 
@@ -27,7 +27,7 @@ function PredictionsContentInner({ initialFixtures }: PredictionsContentProps) {
     hasMore,
     loadFixturesForDate,
     loadNextPage,
-  } = usePredictions({ initialFixtures });
+  } = usePredictionsWithQuery({ initialFixtures });
 
   const { handleDateSelect } = useDateSelection({
     onDateLoad: loadFixturesForDate,
@@ -57,16 +57,32 @@ function PredictionsContentInner({ initialFixtures }: PredictionsContentProps) {
         onDateSelect={handleDateSelect}
       />
       
-      <FixturesDisplay
+      <ReusableFixtureDisplay
         fixtures={fixtures}
         selectedDate={selectedDate}
-        isLoadingDateFixtures={isLoadingDateFixtures}
+        isLoading={isLoadingDateFixtures}
         isLoadingMore={isLoadingMore}
         hasMore={hasMore}
         onLoadMore={loadNextPage}
         onRefresh={handleRefresh}
         onTryNextWeek={handleTryNextWeek}
         onTryToday={handleTryToday}
+        variant="predictions"
+        showDateHeaders={true}
+        showLeagueHeaders={true}
+        showEmptyState={true}
+        compact={false}
+        showSearchAndFilter={true}
+        searchAndFilterVariant="compact"
+        searchAndFilterOptions={{
+          showSearch: true,
+          showLeagueFilter: true,
+          showTeamFilter: true,
+          showStatusFilter: true,
+          showDateFilter: false, // Date filtering is handled by the date picker
+          showPredictionsFilter: true,
+          showValueBetsFilter: true,
+        }}
       />
     </div>
   );

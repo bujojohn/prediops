@@ -1,13 +1,21 @@
 "use client";
 
 import * as React from "react";
-import { DollarSign, TrendingUp, XCircle, AlertCircle } from "lucide-react";
+import { DollarSign, XCircle, AlertCircle, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 
-export type ValueBetState = "loading" | "value" | "no-value" | "unavailable" | "error";
+export type ValueBetState =
+  | "loading"
+  | "value"
+  | "no-value"
+  | "unavailable"
+  | "error";
 
 export interface ValueBetIconProps {
   state: ValueBetState;
@@ -15,7 +23,6 @@ export interface ValueBetIconProps {
   size?: "sm" | "md" | "lg";
   title?: string;
   showGlow?: boolean;
-  showExplanations?: boolean;
   valueBetData?: {
     count: number;
     bestOdd?: number;
@@ -27,26 +34,32 @@ export interface ValueBetIconProps {
 
 const sizeClasses = {
   sm: "h-3 w-3",
-  md: "h-4 w-4", 
+  md: "h-4 w-4",
   lg: "h-5 w-5",
 };
 
-const pillSizeClasses = {
-  sm: "h-5 px-2 text-xs",
-  md: "h-6 px-2 text-xs", 
-  lg: "h-7 px-3 text-sm",
+const buttonSizeClasses = {
+  sm: "h-6 w-6 p-0",
+  md: "h-7 w-7 p-0",
+  lg: "h-8 w-8 p-0",
 };
 
 const stateClasses = {
-  loading: "text-gray-400 animate-pulse",
-  value: "text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/20 border-green-200 dark:border-green-800",
-  "no-value": "text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700",
-  unavailable: "text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700",
-  error: "text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/20 border-red-200 dark:border-red-800",
+  loading:
+    "text-gray-400 animate-pulse bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700",
+  value:
+    "text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700 shadow-sm",
+  "no-value":
+    "text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600",
+  unavailable:
+    "text-gray-300 dark:text-gray-600 bg-gray-50 dark:bg-gray-800/30 border-gray-200 dark:border-gray-700 opacity-60",
+  error:
+    "text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/20 border-red-300 dark:border-red-700",
 };
 
 const glowClasses = {
-  value: "drop-shadow-[0_0_4px_rgba(34,197,94,0.4)] dark:drop-shadow-[0_0_4px_rgba(34,197,94,0.6)]",
+  value:
+    "drop-shadow-[0_0_4px_rgba(34,197,94,0.4)] dark:drop-shadow-[0_0_4px_rgba(34,197,94,0.6)]",
   "no-value": "",
   unavailable: "",
   error: "",
@@ -55,7 +68,7 @@ const glowClasses = {
 
 const stateIcons = {
   loading: DollarSign,
-  value: TrendingUp,
+  value: Zap,
   "no-value": DollarSign,
   unavailable: XCircle,
   error: AlertCircle,
@@ -69,74 +82,46 @@ const stateTitles = {
   error: "Error loading value bet data",
 };
 
-const pillLabels = {
-  loading: "Loading...",
-  value: "Value",
-  "no-value": "No Value",
-  unavailable: "N/A",
-  error: "Error",
-};
-
-const stateExplanations = {
-  loading: "⏳ Loading value bet analysis...",
-  value: "🟢 Value Bet: Favorable odds detected - profitable betting opportunity",
-  "no-value": "⚪ No Value: Data available but odds are not favorable for betting",
-  unavailable: "⚫ No Data: Value bet analysis not available for this fixture",
-  error: "🔴 Error: Failed to load value bet data",
-};
-
 function getValueBetTooltip(
-  state: ValueBetState, 
-  valueBetData?: ValueBetIconProps['valueBetData'],
-  showExplanations?: boolean
+  state: ValueBetState,
+  valueBetData?: ValueBetIconProps["valueBetData"]
 ): string {
-  const explanation = showExplanations ? stateExplanations[state] : stateTitles[state];
-  
   if (state === "value" && valueBetData) {
-    const { count, bestOdd, fairOdd, bookmaker, betName } = valueBetData;
-    let tooltip = explanation;
-    
-    if (count > 0) {
-      tooltip += `\n\n📊 ${count} value bet${count > 1 ? 's' : ''} available`;
-    }
-    
+    const { bestOdd, bookmaker, betName } = valueBetData;
+    let tooltip = "Value Bet Available";
+
     if (betName) {
-      tooltip += `\n🎯 Bet: ${betName}`;
+      tooltip += ` - ${betName}`;
     }
-    
-    if (bestOdd && fairOdd) {
-      tooltip += `\n💰 Best odds: ${bestOdd} (Fair: ${fairOdd})`;
+
+    if (bestOdd) {
+      tooltip += ` (${bestOdd})`;
     }
-    
+
     if (bookmaker) {
-      tooltip += `\n🏦 Bookmaker: ${bookmaker}`;
+      tooltip += ` @ ${bookmaker}`;
     }
-    
+
     return tooltip;
   }
-  
-  return explanation;
+
+  return stateTitles[state];
 }
 
-export function ValueBetIcon({ 
-  state, 
-  className, 
+export function ValueBetIcon({
+  state,
+  className,
   size = "md",
   title,
   showGlow = false,
-  showExplanations = false,
-  valueBetData
+  valueBetData,
 }: ValueBetIconProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const IconComponent = stateIcons[state];
-  const tooltipContent = title || getValueBetTooltip(state, valueBetData, showExplanations);
-  const pillLabel = pillLabels[state];
-  
-  // Don't render anything for unavailable state to keep it minimal
-  if (state === "unavailable") {
-    return null;
-  }
-  
+  const tooltipContent = title || getValueBetTooltip(state, valueBetData);
+
+  // Always render an icon to prevent layout shifts
+
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
@@ -144,8 +129,8 @@ export function ValueBetIcon({
           variant="outline"
           size="sm"
           className={cn(
-            "border rounded-full flex items-center gap-1 font-medium transition-all duration-200",
-            pillSizeClasses[size],
+            "border rounded-md flex items-center justify-center font-medium transition-all duration-200 hover:scale-105 active:scale-95",
+            buttonSizeClasses[size],
             stateClasses[state],
             showGlow && state === "value" && glowClasses.value,
             className
@@ -153,47 +138,19 @@ export function ValueBetIcon({
           aria-label={tooltipContent}
         >
           <IconComponent className={cn(sizeClasses[size])} />
-          <span>{pillLabel}</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent 
-        side="top" 
-        className="max-w-xs whitespace-pre-line text-center p-3"
+      <PopoverContent
+        side="top"
+        className="max-w-xs text-center p-3 text-sm"
         align="center"
+        sideOffset={8}
       >
         <div className="space-y-2">
-          <div className="font-medium text-sm">
-            {tooltipContent.split('\n')[0]}
-          </div>
-          {valueBetData && state === "value" && (
-            <div className="space-y-1 text-xs">
-              {valueBetData.count > 0 && (
-                <div className="flex items-center justify-center gap-1">
-                  <Badge variant="secondary" className="text-xs">
-                    {valueBetData.count} value bet{valueBetData.count > 1 ? 's' : ''}
-                  </Badge>
-                </div>
-              )}
-              {valueBetData.betName && (
-                <div className="text-gray-600 dark:text-gray-400">
-                  🎯 {valueBetData.betName}
-                </div>
-              )}
-              {valueBetData.bestOdd && valueBetData.fairOdd && (
-                <div className="text-gray-600 dark:text-gray-400">
-                  💰 Best: {valueBetData.bestOdd} | Fair: {valueBetData.fairOdd}
-                </div>
-              )}
-              {valueBetData.bookmaker && (
-                <div className="text-gray-600 dark:text-gray-400">
-                  🏦 {valueBetData.bookmaker}
-                </div>
-              )}
-            </div>
-          )}
-          {tooltipContent.includes('\n') && (
-            <div className="text-xs text-gray-600 dark:text-gray-400 pt-1 border-t">
-              {tooltipContent.split('\n').slice(1).join('\n')}
+          <div className="font-medium text-sm">{tooltipContent}</div>
+          {valueBetData && state === "value" && valueBetData.count > 1 && (
+            <div className="text-xs text-gray-600 dark:text-gray-400">
+              {valueBetData.count} value bets available
             </div>
           )}
         </div>

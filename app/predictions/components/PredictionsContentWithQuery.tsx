@@ -22,20 +22,18 @@ function PredictionsContentWithQueryInner({ initialFixtures }: PredictionsConten
 
   const {
     fixtures,
-    isLoading,
-    isError,
+    isLoadingDateFixtures,
+    isLoadingMore,
+    hasMore,
     error,
-    refetch,
+    loadFixturesForDate,
+    loadNextPage,
   } = usePredictionsWithQuery({ 
-    initialFixtures, 
-    selectedDate 
+    initialFixtures
   });
 
   const { handleDateSelect } = useDateSelection({
-    onDateLoad: async () => {
-      // React Query will automatically refetch when the date changes
-      // due to the query key dependency
-    },
+    onDateLoad: loadFixturesForDate,
   });
 
   // Helper functions for empty state actions
@@ -52,11 +50,11 @@ function PredictionsContentWithQueryInner({ initialFixtures }: PredictionsConten
   };
 
   const handleRefresh = () => {
-    refetch();
+    loadFixturesForDate(selectedDate);
   };
 
   // Handle error state
-  if (isError) {
+  if (error) {
     return (
       <div className="space-y-6">
         <PredictionsHeader 
@@ -68,7 +66,7 @@ function PredictionsContentWithQueryInner({ initialFixtures }: PredictionsConten
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-red-600">Error Loading Predictions</h3>
             <p className="text-gray-600">
-              {error?.message || 'An unexpected error occurred while loading fixtures.'}
+              {error || 'An unexpected error occurred while loading fixtures.'}
             </p>
             <button
               onClick={handleRefresh}
@@ -92,10 +90,10 @@ function PredictionsContentWithQueryInner({ initialFixtures }: PredictionsConten
       <FixturesDisplay
         fixtures={fixtures}
         selectedDate={selectedDate}
-        isLoadingDateFixtures={isLoading}
-        isLoadingMore={false} // React Query handles pagination differently
-        hasMore={false} // For now, we'll use date-based loading
-        onLoadMore={() => {}} // Not needed with React Query approach
+        isLoadingDateFixtures={isLoadingDateFixtures}
+        isLoadingMore={isLoadingMore}
+        hasMore={hasMore}
+        onLoadMore={loadNextPage}
         onRefresh={handleRefresh}
         onTryNextWeek={handleTryNextWeek}
         onTryToday={handleTryToday}
