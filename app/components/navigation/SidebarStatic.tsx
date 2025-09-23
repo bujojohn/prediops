@@ -416,7 +416,11 @@ function SearchResults({ searchTerm }: { searchTerm: string }) {
 }
 
 // Static shell that can be prerendered with full functionality
-export const SidebarStatic = memo(function SidebarStatic() {
+interface SidebarStaticProps {
+  showLogo?: boolean;
+}
+
+export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: SidebarStaticProps = {}) {
   const pathname = usePathname();
   const isHomePage = pathname === '/';
   const [searchTerm, setSearchTerm] = useState('');
@@ -433,10 +437,12 @@ export const SidebarStatic = memo(function SidebarStatic() {
   return (
     <SidebarTheme>
       <div className="flex flex-col h-full">
-        {/* Logo Header */}
-        <div className="p-3 border-b border-sidebar-border">
-          <Logo size="sm" showText={true} />
-        </div>
+        {/* Logo Header - Only show on mobile or when explicitly requested */}
+        {showLogo && (
+          <div className="p-3 border-b border-sidebar-border">
+            <Logo size="sm" showText={true} />
+          </div>
+        )}
         
         {/* Header with Search */}
         <div className="p-2 border-b">

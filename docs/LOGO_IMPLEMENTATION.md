@@ -109,17 +109,38 @@ The logo automatically adapts to the current theme:
 - Lazy loading support
 - Proper caching headers
 
+## Mobile Responsiveness
+
+The logo implementation is optimized for mobile devices with the following behavior:
+
+### Desktop (≥768px)
+- **Navigation Bar**: Logo visible in top navigation
+- **Sidebar**: No logo section (cleaner interface)
+
+### Mobile (<768px)
+- **Navigation Bar**: Logo hidden (space optimization)
+- **Sidebar**: Logo section visible when mobile menu is open
+- **Mobile Menu**: Logo always shown in mobile sidebar overlay
+
+### Technical Implementation
+- Uses `useMediaQuery` hook for responsive behavior
+- `showLogo` prop controls logo visibility in sidebar
+- Automatic detection of screen size changes
+- Consistent branding across all device types
+
 ## Integration Details
 
 ### Navigation Bar
 - Location: `app/components/navigation/Navbar.tsx`
 - Size: Default (32x32px)
 - Features: Clickable, shows text and icon
+- **Mobile Behavior**: Hidden on mobile screens (logo shown in sidebar instead)
 
 ### Sidebar
 - Location: `app/components/navigation/SidebarStatic.tsx`
 - Size: Small (24x24px)
 - Features: Clickable, shows text and icon
+- **Mobile Behavior**: Logo section only visible on mobile screens or when mobile menu is active
 
 ### Favicon
 - Location: `app/layout.tsx`

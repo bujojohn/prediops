@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import { usePathname } from 'next/navigation';
 import { Navbar } from './Navbar';
 import { SidebarStatic } from './SidebarStatic';
+import { useIsMobile } from '@/app/hooks/useMediaQuery';
 
 interface SidebarWrapperProps {
   children: React.ReactNode;
@@ -12,6 +13,7 @@ interface SidebarWrapperProps {
 export function SidebarWrapper({ children }: SidebarWrapperProps) {
   const pathname = usePathname();
   const isHomePage = pathname === '/';
+  const isMobile = useIsMobile();
 
   return (
     <div className="flex h-screen">
@@ -31,7 +33,7 @@ export function SidebarWrapper({ children }: SidebarWrapperProps) {
               </div>
             </div>
           }>
-            <SidebarStatic />
+            <SidebarStatic showLogo={isMobile} />
           </Suspense>
         </div>
       )}

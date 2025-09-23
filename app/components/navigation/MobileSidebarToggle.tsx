@@ -35,7 +35,7 @@ export function MobileSidebarToggle({ className }: MobileSidebarToggleProps) {
           
           {/* Sidebar */}
           <div className="absolute left-0 top-0 h-full w-80 max-w-[80vw]">
-            <SidebarStatic />
+            <SidebarStatic showLogo={true} />
           </div>
         </div>
       )}
