@@ -63,6 +63,28 @@ export function LeaguePredictionsClient({
     initialEndDate || new Date(Date.now() + 6 * 24 * 60 * 60 * 1000) // 7 days from now
   );
 
+  // Get active tab from URL or default to 'fixtures'
+  const activeTab = searchParams.get('tab') || 'fixtures';
+
+  // Handle tab change with URL update
+  const handleTabChange = useCallback((value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', value);
+    const leagueSlug = league.name?.toLowerCase().replace(/\s+/g, '-') || `league-${league.id}`;
+    router.push(`/predictions/league/${leagueSlug}?id=${league.id}&${params.toString()}`);
+  }, [router, searchParams, league]);
+
+  // Handle date change with URL update and data loading
+  const handleDateChange = useCallback((date: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('date', date);
+    const leagueSlug = league.name?.toLowerCase().replace(/\s+/g, '-') || `league-${league.id}`;
+    router.push(`/predictions/league/${leagueSlug}?id=${league.id}&${params.toString()}`);
+    
+    // Note: The LeagueFixturesDisplay will handle the actual data loading
+    // through its internal useLeagueFixtures hook when the date changes
+  }, [router, searchParams, league]);
+
   // Extract available markets from fixtures for stats
   const availableMarkets = useMemo(() => {
     const markets = new Set<string>();
@@ -136,7 +158,7 @@ export function LeaguePredictionsClient({
 
 
       {/* Main Content Tabs */}
-      <Tabs defaultValue="fixtures" className="w-full">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="fixtures" id="fixtures">
             Fixtures & Predictions
@@ -159,6 +181,7 @@ export function LeaguePredictionsClient({
             variant="detailed"
             showSearchAndFilter={true}
             searchAndFilterVariant="full"
+            onDateChange={handleDateChange}
             searchAndFilterOptions={{
               showSearch: true,
               showLeagueFilter: false, // Not needed on league page
@@ -178,7 +201,7 @@ export function LeaguePredictionsClient({
         </TabsContent>
 
         <TabsContent value="standings">
-          <Card>
+            <Card>
             <CardHeader>
               <CardTitle className="text-lg">League Standings</CardTitle>
               <p className="text-sm text-muted-foreground">
@@ -231,7 +254,7 @@ export function LeaguePredictionsClient({
                                 }`}
                               >
                                 <td className="p-3 text-sm font-mono font-semibold">
-                                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2">
                                     <span className={`
                                       inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold
                                       ${isTopThree ? 'bg-green-500 text-white' : 
@@ -256,10 +279,10 @@ export function LeaguePredictionsClient({
                                       {row.result && (
                                         <div className="text-xs text-blue-600 dark:text-blue-400 truncate">
                                           {row.result}
-                                        </div>
+                    </div>
                                       )}
-                                    </div>
-                                  </div>
+                    </div>
+                  </div>
                                 </td>
                                 <td className="p-3 text-center text-sm font-mono">{getStandingStat(row.details, 'overall-matches-played') ?? '-'}</td>
                                 <td className="p-3 text-center text-sm font-mono text-green-600 dark:text-green-400">{getStandingStat(row.details, 'overall-won') ?? '-'}</td>
@@ -331,7 +354,7 @@ export function LeaguePredictionsClient({
                             }`}
                           >
                             {/* Header Row */}
-                            <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">
                                 <span className={`
                                   inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold
@@ -341,11 +364,11 @@ export function LeaguePredictionsClient({
                                 `}>
                                   {row.position ?? '-'}
                                 </span>
-                                <TeamLogo 
+                      <TeamLogo 
                                   src={row.participant?.image_path} 
                                   alt={row.participant?.name || 'Team'} 
-                                  className="h-8 w-8" 
-                                />
+                        className="h-8 w-8"
+                      />
                                 <div>
                                   <div className="font-medium text-gray-900 dark:text-gray-100">
                                     {row.participant?.name || 'Team'}
@@ -359,9 +382,9 @@ export function LeaguePredictionsClient({
                               </div>
                               <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 text-white text-lg font-bold">
                                 {row.points ?? '-'}
-                              </span>
-                            </div>
-
+                      </span>
+                    </div>
+                    
                             {/* Stats Grid */}
                             <div className="grid grid-cols-2 gap-4 text-sm">
                               <div className="space-y-2">
@@ -391,9 +414,9 @@ export function LeaguePredictionsClient({
                                   <span className="text-gray-600 dark:text-gray-400">Goals Against</span>
                                   <span className="font-mono font-semibold">{getStandingStat(row.details, 'overall-goals-against') ?? '-'}</span>
                                 </div>
-                              </div>
-                        </div>
-
+                      </div>
+                    </div>
+                    
                             {/* Goal Difference and Form */}
                             <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
                               <div className="flex items-center gap-2">
@@ -423,13 +446,13 @@ export function LeaguePredictionsClient({
                                           }`}
                                         >
                                           {result}
-                                        </span>
+                      </span>
                                       ))}
                                     </div>
                                   </div>
                                 );
                               })()}
-                            </div>
+                    </div>
                           </div>
                         );
                       })}
@@ -444,7 +467,7 @@ export function LeaguePredictionsClient({
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-red-500"></div>
                       <span>Relegation zone</span>
-                    </div>
+                  </div>
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-green-500"></div>
                       <span className="text-green-600">W</span>
@@ -452,8 +475,8 @@ export function LeaguePredictionsClient({
                       <span className="text-gray-600">D</span>
                       <div className="w-3 h-3 rounded-full bg-red-500"></div>
                       <span className="text-red-600">L</span>
-                    </div>
-                  </div>
+                        </div>
+                      </div>
                 </div>
               )}
             </CardContent>

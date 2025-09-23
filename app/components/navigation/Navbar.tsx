@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Moon, Sun, User, Bell, Menu, X } from 'lucide-react';
 import { DisplaySettingsToggle } from '@/app/components/settings/DisplaySettingsToggle';
 import { MobileSidebarToggle } from './MobileSidebarToggle';
+import { Logo } from '@/components/ui/Logo';
 import { useTheme } from '@/app/contexts/ThemeContext';
 
 export function Navbar() {
@@ -18,7 +19,7 @@ export function Navbar() {
     { href: '/', label: 'Home', icon: '🏠' },
     { href: '/predictions', label: 'Predictions', icon: '🎯' },
     { href: '/value-bets', label: 'Value Bets', icon: '💰' },
-    { href: '/live', label: 'Live Matches', icon: '⚽' },
+    { href: '/live', label: 'Live', icon: '⚽' },
   ];
 
 
@@ -29,10 +30,7 @@ export function Navbar() {
         <div className="flex justify-between items-center h-16">
           {/* Logo and Brand */}
           <div className="flex items-center">
-            <Link href="/" className="flex items-center space-x-2">
-              <span className="text-2xl">⚽</span>
-                             <span className="font-bold text-xl text-foreground">Prediops</span>
-            </Link>
+            <Logo size="default" showText={true} />
           </div>
           
 

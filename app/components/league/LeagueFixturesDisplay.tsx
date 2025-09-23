@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback } from 'react';
 import { ReusableFixtureDisplay } from '@/app/components/fixtures/ReusableFixtureDisplay';
 import { useLeagueFixtures } from '@/app/hooks/useLeagueFixtures';
 import type { Fixture } from '@/schemas/fixture.schema';
@@ -22,6 +23,7 @@ export interface LeagueFixturesDisplayProps {
     showPredictionsFilter?: boolean;
     showValueBetsFilter?: boolean;
   };
+  onDateChange?: (date: string) => void;
 }
 
 /**
@@ -37,6 +39,7 @@ export function LeagueFixturesDisplay({
   searchAndFilterVariant = 'compact',
   initialFilters,
   searchAndFilterOptions,
+  onDateChange,
 }: LeagueFixturesDisplayProps) {
   const {
     fixtures,
@@ -50,6 +53,17 @@ export function LeagueFixturesDisplay({
     seasonId,
     initialFixtures,
   });
+
+  // Handle date change with loading
+  const handleDateChangeWithLoading = useCallback(async (date: string) => {
+    // Call the parent's date change handler first (for URL updates)
+    if (onDateChange) {
+      onDateChange(date);
+    }
+    
+    // Then load fixtures for the new date
+    await loadLeagueFixtures({ date_from: date });
+  }, [onDateChange, loadLeagueFixtures]);
 
   // Handle refresh
   const handleRefresh = () => {
@@ -106,11 +120,13 @@ export function LeagueFixturesDisplay({
       onRefresh={handleRefresh}
       onTryNextWeek={handleTryNextWeek}
       onTryToday={handleTryToday}
+      onDateChange={handleDateChangeWithLoading}
       variant="league"
       showDateHeaders={variant === 'detailed'}
       showLeagueHeaders={false} // League pages don't need league headers
       showEmptyState={true}
       compact={variant === 'compact'}
+      autoCollapseNonSelectedDates={true}
       emptyStateTitle="No League Fixtures"
       emptyStateMessage="No fixtures found for this league."
       emptyStateActions={customEmptyState}

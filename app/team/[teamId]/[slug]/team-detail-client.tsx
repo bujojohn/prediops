@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Users, 
   Trophy, 
@@ -30,8 +31,19 @@ interface TeamDetailClientProps {
 }
 
 export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClientProps) {
-  const [activeTab, setActiveTab] = useState('overview');
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [isClient, setIsClient] = useState(false);
+
+  // Get active tab from URL or default to 'overview'
+  const activeTab = searchParams.get('tab') || 'overview';
+
+  // Handle tab change with URL update
+  const handleTabChange = useCallback((value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', value);
+    router.push(`/team/${team.id}/${team.name?.toLowerCase().replace(/\s+/g, '-') || 'team'}?${params.toString()}`);
+  }, [router, searchParams, team]);
 
   // Ensure we're on the client side to prevent hydration issues
   useEffect(() => {
@@ -222,7 +234,7 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
 
       {/* Tabs - Only render on client to prevent hydration issues */}
       {isClient ? (
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="squad">Squad</TabsTrigger>

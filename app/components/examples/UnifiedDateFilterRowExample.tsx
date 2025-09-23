@@ -218,9 +218,11 @@ export function UnifiedDateFilterRowExample() {
               <h4 className="font-medium text-green-600">✅ Implemented</h4>
               <ul className="text-sm space-y-1 text-gray-600 dark:text-gray-400">
                 <li>• Horizontal date picker with chevron navigation</li>
-                <li>• Date format: &quot;12 Sep&quot;, &quot;1 Jan&quot; style</li>
+                <li>• <strong>Semantic date labels</strong> (Today, Tomorrow, Yesterday)</li>
                 <li>• Today as default selection</li>
                 <li>• Scrollable date range</li>
+                <li>• <strong>Improved calendar popup</strong> with month delineation</li>
+                <li>• <strong>Reasonable height with scrolling</strong></li>
                 <li>• Date range selector with popover</li>
                 <li>• Filter icon with popover</li>
                 <li>• Three-column layout</li>

@@ -22,6 +22,7 @@ export interface ReusableFixtureDisplayProps {
   onRefresh?: () => void;
   onTryNextWeek?: () => void;
   onTryToday?: () => void;
+  onDateChange?: (date: string) => void;
   
   // Display options
   variant?: 'predictions' | 'league' | 'team' | 'live';
@@ -29,6 +30,7 @@ export interface ReusableFixtureDisplayProps {
   showLeagueHeaders?: boolean;
   showEmptyState?: boolean;
   compact?: boolean;
+  autoCollapseNonSelectedDates?: boolean;
   
   // Search and filter options
   showSearchAndFilter?: boolean;
@@ -74,11 +76,13 @@ export function ReusableFixtureDisplay({
   onRefresh,
   onTryNextWeek,
   onTryToday,
+  onDateChange,
   variant = 'predictions',
   showDateHeaders = true,
   showLeagueHeaders = true,
   showEmptyState = true,
   compact = false,
+  autoCollapseNonSelectedDates = true,
   showSearchAndFilter = true,
   initialFilters,
   searchAndFilterOptions,
@@ -129,6 +133,7 @@ export function ReusableFixtureDisplay({
   const { collapsedDates, toggleDateCollapse } = useCollapsedDates({
     groups,
     selectedDate: selectedDate || '',
+    autoCollapseNonSelectedDates,
   });
 
   // Intersection observer for infinite scroll
@@ -218,12 +223,10 @@ export function ReusableFixtureDisplay({
           filters={filters}
           onFiltersChange={updateFilters}
           selectedDate={selectedDate}
-          onDateChange={(date) => {
-            // Update URL or state as needed
-            console.log('Date changed to:', date);
-          }}
+          onDateChange={onDateChange}
           maxPastDays={7}
           maxFutureDays={21}
+          isLoading={isLoading}
           {...searchAndFilterOptions}
         />
       )}
@@ -275,30 +278,47 @@ export function ReusableFixtureDisplay({
               {/* Fixtures - only show if not collapsed or if no date headers */}
               {(!showDateHeaders || !collapsedDates.has(group.id)) && (
                 <div className="space-y-4">
-                  {leagueGroups.map((leagueGroup) => (
-                    <FixtureList
-                      key={leagueGroup.id}
-                      groups={[leagueGroup]}
-                      compact={compact}
-                      onRefresh={onRefresh}
-                      renderHeader={renderCustomHeader || (({ group, toggle, count }) => (
-                        showLeagueHeaders ? (
-                          <div
-                            className="flex items-center justify-between px-4 py-3 cursor-pointer select-none"
-                            onClick={toggle}
-                          >
-                            <div className="flex items-center gap-2">
-                              <span className="inline-block h-2 w-2 rounded-full bg-gray-300" />
-                              <div className="font-medium truncate">{group.title}</div>
+                  {group.fixtures.length === 0 ? (
+                    // No fixtures notice for this date
+                    <div className="text-center py-8 px-4">
+                      <div className="space-y-2">
+                        <div className="text-gray-400 text-4xl">📅</div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          No fixtures for {formatSemanticDateUTC(group.fixtures[0]?.starting_at || group.id)}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {variant === 'league' ? 'This league may have a break or off-season period.' : 
+                           variant === 'team' ? 'This team may not have matches scheduled.' :
+                           'No matches are scheduled for this date.'}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    leagueGroups.map((leagueGroup) => (
+                      <FixtureList
+                        key={leagueGroup.id}
+                        groups={[leagueGroup]}
+                        compact={compact}
+                        onRefresh={onRefresh}
+                        renderHeader={renderCustomHeader || (({ group, toggle, count }) => (
+                          showLeagueHeaders ? (
+                            <div
+                              className="flex items-center justify-between px-4 py-3 cursor-pointer select-none"
+                              onClick={toggle}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="inline-block h-2 w-2 rounded-full bg-gray-300" />
+                                <div className="font-medium truncate">{group.title}</div>
+                              </div>
+                              <button type="button" className="text-xs px-2 py-1 border rounded text-gray-700">
+                                {count}
+                              </button>
                             </div>
-                            <button type="button" className="text-xs px-2 py-1 border rounded text-gray-700">
-                              {count}
-                            </button>
-                          </div>
-                        ) : null
-                      ))}
-                    />
-                  ))}
+                          ) : null
+                        ))}
+                      />
+                    ))
+                  )}
                 </div>
               )}
             </div>

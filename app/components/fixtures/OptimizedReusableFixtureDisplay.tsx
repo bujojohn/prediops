@@ -31,6 +31,7 @@ export interface OptimizedReusableFixtureDisplayProps {
   showLeagueHeaders?: boolean;
   showEmptyState?: boolean;
   compact?: boolean;
+  autoCollapseNonSelectedDates?: boolean;
   useVirtualScrolling?: boolean;
   virtualScrollingThreshold?: number;
   
@@ -83,6 +84,7 @@ export const OptimizedReusableFixtureDisplay = memo<OptimizedReusableFixtureDisp
   showLeagueHeaders = true,
   showEmptyState = true,
   compact = false,
+  autoCollapseNonSelectedDates = true,
   useVirtualScrolling = true,
   virtualScrollingThreshold = 50,
   showSearchAndFilter = true,
@@ -133,6 +135,7 @@ export const OptimizedReusableFixtureDisplay = memo<OptimizedReusableFixtureDisp
   const { collapsedDates, toggleDateCollapse } = useCollapsedDates({
     groups,
     selectedDate: selectedDate || '',
+    autoCollapseNonSelectedDates,
   });
 
   // Determine if we should use virtual scrolling
@@ -271,6 +274,7 @@ export const OptimizedReusableFixtureDisplay = memo<OptimizedReusableFixtureDisp
           }}
           maxPastDays={7}
           maxFutureDays={21}
+          isLoading={isLoading}
           {...searchAndFilterOptions}
         />
       )}
@@ -332,17 +336,34 @@ export const OptimizedReusableFixtureDisplay = memo<OptimizedReusableFixtureDisp
                       {/* Fixtures */}
                       {!isCollapsed && (
                         <div className="grid gap-3">
-                          {leagueGroup.fixtures.map((fixture) => (
-                            <OptimizedFixtureCard
-                              key={fixture.id}
-                              fixture={fixture}
-                              compact={compact}
-                              showPredictions={true}
-                              showValueBets={true}
-                              onPredictionClick={handlePredictionClick}
-                              onValueBetClick={handleValueBetClick}
-                            />
-                          ))}
+                          {leagueGroup.fixtures.length === 0 ? (
+                            // No fixtures notice for this date
+                            <div className="text-center py-8 px-4">
+                              <div className="space-y-2">
+                                <div className="text-gray-400 text-4xl">📅</div>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                  No fixtures for {leagueGroup.title}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  {variant === 'league' ? 'This league may have a break or off-season period.' : 
+                                   variant === 'team' ? 'This team may not have matches scheduled.' :
+                                   'No matches are scheduled for this date.'}
+                                </p>
+                              </div>
+                            </div>
+                          ) : (
+                            leagueGroup.fixtures.map((fixture) => (
+                              <OptimizedFixtureCard
+                                key={fixture.id}
+                                fixture={fixture}
+                                compact={compact}
+                                showPredictions={true}
+                                showValueBets={true}
+                                onPredictionClick={handlePredictionClick}
+                                onValueBetClick={handleValueBetClick}
+                              />
+                            ))
+                          )}
                         </div>
                       )}
                     </div>

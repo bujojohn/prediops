@@ -3,9 +3,8 @@
 import { useState, useCallback, useMemo } from 'react';
 import { Calendar, ChevronDown, X, Check, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { format, addDays, subDays, startOfDay, endOfDay, isAfter, isBefore, isValid } from 'date-fns';
+import { format, addDays, subDays, startOfDay, isAfter, isBefore, isSameMonth, getYear, startOfMonth } from 'date-fns';
 
 export type DateSelectionMode = 'single' | 'range';
 
@@ -138,6 +137,64 @@ export function UnifiedDateSelector({
     return dates;
   }, [today, maxFutureDate, maxPastDate, tempMode, tempRange]);
 
+  // Group dates by months for better organization
+  const monthsData = useMemo(() => {
+    const months: Array<{
+      month: Date;
+      monthName: string;
+      year: number;
+      dates: Array<{
+        date: Date;
+        dateString: string;
+        isToday: boolean;
+        isPast: boolean;
+        isFuture: boolean;
+        isSelectable: boolean;
+        isInRange: boolean;
+        isRangeStart: boolean;
+        isRangeEnd: boolean;
+      }>;
+    }> = [];
+
+    let currentMonth: Date | null = null;
+    let currentMonthData: typeof months[0] | null = null;
+
+    calendarDates.forEach((dateInfo) => {
+      const monthStart = startOfMonth(dateInfo.date);
+      
+      if (!currentMonth || !isSameMonth(currentMonth, monthStart)) {
+        // Start new month
+        if (currentMonthData) {
+          months.push(currentMonthData);
+        }
+        
+        currentMonth = monthStart;
+        currentMonthData = {
+          month: monthStart,
+          monthName: format(monthStart, 'MMMM'),
+          year: getYear(monthStart),
+          dates: []
+        };
+      }
+      
+      if (currentMonthData) {
+        currentMonthData.dates.push({
+          ...dateInfo,
+          isInRange: dateInfo.isInRange ?? false,
+          isRangeStart: dateInfo.isRangeStart ?? false,
+          isRangeEnd: dateInfo.isRangeEnd ?? false,
+        });
+      }
+    });
+
+    // Add the last month
+    if (currentMonthData) {
+      months.push(currentMonthData);
+    }
+
+    return months;
+  }, [calendarDates]);
+
   // Handle date selection
   const handleDateClick = useCallback((dateString: string) => {
     if (tempMode === 'single') {
@@ -252,7 +309,7 @@ export function UnifiedDateSelector({
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
           onClick={handleBackdropClick}
         >
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md max-h-[85vh] overflow-hidden flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b">
               <div className="flex items-center gap-2">
@@ -300,8 +357,9 @@ export function UnifiedDateSelector({
             )}
 
             {/* Calendar */}
-            <div className="p-4">
-              <div className="grid grid-cols-7 gap-1 mb-2">
+            <div className="p-4 flex-1 flex flex-col min-h-0">
+              {/* Day headers */}
+              <div className="grid grid-cols-7 gap-1 mb-3">
                 {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day) => (
                   <div key={day} className="text-center text-xs font-medium text-gray-500 py-2">
                     {day}
@@ -309,25 +367,40 @@ export function UnifiedDateSelector({
                 ))}
               </div>
               
-              <div className="grid grid-cols-7 gap-1">
-                {calendarDates.map(({ date, dateString, isToday, isSelectable, isInRange, isRangeStart, isRangeEnd }) => (
-                  <button
-                    key={dateString}
-                    onClick={() => isSelectable && handleDateClick(dateString)}
-                    disabled={!isSelectable}
-                    className={cn(
-                      "h-8 w-8 text-xs rounded-md transition-colors flex items-center justify-center",
-                      !isSelectable && "text-gray-300 dark:text-gray-600 cursor-not-allowed",
-                      isSelectable && "hover:bg-gray-100 dark:hover:bg-gray-700",
-                      isToday && "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 font-semibold",
-                      tempMode === 'single' && tempDate === dateString && "bg-blue-600 text-white",
-                      tempMode === 'range' && isRangeStart && "bg-blue-600 text-white rounded-l-md rounded-r-none",
-                      tempMode === 'range' && isRangeEnd && "bg-blue-600 text-white rounded-r-md rounded-l-none",
-                      tempMode === 'range' && isInRange && !isRangeStart && !isRangeEnd && "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300"
-                    )}
-                  >
-                    {date.getDate()}
-                  </button>
+              {/* Scrollable calendar with months */}
+              <div className="flex-1 overflow-y-auto space-y-6 pr-2">
+                {monthsData.map((monthData) => (
+                  <div key={`${monthData.year}-${monthData.month.getMonth()}`} className="space-y-3">
+                    {/* Month header */}
+                    <div className="flex items-center justify-center">
+                      <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        {monthData.monthName} {monthData.year}
+                      </h4>
+                    </div>
+                    
+                    {/* Month calendar grid */}
+                    <div className="grid grid-cols-7 gap-1">
+                      {monthData.dates.map(({ date, dateString, isToday, isSelectable, isInRange, isRangeStart, isRangeEnd }) => (
+                        <button
+                          key={dateString}
+                          onClick={() => isSelectable && handleDateClick(dateString)}
+                          disabled={!isSelectable}
+                          className={cn(
+                            "h-8 w-8 text-xs rounded-md transition-colors flex items-center justify-center",
+                            !isSelectable && "text-gray-300 dark:text-gray-600 cursor-not-allowed",
+                            isSelectable && "hover:bg-gray-100 dark:hover:bg-gray-700",
+                            isToday && "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 font-semibold",
+                            tempMode === 'single' && tempDate === dateString && "bg-blue-600 text-white",
+                            tempMode === 'range' && isRangeStart && "bg-blue-600 text-white rounded-l-md rounded-r-none",
+                            tempMode === 'range' && isRangeEnd && "bg-blue-600 text-white rounded-r-md rounded-l-none",
+                            tempMode === 'range' && isInRange && !isRangeStart && !isRangeEnd && "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300"
+                          )}
+                        >
+                          {date.getDate()}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>

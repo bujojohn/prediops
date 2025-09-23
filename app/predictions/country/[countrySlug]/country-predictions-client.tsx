@@ -1,30 +1,23 @@
 'use client';
 
-import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { 
   Trophy, 
-  ChevronRight, 
-  ChevronDown,
   Globe,
   Target,
   Calendar,
-  RefreshCw
+  BarChart3
 } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { Country } from '@/schemas/country.schema';
 import { League } from '@/schemas/league.schema';
 import { Fixture } from '@/schemas/fixture.schema';
-import { FixtureCard } from '@/app/components/fixtures/FixtureCard';
-import { generateCountrySlug, generateLeagueSlug } from '@/lib/utils/country-utils';
-import { 
-  DatePickerProvider, 
-  EnhancedDatePicker, 
-  useCountryDatePicker 
-} from '@/app/components/date-picker';
+import { generateCountrySlug } from '@/lib/utils/country-utils';
+import { ReusableFixtureDisplay } from '@/app/components/fixtures/ReusableFixtureDisplay';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useCallback } from 'react';
 
 interface CountryPredictionsClientProps {
   country: Country;
@@ -37,67 +30,53 @@ function CountryPredictionsContent({
   leagues, 
   fixtures: initialFixtures
 }: CountryPredictionsClientProps) {
-  // All hooks must be called unconditionally at the top level
-  const [expandedLeagues, setExpandedLeagues] = useState<Set<number>>(new Set());
+  const router = useRouter();
+  const searchParams = useSearchParams();
   
-  // Use the enhanced date picker hook - ALWAYS call this
-  const datePickerResult = useCountryDatePicker({ 
-    country, 
-    initialDate: new Date().toISOString().split('T')[0],
-    initialFixtures
-  });
-
-  // Destructure after the hook call to ensure consistent order
-  const {
-    selectedDate,
-    fixtures,
-    isLoading,
-    error,
-    selectDate,
-    refreshFixtures,
-  } = datePickerResult;
-
-  // Use date-specific fixtures if available, otherwise use initial fixtures
-  const currentFixtures = fixtures.length > 0 ? fixtures : initialFixtures;
+  // Get current date from URL or default to today
+  const selectedDate = searchParams.get('date') || new Date().toISOString().split('T')[0];
   
-  // Memoize the fixtures grouping - ALWAYS call this
-  const currentFixturesByLeague = useMemo(() => {
-    if (!currentFixtures || currentFixtures.length === 0) {
-      return {} as Record<number, Fixture[]>;
-    }
-    
-    const grouped = currentFixtures.reduce((acc, fixture) => {
-      const leagueId = (fixture as { league?: { id: number } }).league?.id;
-      if (leagueId) {
-        if (!acc[leagueId]) {
-          acc[leagueId] = [];
-        }
-        acc[leagueId].push(fixture);
-      }
-      return acc;
-    }, {} as Record<number, Fixture[]>);
+  // Get active tab from URL or default to 'fixtures'
+  const activeTab = searchParams.get('tab') || 'fixtures';
 
-    return grouped;
-  }, [currentFixtures]);
+  // Handle tab change with URL update
+  const handleTabChange = useCallback((value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', value);
+    router.push(`/predictions/country/${generateCountrySlug(country)}?id=${country.id}&${params.toString()}`);
+  }, [router, searchParams, country]);
 
-  const toggleLeagueExpansion = (leagueId: number) => {
-    const newExpanded = new Set(expandedLeagues);
-    if (newExpanded.has(leagueId)) {
-      newExpanded.delete(leagueId);
-    } else {
-      newExpanded.add(leagueId);
-    }
-    setExpandedLeagues(newExpanded);
-  };
+  // Handle date change with URL update
+  const handleDateChange = useCallback((date: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('date', date);
+    router.push(`/predictions/country/${generateCountrySlug(country)}?id=${country.id}&${params.toString()}`);
+  }, [router, searchParams, country]);
 
+  // Helper functions for empty state actions
+  const handleTryNextWeek = useCallback(() => {
+    const today = new Date();
+    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const nextWeekStr = nextWeek.toISOString().split('T')[0];
+    handleDateChange(nextWeekStr);
+  }, [handleDateChange]);
 
+  const handleTryToday = useCallback(() => {
+    const today = new Date().toISOString().split('T')[0];
+    handleDateChange(today);
+  }, [handleDateChange]);
+
+  const handleRefresh = useCallback(() => {
+    // Refresh the current page to reload fixtures
+    window.location.reload();
+  }, []);
 
   const getActiveLeaguesCount = () => {
     return leagues.filter(league => league.active).length;
   };
 
   const getTotalFixturesCount = () => {
-    return Object.values(currentFixturesByLeague).reduce((total, leagueFixtures) => total + leagueFixtures.length, 0);
+    return initialFixtures.length;
   };
 
   return (
@@ -121,132 +100,114 @@ function CountryPredictionsContent({
               {country.name || 'Unknown Country'}
             </h1>
             <p className="text-lg text-gray-600 dark:text-gray-400">
-              {getActiveLeaguesCount()} active leagues • {getTotalFixturesCount()} fixtures today
+              {getActiveLeaguesCount()} active leagues • {getTotalFixturesCount()} fixtures available
             </p>
           </div>
         </div>
       </div>
 
-             {/* Enhanced Date Picker */}
-       <div className="mb-6">
-         <EnhancedDatePicker
-           onDateSelect={selectDate}
-           variant="minimal"
-           showStats={false}
-           showQuickActions={false}
-           maxPastDays={7}
-           maxFutureDays={14}
-           className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg"
-         />
-       </div>
-
-      {/* Loading State */}
-      {isLoading && (
-        <Card className="mb-8 p-8">
-          <div className="text-center">
-            <RefreshCw className="w-16 h-16 text-gray-400 mx-auto mb-4 animate-spin" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-              Loading Fixtures...
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              Loading fixtures for {country.name} on {selectedDate}
-            </p>
-          </div>
-        </Card>
-      )}
-
-      {/* Error State */}
-      {error && (
-        <Card className="mb-8 p-8">
-          <div className="text-center">
-            <div className="w-16 h-16 text-red-400 mx-auto mb-4">⚠️</div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-              Error Loading Fixtures
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
-            <Button onClick={refreshFixtures} variant="outline">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Retry
-            </Button>
-          </div>
-        </Card>
-      )}
-
-             {/* Stats Cards */}
-       <div className="grid md:grid-cols-3 gap-4 mb-6">
-         <Card>
-           <CardContent className="p-4">
-             <div className="flex items-center gap-2">
-               <Trophy className="h-6 w-6 text-yellow-600" />
-               <div>
-                 <p className="text-xs text-gray-600 dark:text-gray-400">Active Leagues</p>
-                 <p className="text-lg font-bold">{getActiveLeaguesCount()}</p>
-               </div>
-             </div>
-           </CardContent>
-         </Card>
-
-         <Card>
-           <CardContent className="p-4">
-             <div className="flex items-center gap-2">
-               <Calendar className="h-6 w-6 text-blue-600" />
-               <div>
-                 <p className="text-xs text-gray-600 dark:text-gray-400">
-                   {selectedDate === new Date().toISOString().split('T')[0] ? "Today's" : "Selected Date's"} Fixtures
-                 </p>
-                 <p className="text-lg font-bold">{getTotalFixturesCount()}</p>
-               </div>
-             </div>
-           </CardContent>
-         </Card>
-
-         <Card>
-           <CardContent className="p-4">
-             <div className="flex items-center gap-2">
-               <Target className="h-6 w-6 text-green-600" />
-               <div>
-                 <p className="text-xs text-gray-600 dark:text-gray-400">Total Leagues</p>
-                 <p className="text-lg font-bold">{leagues.length}</p>
-               </div>
-             </div>
-           </CardContent>
-         </Card>
-       </div>
-
-             {/* Leagues Section */}
-       <div className="space-y-4">
-         <div className="flex items-center justify-between">
-           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-             Leagues & Fixtures
-           </h2>
-           <Link 
-             href={`/predictions/country/${generateCountrySlug(country)}/all-fixtures?id=${country.id}&date=${selectedDate}`}
-             className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-           >
-             View All Fixtures →
-           </Link>
-         </div>
-
-        {leagues.length === 0 ? (
-          <Card className="p-8">
-            <div className="text-center">
-              <Trophy className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-                No Leagues Found
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                No leagues are currently available for {country.name}.
-              </p>
+      {/* Stats Cards */}
+      <div className="grid md:grid-cols-3 gap-4 mb-6">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Trophy className="h-6 w-6 text-yellow-600" />
+              <div>
+                <p className="text-xs text-gray-600 dark:text-gray-400">Active Leagues</p>
+                <p className="text-lg font-bold">{getActiveLeaguesCount()}</p>
+              </div>
             </div>
-          </Card>
-                 ) : (
-           <div className="space-y-3">
-            {leagues.map((league) => {
-              const leagueFixtures = currentFixturesByLeague[league.id] || [];
-              const isExpanded = expandedLeagues.has(league.id);
-              const hasFixtures = leagueFixtures.length > 0;
+          </CardContent>
+        </Card>
 
-              return (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-6 w-6 text-blue-600" />
+              <div>
+                <p className="text-xs text-gray-600 dark:text-gray-400">Available Fixtures</p>
+                <p className="text-lg font-bold">{getTotalFixturesCount()}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Target className="h-6 w-6 text-green-600" />
+              <div>
+                <p className="text-xs text-gray-600 dark:text-gray-400">Total Leagues</p>
+                <p className="text-lg font-bold">{leagues.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Content Tabs */}
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="fixtures">
+            <Calendar className="w-4 h-4 mr-2" />
+            Fixtures
+          </TabsTrigger>
+          <TabsTrigger value="leagues">
+            <Trophy className="w-4 h-4 mr-2" />
+            Leagues
+          </TabsTrigger>
+          <TabsTrigger value="statistics">
+            <BarChart3 className="w-4 h-4 mr-2" />
+            Statistics
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Fixtures Tab */}
+        <TabsContent value="fixtures" className="space-y-4">
+          <ReusableFixtureDisplay
+            fixtures={initialFixtures}
+            selectedDate={selectedDate}
+            onDateChange={handleDateChange}
+            onRefresh={handleRefresh}
+            onTryNextWeek={handleTryNextWeek}
+            onTryToday={handleTryToday}
+            variant="league"
+            showDateHeaders={true}
+            showLeagueHeaders={true}
+            showEmptyState={true}
+            showSearchAndFilter={true}
+            autoCollapseNonSelectedDates={true}
+            searchAndFilterOptions={{
+              showSearch: true,
+              showLeagueFilter: true,
+              showTeamFilter: true,
+              showStatusFilter: true,
+              showDateFilter: true,
+              showPredictionsFilter: true,
+              showValueBetsFilter: true,
+            }}
+            emptyStateTitle={`No Fixtures Found for ${country.name}`}
+            emptyStateMessage={`No fixtures found for ${country.name} on the selected date. This country may have a break or off-season period.`}
+          />
+        </TabsContent>
+
+        {/* Leagues Tab */}
+        <TabsContent value="leagues" className="space-y-4">
+          <div className="grid gap-4">
+            {leagues.length === 0 ? (
+              <Card className="p-8">
+                <div className="text-center">
+                  <Trophy className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                    No Leagues Found
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    No leagues are currently available for {country.name}.
+                  </p>
+                </div>
+              </Card>
+            ) : (
+              leagues.map((league) => (
                 <Card key={league.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <div className="flex items-center justify-between">
@@ -268,74 +229,86 @@ function CountryPredictionsContent({
                             <Badge variant={league.active ? "default" : "secondary"}>
                               {league.active ? 'Active' : 'Inactive'}
                             </Badge>
-                            {hasFixtures && (
-                              <Badge variant="outline">
-                                {leagueFixtures.length} fixture{leagueFixtures.length !== 1 ? 's' : ''} {selectedDate === new Date().toISOString().split('T')[0] ? 'today' : 'on selected date'}
-                              </Badge>
-                            )}
+                            <Badge variant="outline">
+                              {league.type || 'League'}
+                            </Badge>
                           </div>
                         </div>
                       </div>
-                      
-                      <div className="flex items-center gap-2">
-                        {hasFixtures && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleLeagueExpansion(league.id)}
-                            className="p-1"
-                          >
-                            {isExpanded ? (
-                              <ChevronDown className="w-4 h-4" />
-                            ) : (
-                              <ChevronRight className="w-4 h-4" />
-                            )}
-                          </Button>
-                        )}
-                        
-                                                 <Link 
-                           href={`/predictions/league/${generateLeagueSlug(league)}?id=${league.id}`}
-                         >
-                          <Button variant="outline" size="sm">
-                            View League
-                          </Button>
-                        </Link>
-                      </div>
                     </div>
                   </CardHeader>
-                  
-                  {isExpanded && hasFixtures && (
-                    <CardContent>
-                      <div className="space-y-4">
-                        {leagueFixtures.map((fixture) => (
-                          <FixtureCard key={fixture.id} fixture={fixture} />
-                        ))}
-                      </div>
-                    </CardContent>
-                  )}
                 </Card>
-              );
-            })}
+              ))
+            )}
           </div>
-        )}
-      </div>
+        </TabsContent>
+
+        {/* Statistics Tab */}
+        <TabsContent value="statistics" className="space-y-4">
+          <div className="grid gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5" />
+                  League Distribution
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Active Leagues</span>
+                    <Badge variant="default">{getActiveLeaguesCount()}</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Inactive Leagues</span>
+                    <Badge variant="secondary">{leagues.length - getActiveLeaguesCount()}</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Total Leagues</span>
+                    <Badge variant="outline">{leagues.length}</Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5" />
+                  Fixture Statistics
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Available Fixtures</span>
+                    <Badge variant="default">{getTotalFixturesCount()}</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Selected Date</span>
+                    <Badge variant="outline">{selectedDate}</Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
 
-// Wrapper component that provides the DatePickerProvider
+// Main component export
 export function CountryPredictionsClient({ 
   country, 
   leagues, 
   fixtures 
 }: CountryPredictionsClientProps) {
   return (
-    <DatePickerProvider initialDate={new Date().toISOString().split('T')[0]}>
       <CountryPredictionsContent 
         country={country} 
         leagues={leagues} 
-        fixtures={fixtures} 
+      fixtures={fixtures} 
       />
-    </DatePickerProvider>
   );
 }

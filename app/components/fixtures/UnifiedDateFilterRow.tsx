@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, Filter } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Filter, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { format, addDays, subDays, startOfDay } from 'date-fns';
+import { format, addDays, subDays, startOfDay, isSameDay, differenceInDays } from 'date-fns';
 import type { Fixture } from '@/schemas/fixture.schema';
 import { 
   FixtureFilters, 
@@ -19,6 +19,30 @@ import { useUnifiedDateSelector } from '../date-picker/useUnifiedDateSelector';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '../ui/checkbox';
 import { Label } from '../ui/label';
+
+/**
+ * Generate semantic date label for display
+ */
+function getSemanticDateLabel(date: Date, today: Date): string {
+  if (isSameDay(date, today)) {
+    return 'Today';
+  }
+  
+  const diffDays = differenceInDays(date, today);
+  
+  if (diffDays === 1) {
+    return 'Tomorrow';
+  } else if (diffDays === -1) {
+    return 'Yesterday';
+  } else if (diffDays === 2) {
+    return 'Day After';
+  } else if (diffDays === -2) {
+    return 'Day Before';
+  } else {
+    // For all other dates, show the actual date in "MMM d" format (e.g., "Mar 15", "Sep 3")
+    return format(date, 'MMM d');
+  }
+}
 
 export interface UnifiedDateFilterRowProps {
   fixtures: Fixture[];
@@ -41,6 +65,9 @@ export interface UnifiedDateFilterRowProps {
   showDateFilter?: boolean;
   showPredictionsFilter?: boolean;
   showValueBetsFilter?: boolean;
+  
+  // Loading state
+  isLoading?: boolean;
   
   className?: string;
 }
@@ -65,19 +92,20 @@ export function UnifiedDateFilterRow({
   showLeagueFilter = true,
   showTeamFilter = true,
   showStatusFilter = true,
+  isLoading = false,
   showPredictionsFilter = true,
   showValueBetsFilter = true,
   className,
 }: UnifiedDateFilterRowProps) {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isDateRangeOpen, setIsDateRangeOpen] = useState(false);
-  const [visibleRange, setVisibleRange] = useState({ start: 0, end: 5 });
-
+  
   // Generate date range for horizontal picker
   const dateRange = useMemo(() => {
     const dates: Array<{
       date: Date;
       dateString: string;
+      semanticLabel: string;
       isToday: boolean;
       isPast: boolean;
       isFuture: boolean;
@@ -92,6 +120,7 @@ export function UnifiedDateFilterRow({
       dates.push({
         date,
         dateString: format(date, 'yyyy-MM-dd'),
+        semanticLabel: getSemanticDateLabel(date, today),
         isToday: false,
         isPast: true,
         isFuture: false,
@@ -103,6 +132,7 @@ export function UnifiedDateFilterRow({
     dates.push({
       date: today,
       dateString: format(today, 'yyyy-MM-dd'),
+      semanticLabel: 'Today',
       isToday: true,
       isPast: false,
       isFuture: false,
@@ -115,6 +145,7 @@ export function UnifiedDateFilterRow({
       dates.push({
         date,
         dateString: format(date, 'yyyy-MM-dd'),
+        semanticLabel: getSemanticDateLabel(date, today),
         isToday: false,
         isPast: false,
         isFuture: true,
@@ -124,6 +155,23 @@ export function UnifiedDateFilterRow({
     
     return dates;
   }, [maxPastDays, maxFutureDays]);
+
+  // Find today's index and center the visible range on it
+  const todayIndex = useMemo(() => {
+    return dateRange.findIndex(date => date.isToday);
+  }, [dateRange]);
+
+  // Initialize visible range centered on today
+  const [visibleRange, setVisibleRange] = useState(() => {
+    if (todayIndex >= 0) {
+      const visibleCount = 5; // Show 5 dates by default
+      const halfCount = Math.floor(visibleCount / 2);
+      const start = Math.max(0, todayIndex - halfCount);
+      const end = Math.min(dateRange.length - 1, start + visibleCount - 1);
+      return { start, end };
+    }
+    return { start: 0, end: 5 };
+  });
 
   // Initialize unified date selector for range selection
   const dateSelector = useUnifiedDateSelector({
@@ -221,20 +269,26 @@ export function UnifiedDateFilterRow({
         </Button>
         
         <div className="flex gap-1 overflow-hidden">
-          {visibleDates.map(({ date, dateString, isToday }) => {
+          {visibleDates.map(({ date, dateString, semanticLabel, isToday }) => {
             const isSelected = selectedDate === dateString;
             return (
               <Button
                 key={dateString}
                 variant={isSelected ? "default" : "outline"}
                 size="sm"
-                onClick={() => onDateChange?.(dateString)}
+                onClick={() => !isLoading && onDateChange?.(dateString)}
+                disabled={isLoading}
                 className={cn(
                   "h-8 px-3 text-xs whitespace-nowrap",
-                  isToday && !isSelected && "border-blue-500 text-blue-600 bg-blue-50 dark:bg-blue-900/20"
+                  isToday && !isSelected && "border-blue-500 text-blue-600 bg-blue-50 dark:bg-blue-900/20",
+                  isLoading && "opacity-50 cursor-not-allowed"
                 )}
+                title={format(date, 'EEEE, MMMM d, yyyy')} // Full date tooltip
               >
-                {format(date, 'dd MMM')}
+                {isLoading && isSelected ? (
+                  <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                ) : null}
+                {semanticLabel}
               </Button>
             );
           })}
