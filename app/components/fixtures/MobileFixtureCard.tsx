@@ -7,6 +7,7 @@ import { Calendar, Clock, MapPin, Trophy, Target } from 'lucide-react';
 import { cn, formatDateUTC, formatTimeUTC } from '@/lib/utils';
 import type { Fixture } from '@/schemas/fixture.schema';
 import { ValueBetIcon } from '../valuebet/ValueBetIcon';
+import { FixtureTeamLink } from '@/components/ui/TeamLink';
 
 export interface MobileFixtureCardProps {
   fixture: Fixture;
@@ -158,9 +159,17 @@ export const MobileFixtureCard = memo<MobileFixtureCardProps>(({
         <div className="mb-4">
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0 text-left">
-              <div className="font-semibold text-base truncate">
-                {participantsInfo.homeName}
-              </div>
+              {participantsInfo.home ? (
+                <FixtureTeamLink team={participantsInfo.home} fixtureId={fixture.id?.toString()}>
+                  <div className="font-semibold text-base truncate">
+                    {participantsInfo.homeName}
+                  </div>
+                </FixtureTeamLink>
+              ) : (
+                <div className="font-semibold text-base truncate">
+                  {participantsInfo.homeName}
+                </div>
+              )}
             </div>
             
             <div className="flex items-center gap-3 mx-4 flex-shrink-0">
@@ -173,9 +182,17 @@ export const MobileFixtureCard = memo<MobileFixtureCardProps>(({
             </div>
             
             <div className="flex-1 min-w-0 text-right">
-              <div className="font-semibold text-base truncate">
-                {participantsInfo.awayName}
-              </div>
+              {participantsInfo.away ? (
+                <FixtureTeamLink team={participantsInfo.away} fixtureId={fixture.id?.toString()}>
+                  <div className="font-semibold text-base truncate">
+                    {participantsInfo.awayName}
+                  </div>
+                </FixtureTeamLink>
+              ) : (
+                <div className="font-semibold text-base truncate">
+                  {participantsInfo.awayName}
+                </div>
+              )}
             </div>
           </div>
         </div>

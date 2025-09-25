@@ -3,6 +3,7 @@ import { Metadata } from 'next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Logo } from '@/components/ui/Logo';
 import { 
   Target, 
   TrendingUp, 
@@ -34,9 +35,7 @@ export default function Home() {
         <div className="relative container mx-auto px-6 py-20 lg:py-32">
           <div className="text-center max-w-4xl mx-auto">
             <div className="flex items-center justify-center mb-6">
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-3 rounded-2xl">
-                <Target className="h-8 w-8 text-white" />
-              </div>
+              <Logo size="xl" showText={false} className="text-white" />
             </div>
             
             <Badge variant="secondary" className="mb-6 text-sm">

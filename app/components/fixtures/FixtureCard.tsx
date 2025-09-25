@@ -10,6 +10,7 @@ import { ChevronDown, ChevronUp, Clock, Trophy } from "lucide-react";
 import { Info } from "lucide-react";
 import { TeamLogo } from "@/app/components/ui/optimized-image";
 import { cn, formatDateLocal, formatTimeLocal } from "@/lib/utils";
+import { FixtureTeamLink } from "@/components/ui/TeamLink";
 import { useDisplaySettings } from "@/app/contexts/DisplaySettingsContext";
 import { useLiveScores } from "@/app/hooks/useLiveScores";
 // import { useLiveMatches } from '@/lib/hooks/use-live-matches'; // Temporarily disabled
@@ -988,9 +989,17 @@ export const FixtureCard = memo(function FixtureCard({
                       className="rounded h-4 w-4"
                     />
                   )}
-                  <span className="text-[12px] font-medium text-gray-800 dark:text-gray-200 truncate">
-                    {home?.name || "Home"}
-                  </span>
+                  {home ? (
+                    <FixtureTeamLink team={home} fixtureId={fixture.id?.toString()}>
+                      <span className="text-[12px] font-medium text-gray-800 dark:text-gray-200 truncate">
+                        {home.name || "Home"}
+                      </span>
+                    </FixtureTeamLink>
+                  ) : (
+                    <span className="text-[12px] font-medium text-gray-800 dark:text-gray-200 truncate">
+                      Home
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   {settings.showTeamImages && (
@@ -1000,9 +1009,17 @@ export const FixtureCard = memo(function FixtureCard({
                       className="rounded h-4 w-4"
                     />
                   )}
-                  <span className="text-[12px] font-medium text-gray-800 dark:text-gray-200 truncate">
-                    {away?.name || "Away"}
-                  </span>
+                  {away ? (
+                    <FixtureTeamLink team={away} fixtureId={fixture.id?.toString()}>
+                      <span className="text-[12px] font-medium text-gray-800 dark:text-gray-200 truncate">
+                        {away.name || "Away"}
+                      </span>
+                    </FixtureTeamLink>
+                  ) : (
+                    <span className="text-[12px] font-medium text-gray-800 dark:text-gray-200 truncate">
+                      Away
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -1114,9 +1131,17 @@ export const FixtureCard = memo(function FixtureCard({
                   className="rounded h-5 w-5"
                 />
               )}
-              <span className="font-medium truncate text-[12px] sm:text-[13px] text-gray-800">
-                {home?.name || "Home"}
-              </span>
+              {home ? (
+                <FixtureTeamLink team={home} fixtureId={fixture.id?.toString()}>
+                  <span className="font-medium truncate text-[12px] sm:text-[13px] text-gray-800">
+                    {home.name || "Home"}
+                  </span>
+                </FixtureTeamLink>
+              ) : (
+                <span className="font-medium truncate text-[12px] sm:text-[13px] text-gray-800">
+                  Home
+                </span>
+              )}
             </div>
             <div className="flex items-center justify-center gap-2">
               {scoreHome !== null && scoreHome !== undefined && scoreAway !== null && scoreAway !== undefined ? (
@@ -1142,9 +1167,17 @@ export const FixtureCard = memo(function FixtureCard({
               />
             </div>
             <div className="flex items-center gap-2 min-w-0 justify-end">
-              <span className="font-medium truncate text-[12px] sm:text-[13px] text-right text-gray-800">
-                {away?.name || "Away"}
-              </span>
+              {away ? (
+                <FixtureTeamLink team={away} fixtureId={fixture.id?.toString()}>
+                  <span className="font-medium truncate text-[12px] sm:text-[13px] text-right text-gray-800">
+                    {away.name || "Away"}
+                  </span>
+                </FixtureTeamLink>
+              ) : (
+                <span className="font-medium truncate text-[12px] sm:text-[13px] text-right text-gray-800">
+                  Away
+                </span>
+              )}
               {settings.showTeamImages && (
                 <TeamLogo
                   src={away?.image_path ?? undefined}

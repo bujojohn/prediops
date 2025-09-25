@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sportmonks } from '@/lib/sportmonks';
+import type { Fixture } from '@/schemas/fixture.schema';
 
 export async function GET(
   request: NextRequest,
@@ -24,7 +25,7 @@ export async function GET(
       include,
       per_page,
       page,
-      filters: { fixtureLeagues: id } as any,
+      filters: { fixtureLeagues: id } as Record<string, string>,
     };
 
     // Add date filters if provided
@@ -46,7 +47,7 @@ export async function GET(
     let fixtures = fixturesResponse?.data || [];
     
     // Filter fixtures to ensure they belong to the specified league
-    fixtures = fixtures.filter((fixture: any) => {
+    fixtures = fixtures.filter((fixture: Fixture) => {
       const fixtureLeagueId = fixture.league?.id?.toString();
       return fixtureLeagueId === id;
     });

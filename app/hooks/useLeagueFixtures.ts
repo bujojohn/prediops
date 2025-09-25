@@ -18,7 +18,7 @@ export interface UseLeagueFixturesReturn {
   isLoadingMore: boolean;
   hasMore: boolean;
   error: string | null;
-  loadLeagueFixtures: (params?: Record<string, any>) => Promise<void>;
+  loadLeagueFixtures: (params?: Record<string, string | number | boolean>) => Promise<void>;
   loadNextPage: () => Promise<void>;
   clearError: () => void;
 }
@@ -61,7 +61,7 @@ export function useLeagueFixtures({
   }).slice(-10); // Last 10 fixtures
 
   // League-specific fixture loading
-  const loadLeagueFixtures = useCallback(async (params: Record<string, any> = {}) => {
+  const loadLeagueFixtures = useCallback(async (params: Record<string, string | number | boolean> = {}) => {
     try {
       const leagueParams = {
         league_id: leagueId,

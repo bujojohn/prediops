@@ -18,7 +18,7 @@ export interface UseFixtureManagementReturn {
   isLoadingMore: boolean;
   hasMore: boolean;
   error: string | null;
-  loadFixtures: (params?: Record<string, any>) => Promise<void>;
+  loadFixtures: (params?: Record<string, string | number | boolean>) => Promise<void>;
   loadNextPage: () => Promise<void>;
   loadFixturesForDate: (date: string) => Promise<void>;
   setFixtures: React.Dispatch<React.SetStateAction<Fixture[]>>;
@@ -49,7 +49,7 @@ export function useFixtureManagement({
   }, []);
 
   // Generic fixture loading function
-  const loadFixtures = useCallback(async (params: Record<string, any> = {}) => {
+  const loadFixtures = useCallback(async (params: Record<string, string | number | boolean> = {}) => {
     try {
       setIsLoading(true);
       setError(null);

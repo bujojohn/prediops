@@ -7,6 +7,7 @@ import { Calendar, Clock, MapPin, Trophy, Target } from 'lucide-react';
 import { cn, formatDateUTC, formatTimeUTC } from '@/lib/utils';
 import type { Fixture } from '@/schemas/fixture.schema';
 import { ValueBetIcon } from '../valuebet/ValueBetIcon';
+import { FixtureTeamLink } from '@/components/ui/TeamLink';
 
 export interface OptimizedFixtureCardProps {
   fixture: Fixture;
@@ -143,9 +144,17 @@ export const OptimizedFixtureCard = memo<OptimizedFixtureCardProps>(({
         {/* Teams */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex-1 min-w-0">
-            <div className="font-medium text-sm truncate">
-              {participantsInfo.homeName}
-            </div>
+            {participantsInfo.home ? (
+              <FixtureTeamLink team={participantsInfo.home} fixtureId={fixture.id?.toString()}>
+                <div className="font-medium text-sm truncate">
+                  {participantsInfo.homeName}
+                </div>
+              </FixtureTeamLink>
+            ) : (
+              <div className="font-medium text-sm truncate">
+                {participantsInfo.homeName}
+              </div>
+            )}
           </div>
           
           <div className="flex items-center gap-2 mx-3">
@@ -158,9 +167,17 @@ export const OptimizedFixtureCard = memo<OptimizedFixtureCardProps>(({
           </div>
           
           <div className="flex-1 min-w-0 text-right">
-            <div className="font-medium text-sm truncate">
-              {participantsInfo.awayName}
-            </div>
+            {participantsInfo.away ? (
+              <FixtureTeamLink team={participantsInfo.away} fixtureId={fixture.id?.toString()}>
+                <div className="font-medium text-sm truncate">
+                  {participantsInfo.awayName}
+                </div>
+              </FixtureTeamLink>
+            ) : (
+              <div className="font-medium text-sm truncate">
+                {participantsInfo.awayName}
+              </div>
+            )}
           </div>
         </div>
 

@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { Target, Facebook, Twitter, Mail, Globe } from 'lucide-react';
+import { Facebook, Twitter, Mail, Globe } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Logo } from '@/components/ui/Logo';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -16,18 +17,13 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
           {/* Brand Section */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg">
-                <Target className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-xl font-bold">Prediops</span>
-            </div>
+            <Logo size="lg" showText={true} className="text-white" />
             <p className="text-slate-400 text-sm leading-relaxed">
               AI-powered sports predictions and value betting opportunities across 111+ leagues worldwide.
             </p>
                          <div className="flex items-center gap-2">
                <Badge variant="secondary" className="text-xs">
-                 v2.7.0
+                 v2.8.0
                </Badge>
                <span className="text-xs text-slate-500">Latest Release</span>
              </div>
