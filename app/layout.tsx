@@ -24,6 +24,14 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Prediops - Sports Predictions & Analytics",
   description: "AI-powered sports predictions and value betting opportunities across 111+ leagues worldwide",
+  icons: {
+    icon: [
+      { url: '/logo/favicon.ico', sizes: '32x32' },
+      { url: '/logo/logo.svg', type: 'image/svg+xml' }
+    ],
+    apple: { url: '/logo/logo.svg', sizes: '180x180' },
+  },
+  manifest: '/logo/manifest.json',
 };
 
 

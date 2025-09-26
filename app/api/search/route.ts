@@ -3,6 +3,7 @@ import { sportmonks } from '@/lib/sportmonks';
 import { Country } from '@/schemas/country.schema';
 import { League } from '@/schemas/league.schema';
 import { Team } from '@/schemas/team.schema';
+import { generateTeamUrl } from '@/lib/utils/routing';
 import { Fixture } from '@/schemas/fixture.schema';
 
 export async function GET(request: NextRequest) {
@@ -93,7 +94,7 @@ export async function GET(request: NextRequest) {
             name: team.name,
             subtitle: team.country?.name || 'Unknown Country',
             icon: '⚽',
-            url: `/teams/${team.id}`,
+            url: generateTeamUrl(team),
             metadata: {
               founded: team.founded,
               country: team.country?.name

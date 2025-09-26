@@ -272,11 +272,16 @@ export const sportmonks = {
    * 
    * Doc: https://docs.sportmonks.com/football/endpoints-and-entities/endpoints/fixtures/get-fixtures-by-date
    */
-    async getFixturesByDate(fixturesDate: string, config?: ApiConfig) {
-      const url = `/fixtures/date/${fixturesDate}`;
-      const response = await api.get(url, { params: makeParams(config) });
-      return response.data;
-    },
+   async getFixturesByDate(fixturesDate: string, config?: ApiConfig) {
+     const url = `/fixtures/date/${fixturesDate}`;
+     // Ensure per_page doesn't exceed 50 for date-specific fixtures endpoint
+     const validatedConfig = config ? {
+       ...config,
+       per_page: Math.min(config.per_page || 50, 50)
+     } : { per_page: 50 };
+     const response = await api.get(url, { params: makeParams(validatedConfig) });
+     return response.data;
+   },
   /*
   Deprecated v2.3: Use getAllFixtures instead.
   */
@@ -295,7 +300,12 @@ export const sportmonks = {
     config?: ApiConfig
   ): Promise<ApiListResponse<Fixture>> {
     const url = `/fixtures`;
-    const response = await api.get(url, { params: makeParams(config) });
+    // Ensure per_page doesn't exceed 50 for regular fixtures endpoint
+    const validatedConfig = config ? {
+      ...config,
+      per_page: Math.min(config.per_page || 50, 50)
+    } : { per_page: 50 };
+    const response = await api.get(url, { params: makeParams(validatedConfig) });
     return response.data;
   },
   /**
