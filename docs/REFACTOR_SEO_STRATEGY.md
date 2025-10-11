@@ -152,7 +152,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   
   return {
     title: `${team.name} - Stats, Fixtures & Predictions`,
-    description: `Complete ${team.name} statistics, upcoming fixtures, and AI predictions`,
+    description: `Complete ${team.name} statistics, upcoming fixtures, and predictions`,
     alternates: {
       canonical: `https://prediops.com/team/${teamId}/${canonicalSlug}`
     },

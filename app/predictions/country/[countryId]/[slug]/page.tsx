@@ -3,7 +3,7 @@ import { sportmonks } from '@/lib/sportmonks';
 import { getCountryById } from '@/lib/data/countries';
 import { League } from '@/schemas/league.schema';
 import { Fixture } from '@/schemas/fixture.schema';
-import { CountryPredictionsClient } from '../../[countrySlug]/country-predictions-client';
+import { CountryPredictionsClient } from '../country-predictions-client';
 import { generateCountrySlug } from '@/lib/utils/slug-utils';
 import type { Metadata } from 'next';
 

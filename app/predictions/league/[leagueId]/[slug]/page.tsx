@@ -7,7 +7,7 @@ import { League } from "@/schemas/league.schema";
 import { Fixture } from "@/schemas/fixture.schema";
 import { Standing } from "@/schemas/standing.schema";
 import { Team } from "@/schemas/team.schema";
-import { LeaguePredictionsClient } from "../../[leagueSlug]/league-predictions-client";
+import { LeaguePredictionsClient } from "../league-predictions-client";
 import { generateLeagueSlug } from "@/lib/utils/slug-utils";
 import type { Metadata } from "next";
 
