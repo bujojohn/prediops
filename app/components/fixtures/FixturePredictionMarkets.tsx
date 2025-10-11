@@ -420,13 +420,16 @@ export function FixturePredictionMarkets({
 
   if (!marketsMap || Object.keys(marketsMap).length === 0) {
     // Debug: Log why predictions aren't showing
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[FixturePredictionMarkets] No markets to display:', {
-        predictions: predictions?.length || 0,
-        marketsMap: marketsMap ? Object.keys(marketsMap).length : 0,
-        fixtureId: fixture?.id
-      });
-    }
+    console.log('[FixturePredictionMarkets] No markets to display:', {
+      predictions: predictions?.length || 0,
+      marketsMap: marketsMap ? Object.keys(marketsMap).length : 0,
+      fixtureId: fixture?.id,
+      samplePrediction: predictions?.[0] ? {
+        typeId: predictions[0].type_id,
+        typeName: predictions[0].type?.name,
+        predictions: predictions[0].predictions
+      } : null
+    });
     return null;
   }
 
