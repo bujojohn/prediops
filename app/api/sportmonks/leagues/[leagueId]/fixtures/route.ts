@@ -47,10 +47,21 @@ export async function GET(
     );
 
     // Log predictions status for debugging
-    const fixturesWithPredictions = fixtures.filter(f => f.predictions && f.predictions.length > 0);
+    const fixturesWithPredictions = fixtures.filter((f: any) => f.predictions && f.predictions.length > 0);
     console.log(
       `League ${leagueId}: Fixtures with predictions: ${fixturesWithPredictions.length}/${fixtures.length}`
     );
+    
+    // Log a sample fixture to see its structure
+    if (fixtures.length > 0) {
+      const sampleFixture = fixtures[0] as any;
+      console.log(`Sample fixture ID ${sampleFixture.id}:`, {
+        hasPredictions: !!sampleFixture.predictions,
+        predictionsCount: sampleFixture.predictions?.length || 0,
+        predictionsType: typeof sampleFixture.predictions,
+        firstPrediction: sampleFixture.predictions?.[0] ? 'exists' : 'missing'
+      });
+    }
 
     return NextResponse.json({
       success: true,
