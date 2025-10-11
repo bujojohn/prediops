@@ -39,7 +39,11 @@ export function TeamMatchesContent({
     return { start: today, end };
   });
 
+  // Track if date range has been changed from initial state
+  const [hasChangedDateRange, setHasChangedDateRange] = useState(false);
+
   // Use React Query for automatic caching and refetching
+  // Only enable query if date range has been changed (to avoid duplicate server fetch)
   const { 
     data: fixtures, 
     isLoading, 
@@ -50,14 +54,17 @@ export function TeamMatchesContent({
     teamId,
     startDate: dateRange.start,
     endDate: dateRange.end,
+    enabled: hasChangedDateRange, // Only fetch when date range is changed
   });
 
   const handleDateRangeChange = (start: Date, end: Date) => {
     setDateRange({ start, end });
+    setHasChangedDateRange(true); // Enable React Query on date change
     // React Query will automatically refetch due to queryKey change
   };
 
   const handleRefresh = () => {
+    setHasChangedDateRange(true); // Enable React Query on manual refresh
     refetch();
   };
 
