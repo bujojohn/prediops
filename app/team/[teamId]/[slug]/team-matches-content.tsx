@@ -156,16 +156,8 @@ export function TeamMatchesContent({
               No fixtures found for {teamName} in the selected date range.
             </p>
             <div className="text-sm text-muted-foreground">
-              Try adjusting the date range or check back later.
+              Try adjusting the date range above to see fixtures.
             </div>
-            <Button 
-              onClick={handleRefresh} 
-              variant="outline"
-              disabled={isRefreshing}
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-              {isRefreshing ? 'Refreshing...' : 'Refresh'}
-            </Button>
           </div>
         </Card>
       </div>
@@ -209,7 +201,6 @@ export function TeamMatchesContent({
       {/* Fixtures List with Predictions */}
       <FixturesListWithPredictions
         fixtures={displayFixtures}
-        onRefresh={handleRefresh}
       />
 
       {/* Background refetch indicator */}
