@@ -110,8 +110,12 @@ export default async function LeaguePredictionsPage({
     // Generate canonical slug and redirect if mismatch
     const canonicalSlug = generateLeagueSlug(league);
 
-    if (urlSlug !== canonicalSlug) {
-      console.log(`Redirecting to canonical slug: ${canonicalSlug}`);
+    // Only redirect if slugs are significantly different (not just case or minor differences)
+    // This prevents redirect loops and allows some flexibility
+    const normalizeForComparison = (s: string) => s.toLowerCase().replace(/-+/g, '-').trim();
+    
+    if (normalizeForComparison(urlSlug) !== normalizeForComparison(canonicalSlug)) {
+      console.log(`Redirecting from "${urlSlug}" to canonical slug: "${canonicalSlug}"`);
       redirect(`/predictions/league/${leagueId}/${canonicalSlug}`);
     }
 

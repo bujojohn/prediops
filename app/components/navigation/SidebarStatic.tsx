@@ -271,7 +271,7 @@ function SearchResults({ searchTerm }: { searchTerm: string }) {
                 {searchResults.fixtures.slice(0, 3).map((item, index) => (
                   <a
                     key={`${item.fixture.id}-${index}`}
-                    href={`/predictions/league/${generateLeagueSlug({ name: item.fixture.league.name, id: item.fixture.league.id })}?id=${item.fixture.league.id}`}
+                    href={`/predictions/league/${item.fixture.league.id}/${generateLeagueSlug({ name: item.fixture.league.name, id: item.fixture.league.id })}`}
                     className="flex items-center gap-2 text-sm p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   >
                     <Clock className="h-4 w-4 text-orange-500" />
@@ -333,7 +333,7 @@ function SearchResults({ searchTerm }: { searchTerm: string }) {
                 {searchResults.leagues.slice(0, 4).map((item, index) => (
                   <a
                     key={`${item.country.id}-${item.league.id}-${index}`}
-                    href={`/predictions/league/${generateLeagueSlug({ name: item.league.name, id: item.league.id })}?id=${item.league.id}`}
+                    href={`/predictions/league/${item.league.id}/${generateLeagueSlug({ name: item.league.name, id: item.league.id })}`}
                     className="flex items-center gap-2 text-sm p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   >
                     <Trophy className="h-4 w-4 text-green-500" />
@@ -972,11 +972,11 @@ function SidebarContent({
                       </div>
                     ) : leagues.length > 0 ? (
                       leagues.map((league) => {
-                        const active = pathname?.startsWith('/predictions/league') && searchParams?.get('id') === String(league.id);
+                        const active = pathname?.includes(`/predictions/league/${league.id}/`);
                         return (
                           <div key={league.id} className={`flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors ${active ? 'bg-accent/60' : ''}`}>
                             <a
-                              href={`/predictions/league/${generateLeagueSlug({ name: league.name, id: league.id })}?id=${league.id}`}
+                              href={`/predictions/league/${league.id}/${generateLeagueSlug({ name: league.name, id: league.id })}`}
                               className={`flex items-center gap-1.5 flex-1 text-xs min-w-0 ${active ? 'text-primary font-medium' : ''}`}
                               title={`League ID: ${league.id}`}
                             >
@@ -1035,7 +1035,7 @@ function SidebarContent({
             {topLeagues.map((league, index) => (
               <div key={`top-league-${index}`} className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
                 <a
-                  href={`/predictions/country/${league.country.toLowerCase().replace(/\s+/g, '-')}/?id=${league.countryId}`}
+                  href={`/predictions/country/${league.countryId}/${league.country.toLowerCase().replace(/\s+/g, '-')}`}
                   className="flex items-center gap-1.5 flex-1 text-left min-w-0"
                 >
                   <span className="font-medium text-sm truncate max-w-[120px]" title={`${league.name} (${league.country})`}>
@@ -1046,7 +1046,7 @@ function SidebarContent({
                   </Badge>
                 </a>
                 <a
-                  href={`/predictions/country/${league.country.toLowerCase().replace(/\s+/g, '-')}/?id=${league.countryId}`}
+                  href={`/predictions/country/${league.countryId}/${league.country.toLowerCase().replace(/\s+/g, '-')}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-1 text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
@@ -1171,11 +1171,11 @@ function SidebarContent({
                         </div>
                       ) : leagues.length > 0 ? (
                         leagues.map((league) => {
-                          const active = pathname?.startsWith('/predictions/league') && searchParams?.get('id') === String(league.id);
+                          const active = pathname?.includes(`/predictions/league/${league.id}/`);
                           return (
                             <div key={league.id} className={`flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors ${active ? 'bg-accent/60' : ''}`}>
                             <a
-                              href={`/predictions/league/${generateLeagueSlug({ name: league.name, id: league.id })}?id=${league.id}`}
+                              href={`/predictions/league/${league.id}/${generateLeagueSlug({ name: league.name, id: league.id })}`}
                               className={`flex items-center gap-1.5 flex-1 text-xs min-w-0 ${active ? 'text-primary font-medium' : ''}`}
                               title={`League ID: ${league.id}`}
                             >
