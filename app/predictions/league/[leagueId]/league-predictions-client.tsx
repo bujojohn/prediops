@@ -1,7 +1,6 @@
 'use client';
 
-import { useMemo, useState, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Fixture, League, Standing } from '@/schemas';
@@ -52,9 +51,6 @@ export function LeaguePredictionsClient({
   initialStartDate,
   initialEndDate 
 }: LeaguePredictionsClientProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  
   // State for date range (for initial filters)
   const [currentStartDate] = useState<Date>(
     initialStartDate || new Date()
@@ -63,27 +59,32 @@ export function LeaguePredictionsClient({
     initialEndDate || new Date(Date.now() + 6 * 24 * 60 * 60 * 1000) // 7 days from now
   );
 
-  // Get active tab from URL or default to 'fixtures'
-  const activeTab = searchParams.get('tab') || 'fixtures';
+  // Get active tab from hash or default to 'matches'
+  const [activeTab, setActiveTab] = useState('matches');
 
-  // Handle tab change with URL update
+  // Handle hash-based tab navigation
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '') || 'matches';
+      setActiveTab(hash);
+    };
+
+    handleHashChange();
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // Handle tab change with hash update
   const handleTabChange = useCallback((value: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('tab', value);
-    const leagueSlug = league.name?.toLowerCase().replace(/\s+/g, '-') || `league-${league.id}`;
-    router.push(`/predictions/league/${leagueSlug}?id=${league.id}&${params.toString()}`);
-  }, [router, searchParams, league]);
+    window.location.hash = value;
+    setActiveTab(value);
+  }, []);
 
-  // Handle date change with URL update and data loading
-  const handleDateChange = useCallback((date: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('date', date);
-    const leagueSlug = league.name?.toLowerCase().replace(/\s+/g, '-') || `league-${league.id}`;
-    router.push(`/predictions/league/${leagueSlug}?id=${league.id}&${params.toString()}`);
-    
-    // Note: The LeagueFixturesDisplay will handle the actual data loading
-    // through its internal useLeagueFixtures hook when the date changes
-  }, [router, searchParams, league]);
+  // Handle date change - LeagueFixturesDisplay will handle the actual data loading
+  const handleDateChange = useCallback((_date: string) => {
+    // The LeagueFixturesDisplay component handles date changes internally
+    // through its React Query hook
+  }, []);
 
   // Extract available markets from fixtures for stats
   const availableMarkets = useMemo(() => {
@@ -160,8 +161,8 @@ export function LeaguePredictionsClient({
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="fixtures" id="fixtures">
-            Fixtures & Predictions
+          <TabsTrigger value="matches" id="matches">
+            Matches
           </TabsTrigger>
           <TabsTrigger value="standings" id="standings">
             Standings
@@ -174,7 +175,7 @@ export function LeaguePredictionsClient({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="fixtures" className="space-y-4">
+        <TabsContent value="matches" className="space-y-4">
           <LeagueFixturesDisplay
             leagueId={league.id.toString()}
             initialFixtures={fixtures}
