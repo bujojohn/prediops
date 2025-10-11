@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FixtureTeamLink, NavigationTeamLink } from '@/components/ui/TeamLink';
-import { ROUTES } from '@/lib/utils/routing';
+import { ROUTES, generateFixtureUrl } from '@/lib/utils/routing';
 import { Badge } from '@/components/ui/badge';
 
 // Mock data for demonstration
@@ -51,7 +51,7 @@ const mockAwayTeam = {
 };
 
 const mockFixture = {
-  id: '12345',
+  id: 12345,
   participants: [mockTeam, mockAwayTeam]
 };
 
@@ -126,9 +126,9 @@ export default function TeamLinksDemo() {
             <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <FixtureTeamLink 
-                    team={mockTeam} 
-                    fixtureId={mockFixture.id}
+                  <FixtureTeamLink
+                    team={mockTeam}
+                    fixtureId={mockFixture.id.toString()}
                     className="font-semibold text-lg hover:text-blue-600"
                   >
                     {mockTeam.name}
@@ -141,9 +141,9 @@ export default function TeamLinksDemo() {
                 </div>
                 
                 <div className="flex items-center gap-2">
-                  <FixtureTeamLink 
-                    team={mockAwayTeam} 
-                    fixtureId={mockFixture.id}
+                  <FixtureTeamLink
+                    team={mockAwayTeam}
+                    fixtureId={mockFixture.id.toString()}
                     className="font-semibold text-lg hover:text-blue-600"
                   >
                     {mockAwayTeam.name}
@@ -211,7 +211,7 @@ export default function TeamLinksDemo() {
               <div>
                 <strong>Fixture with Team Context:</strong>
                 <code className="block text-xs bg-gray-100 dark:bg-gray-800 p-2 rounded mt-1">
-                  {ROUTES.FIXTURE_DETAIL(mockFixture.id)}?team={mockTeam.id}
+                  {generateFixtureUrl(mockFixture)}?team={mockTeam.id}
                 </code>
               </div>
             </div>

@@ -1,7 +1,8 @@
 import { notFound, redirect } from 'next/navigation';
 import { sportmonks } from '@/lib/sportmonks';
 import { getCountryById } from '@/lib/data/countries';
-import { Country } from '@/schemas/country.schema';
+import { League } from '@/schemas/league.schema';
+import { Fixture } from '@/schemas/fixture.schema';
 import { CountryPredictionsClient } from '../../[countrySlug]/country-predictions-client';
 import { generateCountrySlug } from '@/lib/utils/slug-utils';
 import type { Metadata } from 'next';
@@ -23,7 +24,7 @@ export async function generateMetadata({
 }: {
   params: Promise<{ countryId: string; slug: string }>;
 }): Promise<Metadata> {
-  const { countryId, slug } = await params;
+  const { countryId } = await params;
 
   try {
     const country = getCountryById(parseInt(countryId));
@@ -63,11 +64,9 @@ export async function generateMetadata({
 }
 
 export default async function CountryPredictionsPage({ 
-  params, 
-  searchParams 
+  params
 }: CountryPredictionsPageProps) {
   const { countryId, slug: urlSlug } = await params;
-  const { league: leagueId } = await searchParams;
 
   try {
     // Get country by Sportmonks API ID
@@ -146,9 +145,8 @@ export default async function CountryPredictionsPage({
     return (
       <CountryPredictionsClient
         country={country}
-        leagues={sortedLeagues as Country[]}
-        fixtures={countryFixtures as unknown[]}
-        selectedLeagueId={leagueId}
+        leagues={sortedLeagues as League[]}
+        fixtures={countryFixtures as Fixture[]}
       />
     );
   } catch (error) {

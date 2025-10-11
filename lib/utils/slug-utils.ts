@@ -95,7 +95,7 @@ export function generateFixtureSlug(fixture: {
   id: number;
   participants?: Array<{
     name?: string | null;
-    meta?: { location?: string } | null;
+    meta?: { location?: string | null; winner?: boolean | null; position?: number | null } | null;
   }> | null;
 }): string {
   if (!fixture.participants || fixture.participants.length < 2) {

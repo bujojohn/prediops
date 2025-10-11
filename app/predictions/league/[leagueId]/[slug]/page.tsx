@@ -8,7 +8,7 @@ import { Fixture } from "@/schemas/fixture.schema";
 import { Standing } from "@/schemas/standing.schema";
 import { Team } from "@/schemas/team.schema";
 import { LeaguePredictionsClient } from "../../[leagueSlug]/league-predictions-client";
-import { generateLeagueSlug, generateLeaguePredictionsUrl } from "@/lib/utils/slug-utils";
+import { generateLeagueSlug } from "@/lib/utils/slug-utils";
 import type { Metadata } from "next";
 
 interface LeaguePredictionsPageProps {
@@ -25,7 +25,7 @@ export async function generateMetadata({
 }: {
   params: Promise<{ leagueId: string; slug: string }>;
 }): Promise<Metadata> {
-  const { leagueId, slug } = await params;
+  const { leagueId } = await params;
 
   try {
     const league = await sportmonks.getLeagueById(leagueId, {
