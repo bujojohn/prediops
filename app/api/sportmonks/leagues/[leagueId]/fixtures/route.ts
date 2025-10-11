@@ -46,6 +46,12 @@ export async function GET(
       `League ${leagueId}: Raw fixtures: ${rawFixtures.length}, Filtered: ${fixtures.length}`
     );
 
+    // Log predictions status for debugging
+    const fixturesWithPredictions = fixtures.filter(f => f.predictions && f.predictions.length > 0);
+    console.log(
+      `League ${leagueId}: Fixtures with predictions: ${fixturesWithPredictions.length}/${fixtures.length}`
+    );
+
     return NextResponse.json({
       success: true,
       data: fixtures,
