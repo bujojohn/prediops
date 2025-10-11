@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Fixture, League, Standing } from '@/schemas';
 import { Team } from '@/schemas/team.schema';
 import { TeamLogo } from '@/app/components/ui/optimized-image';
-import { LeagueFixturesDisplay } from '@/app/components/league/LeagueFixturesDisplay';
+import { LeagueMatchesContent } from './[slug]/league-matches-content';
 import { Trophy } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -47,18 +47,8 @@ export function LeaguePredictionsClient({
   league, 
   fixtures, 
   standings = [], 
-  teams = [],
-  initialStartDate,
-  initialEndDate 
+  teams = []
 }: LeaguePredictionsClientProps) {
-  // State for date range (for initial filters)
-  const [currentStartDate] = useState<Date>(
-    initialStartDate || new Date()
-  );
-  const [currentEndDate] = useState<Date>(
-    initialEndDate || new Date(Date.now() + 6 * 24 * 60 * 60 * 1000) // 7 days from now
-  );
-
   // Get active tab from hash or default to 'matches'
   const [activeTab, setActiveTab] = useState('matches');
 
@@ -78,12 +68,6 @@ export function LeaguePredictionsClient({
   const handleTabChange = useCallback((value: string) => {
     window.location.hash = value;
     setActiveTab(value);
-  }, []);
-
-  // Handle date change - LeagueFixturesDisplay will handle the actual data loading
-  const handleDateChange = useCallback((_date: string) => {
-    // The LeagueFixturesDisplay component handles date changes internally
-    // through its React Query hook
   }, []);
 
   // Extract available markets from fixtures for stats
@@ -176,28 +160,10 @@ export function LeaguePredictionsClient({
         </TabsList>
 
         <TabsContent value="matches" className="space-y-4">
-          <LeagueFixturesDisplay
+          <LeagueMatchesContent
             leagueId={league.id.toString()}
+            leagueName={league.name || 'League'}
             initialFixtures={fixtures}
-            variant="detailed"
-            showSearchAndFilter={true}
-            searchAndFilterVariant="full"
-            onDateChange={handleDateChange}
-            searchAndFilterOptions={{
-              showSearch: true,
-              showLeagueFilter: false, // Not needed on league page
-              showTeamFilter: true,
-              showStatusFilter: true,
-              showDateFilter: true,
-              showPredictionsFilter: true,
-              showValueBetsFilter: true,
-            }}
-            initialFilters={{
-              dateRange: {
-                from: format(currentStartDate, 'yyyy-MM-dd'),
-                to: format(currentEndDate, 'yyyy-MM-dd'),
-              }
-            }}
           />
         </TabsContent>
 
