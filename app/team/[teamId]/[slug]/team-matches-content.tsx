@@ -44,7 +44,8 @@ export function TeamMatchesContent({
     data: fixtures, 
     isLoading, 
     error, 
-    refetch 
+    refetch,
+    isFetching
   } = useTeamFixturesQuery({
     teamId,
     startDate: dateRange.start,
@@ -61,7 +62,8 @@ export function TeamMatchesContent({
   };
 
   // Use React Query data if available, fallback to initial fixtures
-  const displayFixtures = fixtures || initialFixtures;
+  // Only use fixtures if it's explicitly returned (not undefined)
+  const displayFixtures = fixtures !== undefined ? fixtures : initialFixtures;
 
   // Error state
   if (error) {
@@ -161,9 +163,9 @@ export function TeamMatchesContent({
               onClick={handleRefresh} 
               variant="outline" 
               size="sm"
-              disabled={isLoading}
+              disabled={isFetching}
             >
-              <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
           </div>
@@ -183,7 +185,7 @@ export function TeamMatchesContent({
       />
 
       {/* Background refetch indicator */}
-      {isLoading && displayFixtures.length > 0 && (
+      {isFetching && !isLoading && displayFixtures.length > 0 && (
         <div className="fixed bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
           <RefreshCw className="w-4 h-4 animate-spin" />
           <span className="text-sm">Updating...</span>
