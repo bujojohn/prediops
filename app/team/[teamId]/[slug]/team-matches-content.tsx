@@ -41,6 +41,9 @@ export function TeamMatchesContent({
 
   // Track if date range has been changed from initial state
   const [hasChangedDateRange, setHasChangedDateRange] = useState(false);
+  
+  // Track manual refresh state
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Use React Query for automatic caching and refetching
   // Only enable query if date range has been changed (to avoid duplicate server fetch)
@@ -63,9 +66,23 @@ export function TeamMatchesContent({
     // React Query will automatically refetch due to queryKey change
   };
 
-  const handleRefresh = () => {
-    setHasChangedDateRange(true); // Enable React Query on manual refresh
-    refetch();
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    
+    try {
+      if (!hasChangedDateRange) {
+        // If React Query hasn't been enabled yet, just reload the page
+        // to get fresh server data
+        window.location.reload();
+        return;
+      }
+      
+      // Otherwise, use React Query refetch
+      setHasChangedDateRange(true); // Ensure React Query is enabled
+      await refetch();
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   // Use React Query data if available, fallback to initial fixtures
@@ -141,9 +158,13 @@ export function TeamMatchesContent({
             <div className="text-sm text-muted-foreground">
               Try adjusting the date range or check back later.
             </div>
-            <Button onClick={handleRefresh} variant="outline">
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
+            <Button 
+              onClick={handleRefresh} 
+              variant="outline"
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Refreshing...' : 'Refresh'}
             </Button>
           </div>
         </Card>
@@ -170,10 +191,10 @@ export function TeamMatchesContent({
               onClick={handleRefresh} 
               variant="outline" 
               size="sm"
-              disabled={isFetching}
+              disabled={isFetching || isRefreshing}
             >
-              <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
-              Refresh
+              <RefreshCw className={`w-4 h-4 mr-2 ${(isFetching || isRefreshing) ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Refreshing...' : 'Refresh'}
             </Button>
           </div>
         </CardHeader>
@@ -188,6 +209,7 @@ export function TeamMatchesContent({
       {/* Fixtures List with Predictions */}
       <FixturesListWithPredictions
         fixtures={displayFixtures}
+        onRefresh={handleRefresh}
       />
 
       {/* Background refetch indicator */}
