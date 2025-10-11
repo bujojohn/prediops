@@ -15,35 +15,37 @@ export async function GET(request: Request) {
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
-    // Build filters dynamically
-    let filters = searchParams.get('filters');
-    
-    if (!filters) {
-      // Default filter
-      filters = 'todayDate';
-      
-      // If team ID is provided, fetch team fixtures
-      if (teamId) {
-        const filterParts = [`teamId:${teamId}`];
-        
-        if (startDate && endDate) {
-          filterParts.push(`startingAtBetween:${startDate},${endDate}`);
-        } else if (startDate) {
-          filterParts.push(`startingAtAfter:${startDate}`);
-        }
-        
-        filters = filterParts.join(';');
-      }
-    }
+    let fixtures;
 
-    const fixtures = await sportmonks.getUpcomingFixtures({
-      include,
-      filters,
-      sortBy: sortBy as 'starting_at' | 'name',
-      order: order as 'asc' | 'desc',
-      page,
-      per_page,
-    });
+    // If team ID and dates are provided, use the specific team endpoint
+    if (teamId && startDate && endDate) {
+      console.log(`Fetching fixtures for team ${teamId} between ${startDate} and ${endDate}`);
+      fixtures = await sportmonks.getFixuresByDateRangeForTeam(
+        teamId,
+        startDate,
+        endDate,
+        {
+          include,
+          sortBy: sortBy as 'starting_at' | 'name',
+          order: order as 'asc' | 'desc',
+          page,
+          per_page,
+        }
+      );
+    } else {
+      // Use generic fixtures endpoint with filters
+      const filters = searchParams.get('filters') || 'todayDate';
+      
+      console.log(`Fetching fixtures with filters: ${filters}`);
+      fixtures = await sportmonks.getUpcomingFixtures({
+        include,
+        filters,
+        sortBy: sortBy as 'starting_at' | 'name',
+        order: order as 'asc' | 'desc',
+        page,
+        per_page,
+      });
+    }
 
     return NextResponse.json({
       success: true,
@@ -57,6 +59,7 @@ export async function GET(request: Request) {
       {
         success: false,
         error: 'Failed to fetch fixtures',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );

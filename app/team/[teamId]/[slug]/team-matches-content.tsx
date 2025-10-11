@@ -181,7 +181,6 @@ export function TeamMatchesContent({
       {/* Fixtures List with Predictions */}
       <FixturesListWithPredictions
         fixtures={displayFixtures}
-        teamName={teamName}
       />
 
       {/* Background refetch indicator */}
