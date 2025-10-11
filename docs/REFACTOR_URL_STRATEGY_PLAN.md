@@ -29,9 +29,23 @@ This document outlines the planned refactor to adopt a hybrid URL strategy using
 - [ ] Add tests for link generation and slug handling
 - [ ] Update docs and `README` with the final URL strategy
 
+### Implementation Order
+1. ✅ Create slug generation utilities
+2. ✅ Update centralized routing helpers
+3. ✅ Refactor league routes (predictions + detail pages)
+4. ✅ Refactor country routes (predictions + detail pages)
+5. ✅ Refactor fixture routes (add slug support)
+6. ✅ Standardize team routes (already mostly complete)
+7. ✅ Update all link components (LeagueLink, CountryLink, etc.)
+8. ✅ Update search and navigation to use new URLs
+9. ✅ Add canonical meta tags
+10. ✅ Test and verify all routes work correctly
+
 ### Notes
 - This plan will be implemented incrementally in small, reviewable commits.
-- Draft PR will be used to capture feedback before major code changes.
+- Using Sportmonks API IDs + dynamically generated slugs (no DB changes).
+- SEO-optimized with keywords in URLs for better search rankings.
+- See `docs/REFACTOR_SEO_STRATEGY.md` for detailed SEO implementation guide.
 
 # URL Strategy Refactor Plan
 
