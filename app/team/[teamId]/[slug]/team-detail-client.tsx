@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Users, 
   Trophy, 
@@ -22,8 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import type { TeamDetailed } from '@/schemas/team-detailed.schema';
 import type { Fixture } from '@/schemas/fixture.schema';
 import { formatFoundedYear, getTeamTypeDisplay } from '@/lib/utils/team-utils';
-import { TeamPredictionsContent } from './team-predictions-content';
-import { TeamFixturesDisplay } from '@/app/components/team/TeamFixturesDisplay';
+import { TeamMatchesContent } from './team-matches-content';
 
 interface TeamDetailClientProps {
   team: TeamDetailed;
@@ -31,19 +29,28 @@ interface TeamDetailClientProps {
 }
 
 export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClientProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const [isClient, setIsClient] = useState(false);
 
-  // Get active tab from URL or default to 'overview'
-  const activeTab = searchParams.get('tab') || 'overview';
+  // Get active tab from hash or default to 'overview'
+  const [activeTab, setActiveTab] = useState('overview');
 
-  // Handle tab change with URL update
+  // Handle hash-based tab navigation
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '') || 'overview';
+      setActiveTab(hash);
+    };
+
+    handleHashChange();
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // Handle tab change with hash update
   const handleTabChange = useCallback((value: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('tab', value);
-    router.push(`/team/${team.id}/${team.name?.toLowerCase().replace(/\s+/g, '-') || 'team'}?${params.toString()}`);
-  }, [router, searchParams, team]);
+    window.location.hash = value;
+    setActiveTab(value);
+  }, []);
 
   // Ensure we're on the client side to prevent hydration issues
   useEffect(() => {
@@ -235,11 +242,10 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
       {/* Tabs - Only render on client to prevent hydration issues */}
       {isClient ? (
         <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="matches">Matches</TabsTrigger>
           <TabsTrigger value="squad">Squad</TabsTrigger>
-          <TabsTrigger value="fixtures">Fixtures</TabsTrigger>
-          <TabsTrigger value="predictions">Predictions</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
           <TabsTrigger value="statistics">Statistics</TabsTrigger>
           <TabsTrigger value="rivals">Rivals</TabsTrigger>
@@ -520,69 +526,11 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
           )}
         </TabsContent>
 
-        {/* Fixtures Tab */}
-        <TabsContent value="fixtures" className="space-y-6">
-          {/* Form Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-green-600">W</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Wins</div>
-                <div className="text-xs text-gray-500">
-                  Last 5: {getRecentFixtures().filter(f => f.result_info?.includes('W')).length}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-yellow-600">D</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Draws</div>
-                <div className="text-xs text-gray-500">
-                  Last 5: {getRecentFixtures().filter(f => f.result_info?.includes('D')).length}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-red-600">L</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Losses</div>
-                <div className="text-xs text-gray-500">
-                  Last 5: {getRecentFixtures().filter(f => f.result_info?.includes('L')).length}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <Activity className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                <div className="text-2xl font-bold">{getUpcomingFixtures().length}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Upcoming</div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Team Fixtures Display */}
-          <TeamFixturesDisplay
+        {/* Matches Tab - Merged Fixtures + Predictions */}
+        <TabsContent value="matches" className="space-y-6">
+          <TeamMatchesContent
             teamId={team.id.toString()}
-            initialFixtures={initialFixtures}
-            variant="detailed"
-            showSearchAndFilter={true}
-            searchAndFilterVariant="compact"
-            searchAndFilterOptions={{
-              showSearch: false, // Not needed on team page
-              showLeagueFilter: true,
-              showTeamFilter: false, // Not needed on team page
-              showStatusFilter: true,
-              showDateFilter: true,
-              showPredictionsFilter: true,
-              showValueBetsFilter: true,
-            }}
-          />
-        </TabsContent>
-
-        {/* Predictions Tab */}
-        <TabsContent value="predictions" className="space-y-6">
-          <TeamPredictionsContent 
-            teamName={team.name} 
+            teamName={team.name || 'Team'}
             initialFixtures={initialFixtures}
           />
         </TabsContent>

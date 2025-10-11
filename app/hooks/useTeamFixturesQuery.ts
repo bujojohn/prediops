@@ -10,11 +10,6 @@ interface UseTeamFixturesQueryOptions {
   enabled?: boolean;
 }
 
-interface TeamFixturesResponse {
-  fixtures: Fixture[];
-  total: number;
-}
-
 /**
  * React Query hook for fetching team fixtures
  * 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { DateRangeSelector } from '@/app/components/date-range-picker/DateRangeSelector';
 import { Button } from '@/components/ui/button';
