@@ -51,25 +51,27 @@ export function generateLeagueSlug(league: League): string {
 
 /**
  * Generate the full URL for a league's predictions page
+ * Uses the new hybrid URL pattern: /predictions/league/[leagueId]/[slug]
  */
-export function getLeaguePredictionsUrl(league: League): string {
+export function getLeaguePredictionsUrl(league: League | { id: number; name: string }): string {
   const slug = generateLeagueSlug(league);
-  return `/predictions/league/${slug}`;
+  return `/predictions/league/${league.id}/${slug}`;
 }
 
 /**
  * Generate the full URL for a country's predictions page
+ * Uses the new hybrid URL pattern: /predictions/country/[countryId]/[slug]
  */
 export function getCountryPredictionsUrl(
   country: Country,
   leagueId?: number
 ): string {
   const slug = generateCountrySlug(country);
-  // Use the predictions/country route which actually exists
-  const baseUrl = `/predictions/country/${slug}?id=${country.id}`;
+  // Use the new hybrid URL pattern with countryId and slug
+  const baseUrl = `/predictions/country/${country.id}/${slug}`;
 
   if (leagueId) {
-    return `${baseUrl}&league=${leagueId}`;
+    return `${baseUrl}?league=${leagueId}`;
   }
 
   return baseUrl;
