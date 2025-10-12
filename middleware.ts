@@ -12,10 +12,12 @@ export function middleware(request: NextRequest) {
   // Redirect to: /predictions/country/[id]/[slug]
   if (pathname.startsWith('/predictions/country/') && searchParams.has('id')) {
     const countryId = searchParams.get('id');
-    const pathParts = pathname.split('/');
-    const oldSlug = pathParts[pathParts.length - 1];
+    const pathParts = pathname.split('/').filter(part => part); // Remove empty strings
+    // pathParts will be: ['predictions', 'country', 'argentina']
+    const oldSlug = pathParts[pathParts.length - 1]; // Get last part (slug)
     
-    if (countryId && oldSlug) {
+    // Only redirect if we have both countryId and slug, and slug is not a number
+    if (countryId && oldSlug && isNaN(Number(oldSlug))) {
       // Build new URL using the countryId and preserving the slug
       const newUrl = new URL(request.url);
       newUrl.pathname = `/predictions/country/${countryId}/${oldSlug}`;
@@ -33,10 +35,12 @@ export function middleware(request: NextRequest) {
   // Redirect to: /predictions/league/[id]/[slug]
   if (pathname.startsWith('/predictions/league/') && searchParams.has('id')) {
     const leagueId = searchParams.get('id');
-    const pathParts = pathname.split('/');
-    const oldSlug = pathParts[pathParts.length - 1];
+    const pathParts = pathname.split('/').filter(part => part); // Remove empty strings
+    // pathParts will be: ['predictions', 'league', 'premier-league']
+    const oldSlug = pathParts[pathParts.length - 1]; // Get last part (slug)
     
-    if (leagueId && oldSlug) {
+    // Only redirect if we have both leagueId and slug, and slug is not a number
+    if (leagueId && oldSlug && isNaN(Number(oldSlug))) {
       // Build new URL
       const newUrl = new URL(request.url);
       newUrl.pathname = `/predictions/league/${leagueId}/${oldSlug}`;
