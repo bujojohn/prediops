@@ -59,7 +59,18 @@ export async function GET(
         hasPredictions: !!sampleFixture.predictions,
         predictionsCount: sampleFixture.predictions?.length || 0,
         predictionsType: typeof sampleFixture.predictions,
-        firstPrediction: sampleFixture.predictions?.[0] ? 'exists' : 'missing'
+        firstPrediction: sampleFixture.predictions?.[0],
+        allKeys: Object.keys(sampleFixture)
+      });
+    }
+    
+    // Log raw API response for debugging
+    if (rawFixtures.length > 0) {
+      const rawSample = rawFixtures[0] as any;
+      console.log(`Raw API fixture ID ${rawSample.id}:`, {
+        hasPredictions: !!rawSample.predictions,
+        predictionsCount: rawSample.predictions?.length || 0,
+        firstPrediction: rawSample.predictions?.[0]
       });
     }
 

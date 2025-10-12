@@ -248,12 +248,34 @@ export default async function LeaguePredictionsPage({
 
       const rawFixtures = fixturesResponse?.data || [];
 
+      // Debug: Check if raw fixtures have predictions
+      if (rawFixtures.length > 0) {
+        const sampleFixture = rawFixtures[0] as any;
+        console.log(`[DEBUG] Sample raw fixture predictions:`, {
+          fixtureId: sampleFixture.id,
+          hasPredictions: !!sampleFixture.predictions,
+          predictionsCount: sampleFixture.predictions?.length || 0,
+          firstPrediction: sampleFixture.predictions?.[0]
+        });
+      }
+
       // Always filter client-side to ensure we only get fixtures for this league
       allFixtures = rawFixtures.filter((fixture: Fixture) => {
         const fixtureLeagueId = fixture.league?.id?.toString();
         const targetLeagueId = league.id?.toString();
         return fixtureLeagueId === targetLeagueId;
       });
+
+      // Debug: Check if filtered fixtures still have predictions
+      if (allFixtures.length > 0) {
+        const sampleFiltered = allFixtures[0] as any;
+        console.log(`[DEBUG] Sample filtered fixture predictions:`, {
+          fixtureId: sampleFiltered.id,
+          hasPredictions: !!sampleFiltered.predictions,
+          predictionsCount: sampleFiltered.predictions?.length || 0,
+          firstPrediction: sampleFiltered.predictions?.[0]
+        });
+      }
 
       console.log(
         `Raw fixtures from API: ${rawFixtures.length}, Filtered for league ${league.name} (ID: ${league.id}): ${allFixtures.length}`
