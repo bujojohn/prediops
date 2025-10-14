@@ -448,16 +448,8 @@ export function FixturePredictionMarkets({
       });
     }
     
-    // Show graceful fallback UI instead of null
-    return (
-      <div className={cn(
-        "flex items-center gap-1.5 text-xs text-muted-foreground italic",
-        variant === 'mobile' ? 'justify-start' : 'justify-center',
-        className
-      )}>
-        <span className="opacity-60">Predictions unavailable</span>
-      </div>
-    );
+    // Return null (old behavior) - no fallback UI
+    return null;
   }
 
   const selectedMarket = marketsMap[selectedMarketKey];
