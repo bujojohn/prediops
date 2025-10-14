@@ -430,6 +430,10 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
   const [showActiveOnly, setShowActiveOnly] = useState(false);
   const [showTodayOnly, setShowTodayOnly] = useState(false);
   
+  // Refresh state
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  
   if (isHomePage) {
     return null;
   }
@@ -505,15 +509,15 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
             {/* Right side - Action tools */}
             <div className="flex items-center gap-1">
               <button
-                className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors text-muted-foreground hover:text-foreground hover:bg-accent"
+                className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors text-muted-foreground hover:text-foreground hover:bg-accent ${isRefreshing ? 'cursor-wait' : ''}`}
                 title="Refresh data"
+                disabled={isRefreshing}
                 onClick={() => {
-                  // Refresh sidebar data
-                  window.location.reload();
+                  setRefreshTrigger(prev => prev + 1);
                 }}
               >
-                <RefreshCw className="h-3 w-3" />
-                <span className="hidden sm:inline">Refresh</span>
+                <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
               </button>
               
               <button
@@ -559,6 +563,8 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
             showFavoritesOnly={showFavoritesOnly}
             showActiveOnly={showActiveOnly}
             showTodayOnly={showTodayOnly}
+            refreshTrigger={refreshTrigger}
+            onRefreshStateChange={setIsRefreshing}
           />
         </div>
       </div>
@@ -571,12 +577,16 @@ function SidebarContent({
   searchTerm, 
   showFavoritesOnly, 
   showActiveOnly, 
-  showTodayOnly 
+  showTodayOnly,
+  refreshTrigger,
+  onRefreshStateChange
 }: { 
   searchTerm: string;
   showFavoritesOnly: boolean;
   showActiveOnly: boolean;
   showTodayOnly: boolean;
+  refreshTrigger: number;
+  onRefreshStateChange: (isRefreshing: boolean) => void;
 }) {
   const [allCountries, setAllCountries] = useState<CountryWithLeagues[]>([]);
   const [filteredCountries, setFilteredCountries] = useState<CountryWithLeagues[]>([]);
@@ -597,6 +607,9 @@ function SidebarContent({
   // Today fixture counts
   const [countryTodayCounts, setCountryTodayCounts] = useState<Map<number, number>>(new Map());
   const [loadingCounts, setLoadingCounts] = useState<Set<number>>(new Set());
+  // League fixture counts
+  const [leagueFixtureCounts, setLeagueFixtureCounts] = useState<Map<number, number>>(new Map());
+  const [loadingLeagueCounts, setLoadingLeagueCounts] = useState<Set<number>>(new Set());
   
   // Section collapse state
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
@@ -694,17 +707,56 @@ function SidebarContent({
     return { countryItems: countries, tournamentItems: tournaments };
   }, [filteredCountries, isTournament]);
 
-  // Define top leagues data - using country IDs for now, will be replaced with actual league IDs from API
+  // Define top leagues data with actual league IDs from SportMonks API
   const topLeagues = React.useMemo(() => [
-    { name: 'Premier League', country: 'England', short_code: 'EPL', countryId: 462 },
-    { name: 'La Liga', country: 'Spain', short_code: 'LL', countryId: 32 },
-    { name: 'Serie A', country: 'Italy', short_code: 'SA', countryId: 251 },
-    { name: 'Bundesliga', country: 'Germany', short_code: 'BL', countryId: 11 },
-    { name: 'Ligue 1', country: 'France', short_code: 'L1', countryId: 17 },
-    { name: 'Championship', country: 'England', short_code: 'CH', countryId: 462 },
-    { name: 'Eredivisie', country: 'Netherlands', short_code: 'ED', countryId: 38 },
-    { name: 'Primeira Liga', country: 'Portugal', short_code: 'PL', countryId: 20 },
+    { id: 8, name: 'Premier League', country: 'England', short_code: 'EPL', countryId: 462 },
+    { id: 564, name: 'La Liga', country: 'Spain', short_code: 'LL', countryId: 32 },
+    { id: 384, name: 'Serie A', country: 'Italy', short_code: 'SA', countryId: 251 },
+    { id: 351, name: 'Bundesliga', country: 'Germany', short_code: 'BL', countryId: 11 },
+    { id: 301, name: 'Ligue 1', country: 'France', short_code: 'L1', countryId: 17 },
+    { id: 7, name: 'Championship', country: 'England', short_code: 'CH', countryId: 462 },
+    { id: 72, name: 'Eredivisie', country: 'Netherlands', short_code: 'ED', countryId: 38 },
+    { id: 238, name: 'Primeira Liga', country: 'Portugal', short_code: 'PL', countryId: 20 },
   ], []);
+
+  // Load fixture counts for a specific league (next 7 days)
+  const loadLeagueFixtureCounts = React.useCallback(async (leagueId: number) => {
+    if (loadingLeagueCounts.has(leagueId) || leagueFixtureCounts.has(leagueId)) {
+      return; // Already loading or loaded
+    }
+
+    setLoadingLeagueCounts(prev => new Set(prev).add(leagueId));
+
+    try {
+      const today = new Date();
+      const nextWeek = new Date();
+      nextWeek.setDate(today.getDate() + 7);
+      
+      const startDate = today.toISOString().split('T')[0];
+      const endDate = nextWeek.toISOString().split('T')[0];
+      
+      const response = await fetch(
+        `/api/sportmonks/leagues/${leagueId}/fixtures?startDate=${startDate}&endDate=${endDate}`
+      );
+      const data = await response.json();
+      
+      if (data.success && data.data) {
+        const count = data.data.length || 0;
+        setLeagueFixtureCounts(prev => new Map(prev).set(leagueId, count));
+      } else {
+        setLeagueFixtureCounts(prev => new Map(prev).set(leagueId, 0));
+      }
+    } catch (error) {
+      console.error('Error loading fixture counts for league:', leagueId, error);
+      setLeagueFixtureCounts(prev => new Map(prev).set(leagueId, 0));
+    } finally {
+      setLoadingLeagueCounts(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(leagueId);
+        return newSet;
+      });
+    }
+  }, [leagueFixtureCounts, loadingLeagueCounts]);
 
   // Load countries with leagues using API route
   const loadCountriesWithLeagues = async () => {
@@ -743,6 +795,11 @@ function SidebarContent({
       if (data.success && data.data) {
         const leagues = data.data.filter((league: League) => league.active);
         setCountryLeagues(prev => new Map(prev).set(countryId, leagues));
+        
+        // Load fixture counts for the leagues
+        leagues.forEach((league: League) => {
+          loadLeagueFixtureCounts(league.id);
+        });
       } else {
         console.error('Failed to load leagues for country:', countryId, data.error);
         setCountryLeagues(prev => new Map(prev).set(countryId, []));
@@ -757,7 +814,7 @@ function SidebarContent({
         return newMap;
       });
     }
-  }, [countryLeagues]);
+  }, [countryLeagues, loadLeagueFixtureCounts]);
 
   // Toggle country expansion
   const toggleCountry = React.useCallback((countryId: number) => {
@@ -811,6 +868,41 @@ function SidebarContent({
   useEffect(() => {
     loadCountriesWithLeagues();
   }, []);
+
+  // Load fixture counts for top leagues on mount
+  useEffect(() => {
+    topLeagues.forEach(league => {
+      loadLeagueFixtureCounts(league.id);
+    });
+  }, [topLeagues, loadLeagueFixtureCounts]);
+
+  // Handle refresh trigger
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      const performRefresh = async () => {
+        onRefreshStateChange(true);
+        try {
+          // Clear all caches
+          setCountryLeagues(new Map());
+          setCountryTodayCounts(new Map());
+          setLeagueFixtureCounts(new Map());
+          setExpandedCountries(new Set());
+          
+          // Reload countries
+          await loadCountriesWithLeagues();
+          
+          // Reload top leagues fixture counts
+          topLeagues.forEach(league => {
+            loadLeagueFixtureCounts(league.id);
+          });
+        } finally {
+          onRefreshStateChange(false);
+        }
+      };
+      
+      performRefresh();
+    }
+  }, [refreshTrigger, onRefreshStateChange, topLeagues, loadLeagueFixtureCounts]);
 
   // Load fixture counts for visible countries
   useEffect(() => {
@@ -972,6 +1064,9 @@ function SidebarContent({
                     ) : leagues.length > 0 ? (
                       leagues.map((league) => {
                         const active = pathname?.includes(`/predictions/league/${league.id}/`);
+                        const fixtureCount = leagueFixtureCounts.get(league.id) ?? 0;
+                        const isLoadingCount = loadingLeagueCounts.has(league.id);
+                        
                         return (
                           <div key={league.id} className={`flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors ${active ? 'bg-accent/60' : ''}`}>
                             <a
@@ -985,12 +1080,21 @@ function SidebarContent({
                                   {league.short_code}
                                 </Badge>
                               )}
-                              <Badge
-                                variant="outline"
-                                className="text-[10px] flex-shrink-0 bg-muted text-muted-foreground"
-                              >
-                                0
-                              </Badge>
+                              {isLoadingCount ? (
+                                <div className="h-4 w-6 bg-muted animate-pulse rounded flex-shrink-0" />
+                              ) : (
+                                <Badge
+                                  variant="outline"
+                                  className={`text-[10px] flex-shrink-0 ${
+                                    fixtureCount > 0
+                                      ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
+                                      : 'bg-muted text-muted-foreground'
+                                  }`}
+                                  title={fixtureCount > 0 ? `${fixtureCount} fixtures in next 7 days` : 'No fixtures in next 7 days'}
+                                >
+                                  {fixtureCount}
+                                </Badge>
+                              )}
                             </a>
                           </div>
                         );
@@ -1031,30 +1135,51 @@ function SidebarContent({
         
         {!collapsedSections.has('top-leagues') && (
           <div className="space-y-0.5">
-            {topLeagues.map((league, index) => (
-              <div key={`top-league-${index}`} className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
-                <a
-                  href={`/predictions/country/${league.countryId}/${league.country.toLowerCase().replace(/\s+/g, '-')}`}
-                  className="flex items-center gap-1.5 flex-1 text-left min-w-0"
-                >
-                  <span className="font-medium text-sm truncate max-w-[120px]" title={`${league.name} (${league.country})`}>
-                    {league.name}
-                  </span>
-                  <Badge variant="outline" className="text-[9px] px-1 flex-shrink-0">
-                    {league.short_code}
-                  </Badge>
-                </a>
-                <a
-                  href={`/predictions/country/${league.countryId}/${league.country.toLowerCase().replace(/\s+/g, '-')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-1 text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
-                  title="Open predictions page"
-                >
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </div>
-            ))}
+            {topLeagues.map((league) => {
+              const fixtureCount = leagueFixtureCounts.get(league.id) ?? 0;
+              const isLoadingCount = loadingLeagueCounts.has(league.id);
+              const active = pathname?.includes(`/predictions/league/${league.id}/`);
+              
+              return (
+                <div key={league.id} className={`flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors ${active ? 'bg-accent/60' : ''}`}>
+                  <a
+                    href={`/predictions/league/${league.id}/${generateLeagueSlug({ name: league.name, id: league.id })}`}
+                    className={`flex items-center gap-1.5 flex-1 text-left min-w-0 ${active ? 'text-primary font-medium' : ''}`}
+                  >
+                    <span className="font-medium text-sm truncate max-w-[100px]" title={`${league.name} (${league.country})`}>
+                      {league.name}
+                    </span>
+                    <Badge variant="outline" className={`text-[9px] px-1 flex-shrink-0 ${active ? 'border-primary text-primary' : ''}`}>
+                      {league.short_code}
+                    </Badge>
+                    {isLoadingCount ? (
+                      <div className="h-4 w-6 bg-muted animate-pulse rounded flex-shrink-0" />
+                    ) : (
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] flex-shrink-0 ${
+                          fixtureCount > 0
+                            ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
+                            : 'bg-muted text-muted-foreground'
+                        }`}
+                        title={fixtureCount > 0 ? `${fixtureCount} fixtures in next 7 days` : 'No fixtures in next 7 days'}
+                      >
+                        {fixtureCount}
+                      </Badge>
+                    )}
+                  </a>
+                  <a
+                    href={`/predictions/league/${league.id}/${generateLeagueSlug({ name: league.name, id: league.id })}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1 text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+                    title="Open predictions page"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -1171,6 +1296,9 @@ function SidebarContent({
                       ) : leagues.length > 0 ? (
                         leagues.map((league) => {
                           const active = pathname?.includes(`/predictions/league/${league.id}/`);
+                          const fixtureCount = leagueFixtureCounts.get(league.id) ?? 0;
+                          const isLoadingCount = loadingLeagueCounts.has(league.id);
+                          
                           return (
                             <div key={league.id} className={`flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors ${active ? 'bg-accent/60' : ''}`}>
                             <a
@@ -1184,12 +1312,21 @@ function SidebarContent({
                                     {league.short_code}
                                   </Badge>
                                 )}
-                                <Badge
-                                  variant="outline"
-                                  className="text-[10px] flex-shrink-0 bg-muted text-muted-foreground"
-                                >
-                                  0
-                                </Badge>
+                                {isLoadingCount ? (
+                                  <div className="h-4 w-6 bg-muted animate-pulse rounded flex-shrink-0" />
+                                ) : (
+                                  <Badge
+                                    variant="outline"
+                                    className={`text-[10px] flex-shrink-0 ${
+                                      fixtureCount > 0
+                                        ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
+                                        : 'bg-muted text-muted-foreground'
+                                    }`}
+                                    title={fixtureCount > 0 ? `${fixtureCount} fixtures in next 7 days` : 'No fixtures in next 7 days'}
+                                  >
+                                    {fixtureCount}
+                                  </Badge>
+                                )}
                               </a>
                             </div>
                           );
