@@ -217,7 +217,7 @@ export default async function LeaguePredictionsPage({
       // Approach 1: Try with API filtering first
       const apiConfigWithFilter = {
         include:
-          "participants;scores;state;predictions.type;league.country;stage;round",
+          "participants;scores;state;predictions;predictions.type;league.country;stage;round",
         filters: { fixtureLeagues: league.id },
       };
 
@@ -235,7 +235,7 @@ export default async function LeaguePredictionsPage({
         // Approach 2: Try without API filtering
         const apiConfigNoFilter = {
           include:
-            "participants;scores;state;predictions.type;league.country;stage;round",
+            "participants;scores;state;predictions;predictions.type;league.country;stage;round",
           per_page: 50,
           page: 1,
         };
@@ -300,7 +300,7 @@ export default async function LeaguePredictionsPage({
         try {
           const todayResponse = await sportmonks.getFixturesByDate(todayString, {
             include:
-              "participants;scores;state;predictions.type;league.country;stage;round",
+              "participants;scores;state;predictions;predictions.type;league.country;stage;round",
             per_page: 50,
             page: 1,
           });

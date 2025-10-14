@@ -28,7 +28,7 @@ export async function GET(
       startDate,
       endDate,
       {
-        include: 'participants;scores;state;predictions.type;league.country;stage;round',
+        include: 'participants;scores;state;predictions;predictions.type;league.country;stage;round',
         filters: { fixtureLeagues: leagueId },
         per_page: 50,
       }

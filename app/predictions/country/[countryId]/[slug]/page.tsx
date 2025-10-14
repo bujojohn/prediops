@@ -125,7 +125,7 @@ export default async function CountryPredictionsPage({
       
       // Since getLeaguesByFixtureDate doesn't return fixtures, use getFixturesByDate directly
       const fixturesResponse = await sportmonks.getFixturesByDate(today, {
-        include: 'participants;scores;state;predictions.type;league.country',
+        include: 'participants;scores;state;predictions;predictions.type;league.country',
         per_page: 50,
         page: 1,
       });
