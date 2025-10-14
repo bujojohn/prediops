@@ -171,13 +171,28 @@ export function FixturePredictionMarkets({
   const marketsMap = useMemo(() => {
     const map: Record<string, PredictionMarket> = {};
     
-    predictions.forEach((prediction) => {
+    if (process.env.NODE_ENV === 'development' && predictions.length > 0) {
+      console.log(`[FixturePredictionMarkets] Processing ${predictions.length} predictions for fixture ${fixture?.id}`);
+    }
+    
+    predictions.forEach((prediction, index) => {
       const pred = prediction.predictions;
       const typeName = prediction.type?.name || 'Unknown Market';
       const typeCode = prediction.type?.code || '';
       
       // Generate a unique key for this market
       const marketKey = typeCode || typeName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+      
+      // Debug first few predictions
+      if (process.env.NODE_ENV === 'development' && index < 3) {
+        console.log(`[FixturePredictionMarkets] Prediction ${index}:`, {
+          typeId: prediction.type_id,
+          typeName,
+          predStructure: pred ? Object.keys(pred) : null,
+          hasHome: pred && 'home' in pred,
+          hasYes: pred && 'yes' in pred,
+        });
+      }
       
       // Helper function to check if prediction has yes/no structure
       const isYesNoPred = (p: unknown): p is { yes: number | null; no: number | null } => {
