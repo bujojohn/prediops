@@ -8,16 +8,18 @@ import {
   Globe,
   Target,
   Calendar,
-  BarChart3
+  BarChart3,
+  ExternalLink
 } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Country } from '@/schemas/country.schema';
 import { League } from '@/schemas/league.schema';
 import { Fixture } from '@/schemas/fixture.schema';
-import { generateCountrySlug } from '@/lib/utils/country-utils';
+import { generateLeagueSlug } from '@/lib/utils/slug-utils';
 import { ReusableFixtureDisplay } from '@/app/components/fixtures/ReusableFixtureDisplay';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useCallback, useState, useEffect } from 'react';
 
 interface CountryPredictionsClientProps {
   country: Country;
@@ -30,28 +32,38 @@ function CountryPredictionsContent({
   leagues, 
   fixtures: initialFixtures
 }: CountryPredictionsClientProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   
   // Get current date from URL or default to today
   const selectedDate = searchParams.get('date') || new Date().toISOString().split('T')[0];
   
-  // Get active tab from URL or default to 'fixtures'
-  const activeTab = searchParams.get('tab') || 'fixtures';
+  // Get active tab from hash or default to 'fixtures'
+  const [activeTab, setActiveTab] = useState('fixtures');
 
-  // Handle tab change with URL update
+  // Handle hash-based tab navigation
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '') || 'fixtures';
+      setActiveTab(hash);
+    };
+
+    handleHashChange();
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // Handle tab change with hash update
   const handleTabChange = useCallback((value: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('tab', value);
-    router.push(`/predictions/country/${generateCountrySlug(country)}?id=${country.id}&${params.toString()}`);
-  }, [router, searchParams, country]);
+    window.location.hash = value;
+    setActiveTab(value);
+  }, []);
 
   // Handle date change with URL update
   const handleDateChange = useCallback((date: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('date', date);
-    router.push(`/predictions/country/${generateCountrySlug(country)}?id=${country.id}&${params.toString()}`);
-  }, [router, searchParams, country]);
+    window.history.pushState(null, '', `?${params.toString()}${window.location.hash}`);
+  }, [searchParams]);
 
   // Helper functions for empty state actions
   const handleTryNextWeek = useCallback(() => {
@@ -208,36 +220,50 @@ function CountryPredictionsContent({
               </Card>
             ) : (
               leagues.map((league) => (
-                <Card key={league.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        {league.image_path ? (
-                          <Image 
-                            src={league.image_path} 
-                            alt={league.name || 'League logo'}
-                            width={32}
-                            height={32}
-                            className="w-8 h-8 rounded object-cover"
-                          />
-                        ) : (
-                          <Trophy className="h-8 w-8 text-yellow-600" />
-                        )}
-                        <div>
-                          <CardTitle className="text-lg">{league.name || 'Unknown League'}</CardTitle>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant={league.active ? "default" : "secondary"}>
-                              {league.active ? 'Active' : 'Inactive'}
-                            </Badge>
-                            <Badge variant="outline">
-                              {league.type || 'League'}
-                            </Badge>
+                <Link
+                  key={league.id}
+                  href={`/predictions/league/${league.id}/${generateLeagueSlug(league)}`}
+                  className="block"
+                >
+                  <Card className="hover:shadow-lg transition-shadow cursor-pointer hover:border-blue-500">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3 flex-1">
+                          {league.image_path ? (
+                            <Image 
+                              src={league.image_path} 
+                              alt={league.name || 'League logo'}
+                              width={32}
+                              height={32}
+                              className="w-8 h-8 rounded object-cover"
+                            />
+                          ) : (
+                            <Trophy className="h-8 w-8 text-yellow-600" />
+                          )}
+                          <div className="flex-1">
+                            <CardTitle className="text-lg flex items-center gap-2">
+                              {league.name || 'Unknown League'}
+                              <ExternalLink className="h-4 w-4 text-gray-400" />
+                            </CardTitle>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge variant={league.active ? "default" : "secondary"}>
+                                {league.active ? 'Active' : 'Inactive'}
+                              </Badge>
+                              <Badge variant="outline">
+                                {league.type || 'League'}
+                              </Badge>
+                              {league.short_code && (
+                                <Badge variant="outline" className="text-xs">
+                                  {league.short_code}
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </CardHeader>
-                </Card>
+                    </CardHeader>
+                  </Card>
+                </Link>
               ))
             )}
           </div>
