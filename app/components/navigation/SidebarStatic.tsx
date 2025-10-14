@@ -20,7 +20,7 @@ import {
   Eye,
   Download
 } from 'lucide-react';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { SidebarTheme } from './SidebarTheme';
 import { getCountryPredictionsUrl, generateLeagueSlug } from '@/lib/utils/country-utils';
 import type { Country } from '@/schemas/country.schema';
@@ -585,7 +585,6 @@ function SidebarContent({
   const [loadingStates, setLoadingStates] = useState<Map<number, boolean>>(new Map());
   const [isLoading] = useState(false);
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   
   // Favorites and filtering state - load from localStorage
   const [favorites, setFavorites] = useState<Set<number>>(() => {

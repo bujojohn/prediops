@@ -301,7 +301,7 @@ export function FixturePredictionMarkets({
     });
     
     return map;
-  }, [predictions]);
+  }, [predictions, fixture?.id]);
 
   // Set default selected market; prefer Full Time Result if available
   useMemo(() => {
@@ -448,8 +448,17 @@ export function FixturePredictionMarkets({
       });
     }
     
-    // Return null (old behavior) - no fallback UI
-    return null;
+    // Show helpful fallback for fixtures without probability predictions
+    return (
+      <div className={cn(
+        "flex items-center justify-center text-xs text-muted-foreground/60 italic",
+        className
+      )}>
+        <span title="Probability predictions not available for this fixture">
+          No predictions
+        </span>
+      </div>
+    );
   }
 
   const selectedMarket = marketsMap[selectedMarketKey];

@@ -134,12 +134,12 @@ export default async function CountryPredictionsPage({
       
       // Debug: Check if raw fixtures have predictions
       if (allFixtures.length > 0) {
-        const sample = allFixtures[0] as any;
-        const predictionTypes = sample.predictions?.map((p: any) => ({
+        const sample = allFixtures[0] as Fixture;
+        const predictionTypes = sample.predictions?.map((p) => ({
           typeId: p.type_id,
           typeName: p.type?.name,
-          hasHomeAwayDraw: !!(p.predictions?.home && p.predictions?.away && p.predictions?.draw),
-          hasYesNo: !!(p.predictions?.yes && p.predictions?.no),
+          hasHomeAwayDraw: !!(p.predictions && typeof p.predictions === 'object' && 'home' in p.predictions && 'away' in p.predictions && 'draw' in p.predictions),
+          hasYesNo: !!(p.predictions && typeof p.predictions === 'object' && 'yes' in p.predictions && 'no' in p.predictions),
         })) || [];
         
         console.log(`[DEBUG Country Page] Sample raw fixture:`, {
@@ -152,21 +152,33 @@ export default async function CountryPredictionsPage({
         });
       }
       
+      // Log all fixtures before filtering
+      console.log(`[DEBUG] All fixtures from API (${allFixtures.length} total):`);
+      allFixtures.slice(0, 3).forEach((f: unknown, i: number) => {
+        const fixture = f as Fixture;
+        console.log(`  Fixture ${i}: ${fixture.name} (ID: ${fixture.id}), Country: ${fixture.league?.country?.id}, Predictions: ${fixture.predictions?.length || 0}`);
+      });
+      
       const filteredFixtures = allFixtures.filter((fixture: unknown) => {
-        return (fixture as { league?: { country?: { id: number } } }).league?.country?.id === country.id;
+        const f = fixture as Fixture;
+        const matches = f.league?.country?.id === country.id;
+        if (matches && process.env.NODE_ENV === 'development') {
+          console.log(`  ✓ Matched: ${f.name}, Predictions: ${f.predictions?.length || 0}`);
+        }
+        return matches;
       });
       
       countryFixtures.push(...filteredFixtures);
       
       // Debug: Check if filtered fixtures still have predictions
       if (countryFixtures.length > 0) {
-        const sampleFiltered = countryFixtures[0] as any;
-        const filteredPredictionTypes = sampleFiltered.predictions?.map((p: any) => ({
+        const sampleFiltered = countryFixtures[0] as Fixture;
+        const filteredPredictionTypes = sampleFiltered.predictions?.map((p) => ({
           typeId: p.type_id,
           typeName: p.type?.name,
-          hasHomeAwayDraw: !!(p.predictions?.home && p.predictions?.away && p.predictions?.draw),
-          hasYesNo: !!(p.predictions?.yes && p.predictions?.no),
-          predictionsStructure: Object.keys(p.predictions || {})
+          hasHomeAwayDraw: !!(p.predictions && typeof p.predictions === 'object' && 'home' in p.predictions && 'away' in p.predictions && 'draw' in p.predictions),
+          hasYesNo: !!(p.predictions && typeof p.predictions === 'object' && 'yes' in p.predictions && 'no' in p.predictions),
+          predictionsStructure: p.predictions && typeof p.predictions === 'object' ? Object.keys(p.predictions) : []
         })) || [];
         
         console.log(`[DEBUG Country Page] Sample filtered fixture:`, {

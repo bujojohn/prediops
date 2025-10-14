@@ -250,7 +250,7 @@ export default async function LeaguePredictionsPage({
 
       // Debug: Check if raw fixtures have predictions
       if (rawFixtures.length > 0) {
-        const sampleFixture = rawFixtures[0] as any;
+        const sampleFixture = rawFixtures[0] as Fixture;
         console.log(`[DEBUG] Sample raw fixture predictions:`, {
           fixtureId: sampleFixture.id,
           hasPredictions: !!sampleFixture.predictions,
@@ -268,7 +268,7 @@ export default async function LeaguePredictionsPage({
 
       // Debug: Check if filtered fixtures still have predictions
       if (allFixtures.length > 0) {
-        const sampleFiltered = allFixtures[0] as any;
+        const sampleFiltered = allFixtures[0] as Fixture;
         console.log(`[DEBUG] Sample filtered fixture predictions:`, {
           fixtureId: sampleFiltered.id,
           hasPredictions: !!sampleFiltered.predictions,
