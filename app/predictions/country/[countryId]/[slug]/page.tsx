@@ -135,12 +135,20 @@ export default async function CountryPredictionsPage({
       // Debug: Check if raw fixtures have predictions
       if (allFixtures.length > 0) {
         const sample = allFixtures[0] as any;
+        const predictionTypes = sample.predictions?.map((p: any) => ({
+          typeId: p.type_id,
+          typeName: p.type?.name,
+          hasHomeAwayDraw: !!(p.predictions?.home && p.predictions?.away && p.predictions?.draw),
+          hasYesNo: !!(p.predictions?.yes && p.predictions?.no),
+        })) || [];
+        
         console.log(`[DEBUG Country Page] Sample raw fixture:`, {
           id: sample.id,
           name: sample.name,
           hasPredictions: !!sample.predictions,
           predictionsCount: sample.predictions?.length || 0,
-          firstPrediction: sample.predictions?.[0]
+          predictionTypes: predictionTypes,
+          samplePredictionStructure: sample.predictions?.[0]?.predictions
         });
       }
       
@@ -153,12 +161,21 @@ export default async function CountryPredictionsPage({
       // Debug: Check if filtered fixtures still have predictions
       if (countryFixtures.length > 0) {
         const sampleFiltered = countryFixtures[0] as any;
+        const filteredPredictionTypes = sampleFiltered.predictions?.map((p: any) => ({
+          typeId: p.type_id,
+          typeName: p.type?.name,
+          hasHomeAwayDraw: !!(p.predictions?.home && p.predictions?.away && p.predictions?.draw),
+          hasYesNo: !!(p.predictions?.yes && p.predictions?.no),
+          predictionsStructure: Object.keys(p.predictions || {})
+        })) || [];
+        
         console.log(`[DEBUG Country Page] Sample filtered fixture:`, {
           id: sampleFiltered.id,
           name: sampleFiltered.name,
+          countryId: sampleFiltered.league?.country?.id,
           hasPredictions: !!sampleFiltered.predictions,
           predictionsCount: sampleFiltered.predictions?.length || 0,
-          firstPrediction: sampleFiltered.predictions?.[0]
+          predictionTypes: filteredPredictionTypes
         });
       }
       

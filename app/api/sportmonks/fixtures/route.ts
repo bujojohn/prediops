@@ -4,7 +4,7 @@ import { sportmonks } from '@/lib/sportmonks';
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const include = searchParams.get('include') || 'participants;scores;state;predictions;league;periods.type;events.period;events.type;metadata.type';
+    const include = searchParams.get('include') || 'participants;scores;state;predictions.type;league;periods.type;events.period;events.type;metadata.type';
     const sortBy = searchParams.get('sortBy') || 'starting_at';
     const order = searchParams.get('order') || 'desc';
     const page = Number(searchParams.get('page') || '1');
