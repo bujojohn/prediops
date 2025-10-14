@@ -131,11 +131,37 @@ export default async function CountryPredictionsPage({
       });
 
       const allFixtures = fixturesResponse?.data || [];
+      
+      // Debug: Check if raw fixtures have predictions
+      if (allFixtures.length > 0) {
+        const sample = allFixtures[0] as any;
+        console.log(`[DEBUG Country Page] Sample raw fixture:`, {
+          id: sample.id,
+          name: sample.name,
+          hasPredictions: !!sample.predictions,
+          predictionsCount: sample.predictions?.length || 0,
+          firstPrediction: sample.predictions?.[0]
+        });
+      }
+      
       const filteredFixtures = allFixtures.filter((fixture: unknown) => {
         return (fixture as { league?: { country?: { id: number } } }).league?.country?.id === country.id;
       });
       
       countryFixtures.push(...filteredFixtures);
+      
+      // Debug: Check if filtered fixtures still have predictions
+      if (countryFixtures.length > 0) {
+        const sampleFiltered = countryFixtures[0] as any;
+        console.log(`[DEBUG Country Page] Sample filtered fixture:`, {
+          id: sampleFiltered.id,
+          name: sampleFiltered.name,
+          hasPredictions: !!sampleFiltered.predictions,
+          predictionsCount: sampleFiltered.predictions?.length || 0,
+          firstPrediction: sampleFiltered.predictions?.[0]
+        });
+      }
+      
       console.log(`Found ${countryFixtures.length} fixtures for ${country.name} today using getFixturesByDate`);
     } catch (fixturesError) {
       console.error(`Error loading fixtures for ${country.name}:`, fixturesError);

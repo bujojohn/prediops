@@ -65,19 +65,7 @@ function CountryPredictionsContent({
     window.history.pushState(null, '', `?${params.toString()}${window.location.hash}`);
   }, [searchParams]);
 
-  // Helper functions for empty state actions
-  const handleTryNextWeek = useCallback(() => {
-    const today = new Date();
-    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-    const nextWeekStr = nextWeek.toISOString().split('T')[0];
-    handleDateChange(nextWeekStr);
-  }, [handleDateChange]);
-
-  const handleTryToday = useCallback(() => {
-    const today = new Date().toISOString().split('T')[0];
-    handleDateChange(today);
-  }, [handleDateChange]);
-
+  // Refresh handler for reloading fixtures
   const handleRefresh = useCallback(() => {
     // Refresh the current page to reload fixtures
     window.location.reload();
@@ -181,8 +169,6 @@ function CountryPredictionsContent({
             selectedDate={selectedDate}
             onDateChange={handleDateChange}
             onRefresh={handleRefresh}
-            onTryNextWeek={handleTryNextWeek}
-            onTryToday={handleTryToday}
             variant="league"
             showDateHeaders={true}
             showLeagueHeaders={true}
@@ -199,7 +185,7 @@ function CountryPredictionsContent({
               showValueBetsFilter: true,
             }}
             emptyStateTitle={`No Fixtures Found for ${country.name}`}
-            emptyStateMessage={`No fixtures found for ${country.name} on the selected date. This country may have a break or off-season period.`}
+            emptyStateMessage={`No fixtures found for ${country.name}. Use the date filter above to search different time periods.`}
           />
         </TabsContent>
 
