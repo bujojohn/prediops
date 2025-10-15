@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, memo, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
-import { Search, Settings, RefreshCw, Calendar, Eye, Download, Star } from 'lucide-react';
+import { Search, Settings, RefreshCw, Calendar, Eye, Download, Star, ArrowUpDown } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { SidebarTheme } from './SidebarTheme';
 import { Logo } from '@/components/ui/Logo';
@@ -17,6 +17,9 @@ import { TournamentsSection } from './sidebar/TournamentsSection';
 import { useFavorites } from './sidebar/hooks/useFavorites';
 import { useSidebarData } from './sidebar/hooks/useSidebarData';
 import { useLeagueFixtures } from './sidebar/hooks/useLeagueFixtures';
+import { useRecentSearches } from './sidebar/hooks/useRecentSearches';
+import { useKeyboardShortcuts } from './sidebar/hooks/useKeyboardShortcuts';
+import { useSorting } from './sidebar/hooks/useSorting';
 
 // Import types
 import type { CountryWithLeagues, TopLeague } from './sidebar/types';
@@ -29,6 +32,7 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
   const pathname = usePathname();
   const isHomePage = pathname === '/';
   const [searchTerm, setSearchTerm] = useState('');
+  const searchInputRef = React.useRef<HTMLInputElement | null>(null);
 
   // Filter states
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
@@ -38,6 +42,19 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
   // Refresh state
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Recent searches
+  const { recentSearches, addToRecentSearches, clearRecentSearches } = useRecentSearches();
+  const [showRecentSearches, setShowRecentSearches] = useState(false);
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    searchInputRef,
+    onToggleFavorites: () => setShowFavoritesOnly(prev => !prev),
+    onToggleActive: () => setShowActiveOnly(prev => !prev),
+    onToggleToday: () => setShowTodayOnly(prev => !prev),
+    onRefresh: () => setRefreshTrigger(prev => prev + 1),
+  });
 
   if (isHomePage) {
     return null;
@@ -58,11 +75,54 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
           <div className="relative mb-2">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Search countries, leagues..."
+              ref={searchInputRef}
+              placeholder="Search countries, leagues... (Ctrl+K)"
               className="pl-10"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              onFocus={() => setShowRecentSearches(true)}
+              onBlur={() => setTimeout(() => setShowRecentSearches(false), 200)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && searchTerm.trim()) {
+                  addToRecentSearches(searchTerm);
+                  setShowRecentSearches(false);
+                }
+              }}
             />
+            
+            {/* Recent Searches Dropdown */}
+            {showRecentSearches && recentSearches.length > 0 && !searchTerm && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50">
+                <div className="p-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="text-xs font-medium text-gray-600 dark:text-gray-400">Recent Searches</div>
+                    <button
+                      onClick={clearRecentSearches}
+                      className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                  <div className="space-y-1">
+                    {recentSearches.map((search, index) => (
+                      <button
+                        key={`${search}-${index}`}
+                        className="w-full text-left px-2 py-1.5 text-xs rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        onMouseDown={(e) => {
+                          e.preventDefault(); // Prevent blur
+                          setSearchTerm(search);
+                          setShowRecentSearches(false);
+                        }}
+                      >
+                        <Search className="inline h-3 w-3 mr-2 text-gray-400" />
+                        {search}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {/* Search Results Dropdown */}
             <SearchResults searchTerm={searchTerm} />
           </div>
@@ -77,7 +137,7 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
                     ? 'text-yellow-600 bg-yellow-50 dark:text-yellow-400 dark:bg-yellow-900/20'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
-                title="Show only favorites"
+                title="Show only favorites (Ctrl+F)"
                 onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
               >
                 <Star className={`h-3 w-3 ${showFavoritesOnly ? 'fill-current' : ''}`} />
@@ -90,7 +150,7 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
                     ? 'text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900/20'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
-                title="Show only active leagues"
+                title="Show only active leagues (Ctrl+A)"
                 onClick={() => setShowActiveOnly(!showActiveOnly)}
               >
                 <Eye className="h-3 w-3" />
@@ -103,7 +163,7 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
                     ? 'text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
-                title="Show leagues with fixtures today"
+                title="Show leagues with fixtures today (Ctrl+T)"
                 onClick={() => setShowTodayOnly(!showTodayOnly)}
               >
                 <Calendar className="h-3 w-3" />
@@ -117,7 +177,7 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
                 className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors text-muted-foreground hover:text-foreground hover:bg-accent ${
                   isRefreshing ? 'cursor-wait' : ''
                 }`}
-                title="Refresh data"
+                title="Refresh data (Ctrl+R)"
                 disabled={isRefreshing}
                 onClick={() => {
                   setRefreshTrigger((prev) => prev + 1);
@@ -150,14 +210,14 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
 
               <button
                 className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors text-muted-foreground hover:text-foreground hover:bg-accent"
-                title="Sidebar settings"
+                title="Keyboard shortcuts: Ctrl+K (Search), Ctrl+F (Favorites), Ctrl+A (Active), Ctrl+T (Today), Ctrl+R (Refresh)"
                 onClick={() => {
-                  // Open settings modal or toggle settings
-                  console.log('Open sidebar settings');
+                  // Show keyboard shortcuts help
+                  alert('Keyboard Shortcuts:\n\nCtrl+K or Cmd+K: Focus search\nCtrl+F or Cmd+F: Toggle favorites\nCtrl+A or Cmd+A: Toggle active filter\nCtrl+T or Cmd+T: Toggle today filter\nCtrl+R or Cmd+R: Refresh data\nEsc: Clear search and unfocus');
                 }}
               >
                 <Settings className="h-3 w-3" />
-                <span className="hidden sm:inline">Settings</span>
+                <span className="hidden sm:inline">Help</span>
               </button>
             </div>
           </div>
@@ -199,6 +259,7 @@ function SidebarContent({
   const { favorites, toggleFavorite } = useFavorites();
   const { allCountries, countryLeagues, loadingStates, loadCountriesWithLeagues, loadCountryLeagues, clearCache: clearDataCache } = useSidebarData();
   const { leagueFixtureCounts, loadingLeagueCounts, loadLeagueFixtureCounts, clearCache: clearFixturesCache } = useLeagueFixtures();
+  const { sortBy, setSortBy, sortCountries } = useSorting();
 
   // Local state
   const [filteredCountries, setFilteredCountries] = useState<CountryWithLeagues[]>([]);
@@ -409,7 +470,7 @@ function SidebarContent({
     });
   }, [filteredCountries, loadTodayFixtureCounts, loadingCounts, countryTodayCounts]);
 
-  // Filter countries based on search term and filter options
+  // Filter and sort countries based on search term, filter options, and sort preference
   useEffect(() => {
     let filtered = allCountries;
 
@@ -437,8 +498,11 @@ function SidebarContent({
       filtered = filtered.filter((country) => (countryTodayCounts.get(country.id) || 0) > 0);
     }
 
-    setFilteredCountries(filtered);
-  }, [searchTerm, allCountries, showFavoritesOnly, showActiveOnly, showTodayOnly, favorites, countryTodayCounts]);
+    // Apply sorting
+    const sorted = sortCountries(filtered, countryTodayCounts, favorites);
+
+    setFilteredCountries(sorted);
+  }, [searchTerm, allCountries, showFavoritesOnly, showActiveOnly, showTodayOnly, favorites, countryTodayCounts, sortBy, sortCountries]);
 
   // Show skeleton while data is loading
   if (isLoading || allCountries.length === 0) {
@@ -447,6 +511,49 @@ function SidebarContent({
 
   return (
     <div className="p-1">
+      {/* Sorting Controls */}
+      <div className="mb-2 px-1">
+        <div className="flex items-center gap-2">
+          <ArrowUpDown className="h-3 w-3 text-gray-500" />
+          <span className="text-[10px] text-gray-500 dark:text-gray-400">Sort by:</span>
+          <div className="flex gap-1">
+            <button
+              onClick={() => setSortBy('name')}
+              className={`px-2 py-0.5 rounded text-[10px] transition-colors ${
+                sortBy === 'name'
+                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+              title="Sort alphabetically by name"
+            >
+              Name
+            </button>
+            <button
+              onClick={() => setSortBy('fixtures')}
+              className={`px-2 py-0.5 rounded text-[10px] transition-colors ${
+                sortBy === 'fixtures'
+                  ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+              title="Sort by fixture count (most first)"
+            >
+              Fixtures
+            </button>
+            <button
+              onClick={() => setSortBy('favorites')}
+              className={`px-2 py-0.5 rounded text-[10px] transition-colors ${
+                sortBy === 'favorites'
+                  ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+              title="Show favorites first"
+            >
+              Favorites
+            </button>
+          </div>
+        </div>
+      </div>
+      
       {/* 1. Countries Section */}
       <CountriesSection
         countries={countryItems}
