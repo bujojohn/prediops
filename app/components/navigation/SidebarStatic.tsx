@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, memo } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -40,6 +41,28 @@ interface League {
   country_id?: number;
 }
 
+// Global cache for search data with expiry
+const searchDataCache = {
+  countries: { data: [] as CountryWithLeagues[], timestamp: 0, ttl: 5 * 60 * 1000 }, // 5 minutes
+  leagues: { data: [] as League[], timestamp: 0, ttl: 5 * 60 * 1000 },
+  teams: { data: [] as { id: number; name: string; image_path?: string; country_id?: number }[], timestamp: 0, ttl: 5 * 60 * 1000 },
+  fixtures: { data: [] as { id: number; starting_at: string; participants: { id: number; name: string }[]; league: { id: number; name: string; country_id?: number } }[], timestamp: 0, ttl: 2 * 60 * 1000 }, // 2 minutes for fixtures (more dynamic)
+};
+
+// Cache helper functions
+const getCachedData = <T,>(cache: { data: T[]; timestamp: number; ttl: number }): T[] | null => {
+  const now = Date.now();
+  if (cache.timestamp && (now - cache.timestamp) < cache.ttl && cache.data.length > 0) {
+    return cache.data;
+  }
+  return null;
+};
+
+const setCachedData = <T,>(cache: { data: T[]; timestamp: number; ttl: number }, data: T[]) => {
+  cache.data = data;
+  cache.timestamp = Date.now();
+};
+
 // Search Results Dropdown Component
 function SearchResults({ searchTerm }: { searchTerm: string }) {
   const [searchResults, setSearchResults] = useState<{
@@ -66,185 +89,199 @@ function SearchResults({ searchTerm }: { searchTerm: string }) {
     hasResults: false 
   });
   
-  const [allCountries, setAllCountries] = useState<CountryWithLeagues[]>([]);
-  const [allLeagues, setAllLeagues] = useState<League[]>([]);
-  const [allTeams, setAllTeams] = useState<{ id: number; name: string; image_path?: string; country_id?: number }[]>([]);
-  const [allFixtures, setAllFixtures] = useState<{ 
-    id: number; 
-    starting_at: string; 
-    participants: { id: number; name: string }[]; 
-    league: { id: number; name: string; country_id?: number } 
-  }[]>([]);
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const loadingRef = React.useRef(false);
 
-  // Debounced search
+  // Debounced search - increased to 400ms to reduce API calls
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
-    }, 300);
+    }, 400);
     
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Load all search data
+  // Optimized data loading with caching and lazy loading
   useEffect(() => {
     const loadSearchData = async () => {
-      if (debouncedSearchTerm.trim().length < 2) return; // Only search with 2+ characters
+      if (debouncedSearchTerm.trim().length < 2) {
+        setSearchResults({ 
+          countries: [], 
+          leagues: [], 
+          teams: [], 
+          tournaments: [],
+          fixtures: [],
+          hasResults: false 
+        });
+        return;
+      }
       
+      // Prevent duplicate concurrent requests
+      if (loadingRef.current) return;
+      loadingRef.current = true;
       setIsLoading(true);
+      
       try {
-        // Load all data in parallel
-        const [countriesRes, leaguesRes, teamsRes, fixturesRes] = await Promise.all([
-          fetch('/api/sportmonks/countries/with-leagues'),
-          fetch('/api/sportmonks/leagues?per_page=100&page=1'),
-          fetch('/api/sportmonks/teams?per_page=100&page=1'),
-          fetch(`/api/sportmonks/fixtures/upcoming?per_page=50&page=1`)
-        ]);
-
-        const [countriesData, leaguesData, teamsData, fixturesData] = await Promise.all([
-          countriesRes.json(),
-          leaguesRes.json(),
-          teamsRes.json(),
-          fixturesRes.json()
-        ]);
-
-        if (countriesData.success) {
-          setAllCountries(countriesData.data || []);
+        const searchLower = debouncedSearchTerm.toLowerCase();
+        
+        // Phase 1: Load countries (always needed, usually cached)
+        let countries: CountryWithLeagues[] = getCachedData(searchDataCache.countries) || [];
+        if (countries.length === 0) {
+          const countriesRes = await fetch('/api/sportmonks/countries/with-leagues');
+          const countriesData = await countriesRes.json();
+          if (countriesData.success) {
+            countries = countriesData.data || [];
+            setCachedData(searchDataCache.countries, countries);
+          }
         }
         
-        if (leaguesData.success) {
-          setAllLeagues(leaguesData.data || []);
+        // Filter countries immediately
+        const matchingCountries = countries.filter((country) => {
+          const name = (country.name || country.fifa_name || country.official_name || '').toLowerCase();
+          return name.includes(searchLower);
+        });
+        
+        // Determine if we need leagues/teams/fixtures based on search term
+        const needsLeagues = searchLower.length >= 3; // Only load if 3+ chars
+        const needsTeams = searchLower.length >= 3;
+        const needsFixtures = searchLower.length >= 4; // Only for longer searches
+        
+        // Phase 2: Load leagues if needed
+        let leagues: League[] = [];
+        if (needsLeagues) {
+          leagues = getCachedData(searchDataCache.leagues) || [];
+          if (leagues.length === 0) {
+            const leaguesRes = await fetch('/api/sportmonks/leagues?per_page=100&page=1');
+            const leaguesData = await leaguesRes.json();
+            if (leaguesData.success) {
+              leagues = leaguesData.data || [];
+              setCachedData(searchDataCache.leagues, leagues);
+            }
+          }
         }
         
-        if (teamsData.success) {
-          setAllTeams(teamsData.data || []);
+        // Phase 3: Load teams if needed
+        let teams: { id: number; name: string; image_path?: string; country_id?: number }[] = [];
+        if (needsTeams) {
+          teams = getCachedData(searchDataCache.teams) || [];
+          if (teams.length === 0) {
+            const teamsRes = await fetch('/api/sportmonks/teams?per_page=100&page=1');
+            const teamsData = await teamsRes.json();
+            if (teamsData.success) {
+              teams = teamsData.data || [];
+              setCachedData(searchDataCache.teams, teams);
+            }
+          }
         }
         
-        if (fixturesData.success) {
-          setAllFixtures(fixturesData.data || []);
+        // Phase 4: Load fixtures if needed
+        let fixtures: { id: number; starting_at: string; participants: { id: number; name: string }[]; league: { id: number; name: string; country_id?: number } }[] = [];
+        if (needsFixtures) {
+          fixtures = getCachedData(searchDataCache.fixtures) || [];
+          if (fixtures.length === 0) {
+            const fixturesRes = await fetch(`/api/sportmonks/fixtures/upcoming?per_page=50&page=1`);
+            const fixturesData = await fixturesRes.json();
+            if (fixturesData.success) {
+              fixtures = fixturesData.data || [];
+              setCachedData(searchDataCache.fixtures, fixtures);
+            }
+          }
         }
+        
+        // Process search results
+        const results = {
+          countries: matchingCountries,
+          leagues: [] as { country: CountryWithLeagues; league: League }[],
+          teams: [] as { country: CountryWithLeagues; team: { id: number; name: string; image_path?: string } }[],
+          tournaments: [] as CountryWithLeagues[],
+          fixtures: [] as { fixture: { id: number; starting_at: string; participants: { id: number; name: string }[]; league: { id: number; name: string } }; country: CountryWithLeagues }[],
+          hasResults: false
+        };
+        
+        // Filter leagues
+        if (needsLeagues) {
+          const matchingLeagues = leagues.filter(league => 
+            league.name.toLowerCase().includes(searchLower) ||
+            (league.short_code && league.short_code.toLowerCase().includes(searchLower))
+          );
+          
+          matchingLeagues.forEach(league => {
+            const country = countries.find(c => c.id === league.country_id);
+            if (country) {
+              results.leagues.push({ country, league });
+            }
+          });
+        }
+        
+        // Filter teams
+        if (needsTeams) {
+          const matchingTeams = teams.filter(team => 
+            team.name.toLowerCase().includes(searchLower)
+          );
+          
+          matchingTeams.forEach(team => {
+            const country = countries.find(c => c.id === team.country_id);
+            if (country) {
+              results.teams.push({ country, team });
+            }
+          });
+        }
+        
+        // Filter fixtures
+        if (needsFixtures) {
+          const matchingFixtures = fixtures.filter(fixture => {
+            const homeTeam = fixture.participants[0]?.name?.toLowerCase() || '';
+            const awayTeam = fixture.participants[1]?.name?.toLowerCase() || '';
+            const leagueName = fixture.league?.name?.toLowerCase() || '';
+            
+            return homeTeam.includes(searchLower) || 
+                   awayTeam.includes(searchLower) || 
+                   leagueName.includes(searchLower);
+          });
+          
+          matchingFixtures.forEach(fixture => {
+            const country = countries.find(c => c.id === fixture.league.country_id);
+            if (country) {
+              results.fixtures.push({ fixture, country });
+            }
+          });
+        }
+        
+        // Filter tournaments
+        const matchingTournaments = matchingCountries.filter((country) => {
+          const name = (country.name || country.fifa_name || country.official_name || '').toLowerCase();
+          
+          const tournamentKeywords = [
+            'champions league', 'europa league', 'europa conference league', 'conference league',
+            'african cup', 'asian cup', 'copa america', 'gold cup', 'oceanian cup',
+            'nations league', 'confederations cup', 'club world cup', 'super cup',
+            'world cup', 'euro', 'copa libertadores', 'copa sudamericana', 'uefa', 'caf', 'afc'
+          ];
+          
+          return tournamentKeywords.some(keyword => name.includes(keyword)) ||
+                 name.includes('continental') || name.includes('regional') ||
+                 name.includes('intercontinental');
+        });
+        
+        results.tournaments = matchingTournaments;
+        results.hasResults = results.countries.length > 0 || 
+                            results.leagues.length > 0 || 
+                            results.teams.length > 0 ||
+                            results.tournaments.length > 0 ||
+                            results.fixtures.length > 0;
+        
+        setSearchResults(results);
       } catch (error) {
         console.error('Error loading search data:', error);
       } finally {
         setIsLoading(false);
+        loadingRef.current = false;
       }
     };
 
     loadSearchData();
   }, [debouncedSearchTerm]);
-
-  // Enhanced search functionality
-  useEffect(() => {
-    if (!debouncedSearchTerm.trim() || debouncedSearchTerm.trim().length < 2) {
-      setSearchResults({ 
-        countries: [], 
-        leagues: [], 
-        teams: [], 
-        tournaments: [],
-        fixtures: [],
-        hasResults: false 
-      });
-      return;
-    }
-
-    const searchLower = debouncedSearchTerm.toLowerCase();
-    const results = {
-      countries: [] as CountryWithLeagues[],
-      leagues: [] as { country: CountryWithLeagues; league: League }[],
-      teams: [] as { country: CountryWithLeagues; team: { id: number; name: string; image_path?: string } }[],
-      tournaments: [] as CountryWithLeagues[],
-      fixtures: [] as { 
-        fixture: { 
-          id: number; 
-          starting_at: string; 
-          participants: { id: number; name: string }[]; 
-          league: { id: number; name: string } 
-        }; 
-        country: CountryWithLeagues 
-      }[],
-      hasResults: false
-    };
-
-    // Search countries
-    const matchingCountries = allCountries.filter((country) => {
-      const name = (country.name || country.fifa_name || country.official_name || '').toLowerCase();
-      return name.includes(searchLower);
-    });
-    
-    results.countries = matchingCountries;
-
-    // Search leagues
-    const matchingLeagues = allLeagues.filter(league => 
-      league.name.toLowerCase().includes(searchLower) ||
-      (league.short_code && league.short_code.toLowerCase().includes(searchLower))
-    );
-    
-    matchingLeagues.forEach(league => {
-      const country = allCountries.find(c => c.id === league.country_id);
-      if (country) {
-        results.leagues.push({ country, league });
-      }
-    });
-
-    // Search teams
-    const matchingTeams = allTeams.filter(team => 
-      team.name.toLowerCase().includes(searchLower)
-    );
-    
-    matchingTeams.forEach(team => {
-      const country = allCountries.find(c => c.id === team.country_id);
-      if (country) {
-        results.teams.push({ country, team });
-      }
-    });
-
-    // Search tournaments (countries that are tournaments)
-    const matchingTournaments = allCountries.filter((country) => {
-      const name = (country.name || country.fifa_name || country.official_name || '').toLowerCase();
-      if (!name.includes(searchLower)) return false;
-      
-      // Check if it's a tournament
-      const tournamentKeywords = [
-        'champions league', 'europa league', 'europa conference league', 'conference league',
-        'african cup', 'asian cup', 'copa america', 'gold cup', 'oceanian cup',
-        'nations league', 'confederations cup', 'club world cup', 'super cup',
-        'world cup', 'euro', 'copa libertadores', 'copa sudamericana', 'uefa', 'caf', 'afc'
-      ];
-      
-      return tournamentKeywords.some(keyword => name.includes(keyword)) ||
-             name.includes('continental') || name.includes('regional') ||
-             name.includes('intercontinental');
-    });
-    
-    results.tournaments = matchingTournaments;
-
-    // Search fixtures
-    const matchingFixtures = allFixtures.filter(fixture => {
-      const homeTeam = fixture.participants[0]?.name?.toLowerCase() || '';
-      const awayTeam = fixture.participants[1]?.name?.toLowerCase() || '';
-      const leagueName = fixture.league?.name?.toLowerCase() || '';
-      
-      return homeTeam.includes(searchLower) || 
-             awayTeam.includes(searchLower) || 
-             leagueName.includes(searchLower);
-    });
-    
-    matchingFixtures.forEach(fixture => {
-      const country = allCountries.find(c => c.id === fixture.league.country_id);
-      if (country) {
-        results.fixtures.push({ fixture, country });
-      }
-    });
-
-    results.hasResults = results.countries.length > 0 || 
-                        results.leagues.length > 0 || 
-                        results.teams.length > 0 ||
-                        results.tournaments.length > 0 ||
-                        results.fixtures.length > 0;
-    
-    setSearchResults(results);
-  }, [debouncedSearchTerm, allCountries, allLeagues, allTeams, allFixtures]);
 
   // Don't show if no search term or no results
   if (!debouncedSearchTerm.trim() || !searchResults.hasResults) {
@@ -614,6 +651,9 @@ function SidebarContent({
   // Section collapse state
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
   
+  // Virtual scrolling container ref
+  const countriesContainerRef = React.useRef<HTMLDivElement>(null);
+  
   // Toggle section collapse
   const toggleSection = (sectionId: string) => {
     setCollapsedSections(prev => {
@@ -916,6 +956,14 @@ function SidebarContent({
     });
   }, [filteredCountries, loadTodayFixtureCounts, loadingCounts, countryTodayCounts]);
 
+  // Setup virtual scrolling for countries list
+  const countriesVirtualizer = useVirtualizer({
+    count: countryItems.length,
+    getScrollElement: () => countriesContainerRef.current,
+    estimateSize: () => 45, // Estimated height of each country item
+    overscan: 5, // Render 5 extra items above and below visible area
+  });
+  
   // Filter countries based on search term and filter options
   useEffect(() => {
     let filtered = allCountries;
@@ -977,15 +1025,40 @@ function SidebarContent({
         </button>
         
         {!collapsedSections.has('countries') && (
-          <div className="space-y-0.5 max-h-[calc(100vh/3)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
-          {countryItems.map((country) => {
+          <div 
+            ref={countriesContainerRef}
+            className="max-h-[calc(100vh/3)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent"
+            style={{ position: 'relative' }}
+          >
+            <div
+              style={{
+                height: `${countriesVirtualizer.getTotalSize()}px`,
+                width: '100%',
+                position: 'relative',
+              }}
+            >
+          {countriesVirtualizer.getVirtualItems().map((virtualItem) => {
+            const country = countryItems[virtualItem.index];
             const isExpanded = expandedCountries.has(country.id);
             const leagues = countryLeagues.get(country.id) || [];
             const isLoadingLeagues = loadingStates.get(country.id) || false;
             const countryName = country.name || country.fifa_name || country.official_name || '';
 
             return (
-              <div key={country.id} className="space-y-0.5" id={`country-${country.id}`}>
+              <div 
+                key={virtualItem.key}
+                data-index={virtualItem.index}
+                ref={countriesVirtualizer.measureElement}
+                className="space-y-0.5" 
+                id={`country-${country.id}`}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  transform: `translateY(${virtualItem.start}px)`,
+                }}
+              >
                 {/* Country Header */}
                 <div className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
                   <button
@@ -1109,6 +1182,7 @@ function SidebarContent({
               </div>
             );
           })}
+            </div>
           </div>
         )}
       </div>
