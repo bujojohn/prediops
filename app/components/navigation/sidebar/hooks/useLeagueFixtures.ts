@@ -7,8 +7,8 @@ export function useLeagueFixtures() {
   const [leagueFixtureCounts, setLeagueFixtureCounts] = useState<Map<number, number>>(new Map());
   const [loadingLeagueCounts, setLoadingLeagueCounts] = useState<Set<number>>(new Set());
 
-  const loadLeagueFixtureCounts = useCallback(async (leagueId: number) => {
-    if (loadingLeagueCounts.has(leagueId) || leagueFixtureCounts.has(leagueId)) {
+  const loadLeagueFixtureCounts = useCallback(async (leagueId: number, force = false) => {
+    if (!force && (loadingLeagueCounts.has(leagueId) || leagueFixtureCounts.has(leagueId))) {
       return;
     }
 

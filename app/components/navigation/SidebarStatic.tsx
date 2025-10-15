@@ -438,19 +438,22 @@ function SidebarContent({
       const performRefresh = async () => {
         onRefreshStateChange(true);
         try {
-          // Clear all caches
+          // Clear all caches first
           clearDataCache();
           clearFixturesCache();
           setCountryTodayCounts(new Map());
           setExpandedCountries(new Set());
 
+          // Wait a tick for state updates to propagate
+          await new Promise(resolve => setTimeout(resolve, 0));
+
           // Reload countries
           await loadCountriesWithLeagues();
 
-          // Reload top leagues fixture counts
-          topLeagues.forEach((league) => {
-            loadLeagueFixtureCounts(league.id);
-          });
+          // Reload top leagues fixture counts (force refresh)
+          for (const league of topLeagues) {
+            await loadLeagueFixtureCounts(league.id, true);
+          }
         } finally {
           onRefreshStateChange(false);
         }
