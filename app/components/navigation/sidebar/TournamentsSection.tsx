@@ -46,7 +46,7 @@ export function TournamentsSection({
     <div className="mb-3">
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-3 py-2.5 mb-2 rounded-lg bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 hover:from-purple-100 hover:to-purple-200 dark:hover:from-purple-900/40 dark:hover:to-purple-800/40 transition-all duration-200 group border border-purple-200/50 dark:border-purple-700/50"
+        className="w-full flex items-center justify-between px-3 py-2.5 mb-2 rounded-lg bg-gradient-to-r from-purple-50/90 to-purple-100/90 dark:from-purple-900/40 dark:to-purple-800/40 hover:from-purple-100/90 hover:to-purple-200/90 dark:hover:from-purple-900/50 dark:hover:to-purple-800/50 transition-all duration-200 group border border-purple-200/50 dark:border-purple-700/50 backdrop-blur-sm shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
       >
         <div className="flex items-center gap-2">
           <Star className="h-4 w-4 text-purple-600 dark:text-purple-400" />
@@ -76,7 +76,7 @@ export function TournamentsSection({
             return (
               <div key={tournament.id} className="space-y-0.5" id={`country-${tournament.id}`}>
                 {/* Tournament Header */}
-                <div className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
+                <div className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent/80 hover:text-accent-foreground transition-all duration-150 hover:scale-[1.01] hover:shadow-sm">
                   <button
                     onClick={() => onToggleCountry(tournament.id)}
                     className="flex items-center gap-1.5 flex-1 text-left min-w-0"
@@ -128,8 +128,10 @@ export function TournamentsSection({
                         e.stopPropagation();
                         onToggleFavorite(tournament.id);
                       }}
-                      className={`p-1 rounded transition-colors ${
-                        favorites.has(tournament.id) ? 'text-yellow-500 hover:text-yellow-600' : 'text-muted-foreground hover:text-yellow-500'
+                      className={`p-1.5 rounded-md transition-all duration-150 hover:scale-110 active:scale-95 ${
+                        favorites.has(tournament.id) 
+                          ? 'text-yellow-500 hover:text-yellow-600 bg-yellow-50/50 dark:bg-yellow-900/20 hover:bg-yellow-100/50 dark:hover:bg-yellow-900/30' 
+                          : 'text-muted-foreground hover:text-yellow-500 hover:bg-yellow-50/50 dark:hover:bg-yellow-900/20'
                       }`}
                       title={favorites.has(tournament.id) ? 'Remove from favorites' : 'Add to favorites'}
                     >
@@ -139,7 +141,7 @@ export function TournamentsSection({
                       href={getCountryPredictionsUrl(tournament)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+                      className="p-1.5 rounded-md text-muted-foreground hover:text-foreground transition-all duration-150 hover:scale-110 active:scale-95 hover:bg-blue-50/50 dark:hover:bg-blue-900/20"
                       title="Open predictions page"
                     >
                       <ExternalLink className="h-3 w-3" />
@@ -161,7 +163,7 @@ export function TournamentsSection({
                         return (
                           <div
                             key={league.id}
-                            className={`flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors ${
+                            className={`flex items-center justify-between p-1.5 rounded-md hover:bg-accent/80 hover:text-accent-foreground transition-all duration-150 hover:scale-[1.01] hover:shadow-sm ${
                               active ? 'bg-accent/60' : ''
                             }`}
                           >

@@ -54,7 +54,7 @@ export function CountriesSection({
     <div className="mb-3">
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-3 py-2.5 mb-2 rounded-lg bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 hover:from-blue-100 hover:to-blue-200 dark:hover:from-blue-900/40 dark:hover:to-blue-800/40 transition-all duration-200 group border border-blue-200/50 dark:border-blue-700/50"
+        className="w-full flex items-center justify-between px-3 py-2.5 mb-2 rounded-lg bg-gradient-to-r from-blue-50/90 to-blue-100/90 dark:from-blue-900/40 dark:to-blue-800/40 hover:from-blue-100/90 hover:to-blue-200/90 dark:hover:from-blue-900/50 dark:hover:to-blue-800/50 transition-all duration-200 group border border-blue-200/50 dark:border-blue-700/50 backdrop-blur-sm shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
       >
         <div className="flex items-center gap-2">
           <Globe className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -109,7 +109,7 @@ export function CountriesSection({
                   }}
                 >
                   {/* Country Header */}
-                  <div className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors">
+                  <div className="flex items-center justify-between p-1.5 rounded-md hover:bg-accent/80 hover:text-accent-foreground transition-all duration-150 hover:scale-[1.01] hover:shadow-sm">
                     <button
                       onClick={() => onToggleCountry(country.id)}
                       className="flex items-center gap-1.5 flex-1 text-left min-w-0"
@@ -155,8 +155,10 @@ export function CountriesSection({
                           e.stopPropagation();
                           onToggleFavorite(country.id);
                         }}
-                        className={`p-1 rounded transition-colors ${
-                          favorites.has(country.id) ? 'text-yellow-500 hover:text-yellow-600' : 'text-muted-foreground hover:text-yellow-500'
+                        className={`p-1.5 rounded-md transition-all duration-150 hover:scale-110 active:scale-95 ${
+                          favorites.has(country.id) 
+                            ? 'text-yellow-500 hover:text-yellow-600 bg-yellow-50/50 dark:bg-yellow-900/20 hover:bg-yellow-100/50 dark:hover:bg-yellow-900/30' 
+                            : 'text-muted-foreground hover:text-yellow-500 hover:bg-yellow-50/50 dark:hover:bg-yellow-900/20'
                         }`}
                         title={favorites.has(country.id) ? 'Remove from favorites' : 'Add to favorites'}
                       >
@@ -166,7 +168,7 @@ export function CountriesSection({
                         href={getCountryPredictionsUrl(country)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+                        className="p-1.5 rounded-md text-muted-foreground hover:text-foreground transition-all duration-150 hover:scale-110 active:scale-95 hover:bg-blue-50/50 dark:hover:bg-blue-900/20"
                         title="Open predictions page"
                       >
                         <ExternalLink className="h-3 w-3" />
@@ -188,7 +190,7 @@ export function CountriesSection({
                           return (
                             <div
                               key={league.id}
-                              className={`flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors ${
+                              className={`flex items-center justify-between p-1.5 rounded-md hover:bg-accent/80 hover:text-accent-foreground transition-all duration-150 hover:scale-[1.01] hover:shadow-sm ${
                                 active ? 'bg-accent/60' : ''
                               }`}
                             >

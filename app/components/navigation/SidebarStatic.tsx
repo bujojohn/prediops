@@ -62,22 +62,22 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
 
   return (
     <SidebarTheme>
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full bg-gradient-to-b from-white/95 to-white/90 dark:from-gray-900/95 dark:to-gray-800/90 backdrop-blur-sm">
         {/* Logo Header - Only show on mobile or when explicitly requested */}
         {showLogo && (
-          <div className="p-3 border-b border-sidebar-border">
+          <div className="p-3 border-b border-sidebar-border bg-white/80 dark:bg-gray-900/80 backdrop-blur-md">
             <Logo size="sm" showText={true} />
           </div>
         )}
 
         {/* Header with Search */}
-        <div className="p-2 border-b">
+        <div className="p-2 border-b bg-white/70 dark:bg-gray-900/70 backdrop-blur-md">
           <div className="relative mb-2">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
               ref={searchInputRef}
               placeholder="Search countries, leagues... (Ctrl+K)"
-              className="pl-10"
+              className="pl-10 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 focus:border-blue-500/70 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 hover:bg-white/90 dark:hover:bg-gray-800/90 shadow-sm hover:shadow-md"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onFocus={() => setShowRecentSearches(true)}
@@ -92,13 +92,13 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
             
             {/* Recent Searches Dropdown */}
             {showRecentSearches && recentSearches.length > 0 && !searchTerm && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50">
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md border border-gray-200/50 dark:border-gray-700/50 rounded-lg shadow-xl z-50 animate-in slide-in-from-top-2 duration-200">
                 <div className="p-2">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="text-xs font-medium text-gray-600 dark:text-gray-400">Recent Searches</div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">Recent Searches</div>
                     <button
                       onClick={clearRecentSearches}
-                      className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                      className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors hover:scale-105 active:scale-95"
                     >
                       Clear
                     </button>
@@ -107,7 +107,7 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
                     {recentSearches.map((search, index) => (
                       <button
                         key={`${search}-${index}`}
-                        className="w-full text-left px-2 py-1.5 text-xs rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        className="w-full text-left px-3 py-2 text-xs rounded-md hover:bg-gray-100/80 dark:hover:bg-gray-700/80 transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] hover:shadow-sm"
                         onMouseDown={(e) => {
                           e.preventDefault(); // Prevent blur
                           setSearchTerm(search);
@@ -115,7 +115,7 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
                         }}
                       >
                         <Search className="inline h-3 w-3 mr-2 text-gray-400" />
-                        {search}
+                        <span className="text-gray-700 dark:text-gray-300">{search}</span>
                       </button>
                     ))}
                   </div>
@@ -132,10 +132,10 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
             {/* Left side - Filter tools */}
             <div className="flex items-center gap-1">
               <button
-                className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors hover:bg-accent ${
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md ${
                   showFavoritesOnly
-                    ? 'text-yellow-600 bg-yellow-50 dark:text-yellow-400 dark:bg-yellow-900/20'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'text-yellow-700 bg-gradient-to-r from-yellow-100 to-yellow-200 dark:from-yellow-900/40 dark:to-yellow-800/40 dark:text-yellow-300 border border-yellow-200/50 dark:border-yellow-700/50'
+                    : 'text-muted-foreground hover:text-foreground bg-white/60 dark:bg-gray-800/60 hover:bg-white/80 dark:hover:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50'
                 }`}
                 title="Show only favorites (Ctrl+F)"
                 onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
@@ -145,10 +145,10 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
               </button>
 
               <button
-                className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors hover:bg-accent ${
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md ${
                   showActiveOnly
-                    ? 'text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900/20'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'text-green-700 bg-gradient-to-r from-green-100 to-green-200 dark:from-green-900/40 dark:to-green-800/40 dark:text-green-300 border border-green-200/50 dark:border-green-700/50'
+                    : 'text-muted-foreground hover:text-foreground bg-white/60 dark:bg-gray-800/60 hover:bg-white/80 dark:hover:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50'
                 }`}
                 title="Show only active leagues (Ctrl+A)"
                 onClick={() => setShowActiveOnly(!showActiveOnly)}
@@ -158,10 +158,10 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
               </button>
 
               <button
-                className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors hover:bg-accent ${
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md ${
                   showTodayOnly
-                    ? 'text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'text-blue-700 bg-gradient-to-r from-blue-100 to-blue-200 dark:from-blue-900/40 dark:to-blue-800/40 dark:text-blue-300 border border-blue-200/50 dark:border-blue-700/50'
+                    : 'text-muted-foreground hover:text-foreground bg-white/60 dark:bg-gray-800/60 hover:bg-white/80 dark:hover:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50'
                 }`}
                 title="Show leagues with fixtures today (Ctrl+T)"
                 onClick={() => setShowTodayOnly(!showTodayOnly)}
@@ -174,7 +174,7 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
             {/* Right side - Action tools */}
             <div className="flex items-center gap-1">
               <button
-                className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors text-muted-foreground hover:text-foreground hover:bg-accent ${
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md bg-white/60 dark:bg-gray-800/60 hover:bg-white/80 dark:hover:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 text-muted-foreground hover:text-foreground ${
                   isRefreshing ? 'cursor-wait' : ''
                 }`}
                 title="Refresh data (Ctrl+R)"
@@ -188,7 +188,7 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
               </button>
 
               <button
-                className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors text-muted-foreground hover:text-foreground hover:bg-accent"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md bg-white/60 dark:bg-gray-800/60 hover:bg-white/80 dark:hover:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 text-muted-foreground hover:text-foreground"
                 title="Export favorites"
                 onClick={() => {
                   // Export favorites to JSON
@@ -209,7 +209,7 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
               </button>
 
               <button
-                className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors text-muted-foreground hover:text-foreground hover:bg-accent"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md bg-white/60 dark:bg-gray-800/60 hover:bg-white/80 dark:hover:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 text-muted-foreground hover:text-foreground"
                 title="Keyboard shortcuts: Ctrl+K (Search), Ctrl+F (Favorites), Ctrl+A (Active), Ctrl+T (Today), Ctrl+R (Refresh)"
                 onClick={() => {
                   // Show keyboard shortcuts help
@@ -515,17 +515,17 @@ function SidebarContent({
   return (
     <div className="p-1">
       {/* Sorting Controls */}
-      <div className="mb-2 px-1">
-        <div className="flex items-center gap-2">
-          <ArrowUpDown className="h-3 w-3 text-gray-500" />
-          <span className="text-[10px] text-gray-500 dark:text-gray-400">Sort by:</span>
+      <div className="mb-3 px-1">
+        <div className="flex items-center gap-2 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-lg p-2 border border-gray-200/50 dark:border-gray-700/50">
+          <ArrowUpDown className="h-3 w-3 text-gray-600 dark:text-gray-400" />
+          <span className="text-[10px] font-medium text-gray-700 dark:text-gray-300">Sort by:</span>
           <div className="flex gap-1">
             <button
               onClick={() => setSortBy('name')}
-              className={`px-2 py-0.5 rounded text-[10px] transition-colors ${
+              className={`px-2 py-1 rounded-md text-[10px] font-medium transition-all duration-150 hover:scale-105 active:scale-95 ${
                 sortBy === 'name'
-                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  ? 'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-700 dark:from-blue-900/40 dark:to-blue-800/40 dark:text-blue-300 border border-blue-200/50 dark:border-blue-700/50 shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-gray-700/80 hover:shadow-sm'
               }`}
               title="Sort alphabetically by name"
             >
@@ -533,10 +533,10 @@ function SidebarContent({
             </button>
             <button
               onClick={() => setSortBy('fixtures')}
-              className={`px-2 py-0.5 rounded text-[10px] transition-colors ${
+              className={`px-2 py-1 rounded-md text-[10px] font-medium transition-all duration-150 hover:scale-105 active:scale-95 ${
                 sortBy === 'fixtures'
-                  ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  ? 'bg-gradient-to-r from-green-100 to-green-200 text-green-700 dark:from-green-900/40 dark:to-green-800/40 dark:text-green-300 border border-green-200/50 dark:border-green-700/50 shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-gray-700/80 hover:shadow-sm'
               }`}
               title="Sort by fixture count (most first)"
             >
@@ -544,10 +544,10 @@ function SidebarContent({
             </button>
             <button
               onClick={() => setSortBy('favorites')}
-              className={`px-2 py-0.5 rounded text-[10px] transition-colors ${
+              className={`px-2 py-1 rounded-md text-[10px] font-medium transition-all duration-150 hover:scale-105 active:scale-95 ${
                 sortBy === 'favorites'
-                  ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  ? 'bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-700 dark:from-yellow-900/40 dark:to-yellow-800/40 dark:text-yellow-300 border border-yellow-200/50 dark:border-yellow-700/50 shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-gray-700/80 hover:shadow-sm'
               }`}
               title="Show favorites first"
             >

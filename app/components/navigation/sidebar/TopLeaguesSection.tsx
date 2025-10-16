@@ -37,7 +37,7 @@ export function TopLeaguesSection({
     <div className="mb-3">
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-3 py-2.5 mb-2 rounded-lg bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 hover:from-green-100 hover:to-green-200 dark:hover:from-green-900/40 dark:hover:to-green-800/40 transition-all duration-200 group border border-green-200/50 dark:border-green-700/50"
+        className="w-full flex items-center justify-between px-3 py-2.5 mb-2 rounded-lg bg-gradient-to-r from-green-50/90 to-green-100/90 dark:from-green-900/40 dark:to-green-800/40 hover:from-green-100/90 hover:to-green-200/90 dark:hover:from-green-900/50 dark:hover:to-green-800/50 transition-all duration-200 group border border-green-200/50 dark:border-green-700/50 backdrop-blur-sm shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
       >
         <div className="flex items-center gap-2">
           <Trophy className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -66,7 +66,7 @@ export function TopLeaguesSection({
             return (
               <div
                 key={league.id}
-                className={`flex items-center justify-between p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors ${
+                className={`flex items-center justify-between p-1.5 rounded-md hover:bg-accent/80 hover:text-accent-foreground transition-all duration-150 hover:scale-[1.01] hover:shadow-sm ${
                   active ? 'bg-accent/60' : ''
                 }`}
               >
@@ -100,7 +100,7 @@ export function TopLeaguesSection({
                   href={`/predictions/league/${league.id}/${generateLeagueSlug({ name: league.name, id: league.id })}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-1 text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+                  className="p-1.5 rounded-md text-muted-foreground hover:text-foreground transition-all duration-150 hover:scale-110 active:scale-95 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 flex-shrink-0"
                   title="Open predictions page"
                 >
                   <ExternalLink className="h-3 w-3" />
