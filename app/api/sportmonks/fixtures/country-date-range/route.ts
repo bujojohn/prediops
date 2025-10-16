@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     // Get fixtures for the date range
     const fixturesResponse = await sportmonks.getFixturesByDateRange(startDate, endDate, {
       include: 'participants;scores;state;predictions;predictions.type;league.country;periods.type;events.period;events.type;metadata.type',
-      per_page: 100,
+      per_page: 50,
       page: 1,
     });
 

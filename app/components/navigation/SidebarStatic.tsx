@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, memo, useCallback } from 'react';
+import React, { useState, useEffect, memo, useCallback, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Search, Settings, RefreshCw, Calendar, Eye, Download, Star, ArrowUpDown } from 'lucide-react';
 import { usePathname } from 'next/navigation';
@@ -444,11 +444,12 @@ function SidebarContent({
       const performRefresh = async () => {
         onRefreshStateChange(true);
         try {
-          // Clear all caches first
-          clearDataCache();
-          clearFixturesCache();
-          setCountryTodayCounts(new Map());
-          setExpandedCountries(new Set());
+            // Clear all caches first
+            clearDataCache();
+            clearFixturesCache();
+            setCountryTodayCounts(new Map());
+            setExpandedCountries(new Set());
+            processedCountriesRef.current.clear();
 
           // Wait a tick for state updates to propagate
           await new Promise(resolve => setTimeout(resolve, 0));
@@ -469,19 +470,23 @@ function SidebarContent({
     }
   }, [refreshTrigger, onRefreshStateChange, topLeagues, clearDataCache, clearFixturesCache, loadCountriesWithLeagues, loadLeagueFixtureCounts]);
 
+  // Ref to track processed countries to avoid infinite loops
+  const processedCountriesRef = useRef(new Set<number>());
+
   // Load fixture counts for visible countries
   useEffect(() => {
     const visibleCountries = filteredCountries.slice(0, 20);
+    
     visibleCountries.forEach((country) => {
-      // Check if already loaded or currently loading using a ref to avoid dependency issues
-      const hasCount = countryTodayCounts.has(country.id);
-      const isLoading = loadingCounts.has(country.id);
-      
-      if (country.leaguesCount > 0 && !hasCount && !isLoading) {
+      if (country.leaguesCount > 0 && 
+          !processedCountriesRef.current.has(country.id) &&
+          !countryTodayCounts.has(country.id) && 
+          !loadingCounts.has(country.id)) {
+        processedCountriesRef.current.add(country.id);
         loadTodayFixtureCounts(country.id);
       }
     });
-  }, [filteredCountries, loadTodayFixtureCounts, loadingCounts, countryTodayCounts]);
+  }, [filteredCountries, loadTodayFixtureCounts]); // Stable dependencies only
 
   // Filter and sort countries based on search term, filter options, and sort preference
   useEffect(() => {

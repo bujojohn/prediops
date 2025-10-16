@@ -48,6 +48,13 @@ export function CountriesSection({
     getScrollElement: () => countriesContainerRef.current,
     estimateSize: () => 45, // Estimated height of each country item
     overscan: 5, // Render 5 extra items above and below visible area
+    measureElement: (element) => {
+      // Add null check to prevent parentNode errors
+      if (!element || !element.parentNode) {
+        return 45; // Return estimated size if element is not properly attached
+      }
+      return element.getBoundingClientRect().height;
+    },
   });
 
   return (
@@ -86,8 +93,14 @@ export function CountriesSection({
               position: 'relative',
             }}
           >
-            {countriesVirtualizer.getVirtualItems().map((virtualItem) => {
+            {countries.length > 0 && countriesVirtualizer.getVirtualItems().map((virtualItem) => {
               const country = countries[virtualItem.index];
+              
+              // Safety check to prevent errors if country is undefined
+              if (!country) {
+                return null;
+              }
+              
               const isExpanded = expandedCountries.has(country.id);
               const leagues = countryLeagues.get(country.id) || [];
               const isLoadingLeagues = loadingStates.get(country.id) || false;
@@ -97,7 +110,11 @@ export function CountriesSection({
                 <div
                   key={virtualItem.key}
                   data-index={virtualItem.index}
-                  ref={countriesVirtualizer.measureElement}
+                  ref={(el) => {
+                    if (el && countriesVirtualizer.measureElement) {
+                      countriesVirtualizer.measureElement(el);
+                    }
+                  }}
                   className="space-y-0.5"
                   id={`country-${country.id}`}
                   style={{
