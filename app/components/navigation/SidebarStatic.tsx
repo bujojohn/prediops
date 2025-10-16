@@ -335,12 +335,17 @@ function SidebarContent({
         const startDate = today.toISOString().split('T')[0];
         const endDate = nextWeek.toISOString().split('T')[0];
         
+        console.log(`Loading fixture count for country ${countryId} from ${startDate} to ${endDate}`);
         const response = await fetch(`/api/sportmonks/fixtures/country-date-range?startDate=${startDate}&endDate=${endDate}&countryId=${countryId}`);
         const data = await response.json();
 
+        console.log(`Fixture count response for country ${countryId}:`, data);
+
         if (data.success && data.count !== undefined) {
+          console.log(`Setting fixture count for country ${countryId}: ${data.count}`);
           setCountryTodayCounts((prev) => new Map(prev).set(countryId, data.count));
         } else {
+          console.log(`No fixtures found for country ${countryId}, setting count to 0`);
           setCountryTodayCounts((prev) => new Map(prev).set(countryId, 0));
         }
       } catch (error) {
