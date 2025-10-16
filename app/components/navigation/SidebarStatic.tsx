@@ -141,7 +141,7 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
                 onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
               >
                 <Star className={`h-3 w-3 ${showFavoritesOnly ? 'fill-current' : ''}`} />
-                <span className="hidden sm:inline">Favorites</span>
+                <span className="hidden sm:inline">Fav</span>
               </button>
 
               <button
@@ -163,11 +163,11 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
                     ? 'text-blue-700 bg-gradient-to-r from-blue-100 to-blue-200 dark:from-blue-900/40 dark:to-blue-800/40 dark:text-blue-300 border border-blue-200/50 dark:border-blue-700/50'
                     : 'text-muted-foreground hover:text-foreground bg-white/60 dark:bg-gray-800/60 hover:bg-white/80 dark:hover:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50'
                 }`}
-                title="Show leagues with fixtures today (Ctrl+T)"
+                title="Show leagues with upcoming fixtures (Ctrl+T)"
                 onClick={() => setShowTodayOnly(!showTodayOnly)}
               >
                 <Calendar className="h-3 w-3" />
-                <span className="hidden sm:inline">Today</span>
+                <span className="hidden sm:inline">Upcoming</span>
               </button>
             </div>
 
@@ -184,7 +184,7 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
                 }}
               >
                 <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
-                <span className="hidden sm:inline">{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
+                <span className="hidden sm:inline">{isRefreshing ? 'Loading...' : ''}</span>
               </button>
 
               <button
@@ -224,7 +224,7 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
         </div>
 
         {/* Dynamic Content Area - This will stream in */}
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent hover:scrollbar-thumb-gray-400 dark:hover:scrollbar-thumb-gray-500 scrollbar-thumb-rounded-full">
           <SidebarContent
             searchTerm={searchTerm}
             showFavoritesOnly={showFavoritesOnly}
@@ -317,23 +317,29 @@ function SidebarContent({
     [loadCountryLeagues, loadLeagueFixtureCounts]
   );
 
-  // Load today's fixture counts for a country
+  // Load upcoming fixture counts for a country (next 7 days)
   const loadTodayFixtureCounts = useCallback(
     async (countryId: number) => {
-      if (loadingCounts.has(countryId) || countryTodayCounts.has(countryId)) {
-        return;
-      }
-
-      setLoadingCounts((prev) => new Set(prev).add(countryId));
+      setLoadingCounts((prev) => {
+        if (prev.has(countryId)) {
+          return prev; // Already loading
+        }
+        return new Set(prev).add(countryId);
+      });
 
       try {
-        const today = new Date().toISOString().split('T')[0];
-        const response = await fetch(`/api/sportmonks/fixtures/date-country?date=${today}&countryId=${countryId}`);
+        const today = new Date();
+        const nextWeek = new Date();
+        nextWeek.setDate(today.getDate() + 7);
+        
+        const startDate = today.toISOString().split('T')[0];
+        const endDate = nextWeek.toISOString().split('T')[0];
+        
+        const response = await fetch(`/api/sportmonks/fixtures/country-date-range?startDate=${startDate}&endDate=${endDate}&countryId=${countryId}`);
         const data = await response.json();
 
-        if (data.success && data.data) {
-          const count = data.data.length || 0;
-          setCountryTodayCounts((prev) => new Map(prev).set(countryId, count));
+        if (data.success && data.count !== undefined) {
+          setCountryTodayCounts((prev) => new Map(prev).set(countryId, data.count));
         } else {
           setCountryTodayCounts((prev) => new Map(prev).set(countryId, 0));
         }
@@ -348,7 +354,7 @@ function SidebarContent({
         });
       }
     },
-    [countryTodayCounts, loadingCounts]
+    []
   );
 
   // Tournament detection logic
