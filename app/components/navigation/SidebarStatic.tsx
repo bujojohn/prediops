@@ -481,12 +481,20 @@ function SidebarContent({
   // Load fixture counts for visible countries
   useEffect(() => {
     const visibleCountries = filteredCountries.slice(0, 20);
+    console.log(`Processing ${visibleCountries.length} visible countries for fixture counts`);
     
     visibleCountries.forEach((country) => {
+      const isProcessed = processedCountriesRef.current.has(country.id);
+      const hasCount = countryTodayCounts.has(country.id);
+      const isLoading = loadingCounts.has(country.id);
+      
+      console.log(`Country ${country.id} (${country.name}): processed=${isProcessed}, hasCount=${hasCount}, isLoading=${isLoading}, leaguesCount=${country.leaguesCount}`);
+      
       if (country.leaguesCount > 0 && 
-          !processedCountriesRef.current.has(country.id) &&
-          !countryTodayCounts.has(country.id) && 
-          !loadingCounts.has(country.id)) {
+          !isProcessed &&
+          !hasCount && 
+          !isLoading) {
+        console.log(`Loading fixture count for country ${country.id}`);
         processedCountriesRef.current.add(country.id);
         loadTodayFixtureCounts(country.id);
       }
