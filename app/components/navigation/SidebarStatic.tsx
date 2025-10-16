@@ -33,7 +33,7 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
   const isHomePage = pathname === '/';
   const [searchTerm, setSearchTerm] = useState('');
   const searchInputRef = React.useRef<HTMLInputElement | null>(null);
-
+  
   // Filter states
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [showActiveOnly, setShowActiveOnly] = useState(false);
@@ -55,7 +55,7 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
     onToggleToday: () => setShowTodayOnly(prev => !prev),
     onRefresh: () => setRefreshTrigger(prev => prev + 1),
   });
-
+  
   if (isHomePage) {
     return null;
   }
@@ -69,7 +69,7 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
             <Logo size="sm" showText={true} />
           </div>
         )}
-
+        
         {/* Header with Search */}
         <div className="p-2 border-b bg-white/70 dark:bg-gray-900/70 backdrop-blur-md">
           <div className="relative mb-2">
@@ -126,14 +126,14 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
             {/* Search Results Dropdown */}
             <SearchResults searchTerm={searchTerm} />
           </div>
-
+          
           {/* Utility Tools Row */}
           <div className="flex items-center justify-between gap-1 mb-2">
             {/* Left side - Filter tools */}
             <div className="flex items-center gap-1">
               <button
                 className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md ${
-                  showFavoritesOnly
+                  showFavoritesOnly 
                     ? 'text-yellow-700 bg-gradient-to-r from-yellow-100 to-yellow-200 dark:from-yellow-900/40 dark:to-yellow-800/40 dark:text-yellow-300 border border-yellow-200/50 dark:border-yellow-700/50'
                     : 'text-muted-foreground hover:text-foreground bg-white/60 dark:bg-gray-800/60 hover:bg-white/80 dark:hover:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50'
                 }`}
@@ -143,10 +143,10 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
                 <Star className={`h-3 w-3 ${showFavoritesOnly ? 'fill-current' : ''}`} />
                 <span className="hidden sm:inline">Fav</span>
               </button>
-
+              
               <button
                 className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md ${
-                  showActiveOnly
+                  showActiveOnly 
                     ? 'text-green-700 bg-gradient-to-r from-green-100 to-green-200 dark:from-green-900/40 dark:to-green-800/40 dark:text-green-300 border border-green-200/50 dark:border-green-700/50'
                     : 'text-muted-foreground hover:text-foreground bg-white/60 dark:bg-gray-800/60 hover:bg-white/80 dark:hover:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50'
                 }`}
@@ -156,10 +156,10 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
                 <Eye className="h-3 w-3" />
                 <span className="hidden sm:inline">Active</span>
               </button>
-
+              
               <button
                 className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md ${
-                  showTodayOnly
+                  showTodayOnly 
                     ? 'text-blue-700 bg-gradient-to-r from-blue-100 to-blue-200 dark:from-blue-900/40 dark:to-blue-800/40 dark:text-blue-300 border border-blue-200/50 dark:border-blue-700/50'
                     : 'text-muted-foreground hover:text-foreground bg-white/60 dark:bg-gray-800/60 hover:bg-white/80 dark:hover:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50'
                 }`}
@@ -170,7 +170,7 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
                 <span className="hidden sm:inline">Upcoming</span>
               </button>
             </div>
-
+            
             {/* Right side - Action tools */}
             <div className="flex items-center gap-1">
               <button
@@ -186,7 +186,7 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
                 <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
                 <span className="hidden sm:inline">{isRefreshing ? 'Loading...' : ''}</span>
               </button>
-
+              
               <button
                 className="flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md bg-white/60 dark:bg-gray-800/60 hover:bg-white/80 dark:hover:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 text-muted-foreground hover:text-foreground"
                 title="Export favorites"
@@ -207,7 +207,7 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
                 <Download className="h-3 w-3" />
                 <span className="hidden sm:inline">Export</span>
               </button>
-
+              
               <button
                 className="flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md bg-white/60 dark:bg-gray-800/60 hover:bg-white/80 dark:hover:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 text-muted-foreground hover:text-foreground"
                 title="Keyboard shortcuts: Ctrl+K (Search), Ctrl+F (Favorites), Ctrl+A (Active), Ctrl+T (Today), Ctrl+R (Refresh)"
@@ -225,8 +225,8 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
 
         {/* Dynamic Content Area - This will stream in */}
         <div className="flex-1 overflow-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent hover:scrollbar-thumb-gray-400 dark:hover:scrollbar-thumb-gray-500 scrollbar-thumb-rounded-full">
-          <SidebarContent
-            searchTerm={searchTerm}
+          <SidebarContent 
+            searchTerm={searchTerm} 
             showFavoritesOnly={showFavoritesOnly}
             showActiveOnly={showActiveOnly}
             showTodayOnly={showTodayOnly}
@@ -240,14 +240,14 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
 });
 
 // Dynamic content that loads the actual sidebar data with full functionality
-function SidebarContent({
-  searchTerm,
-  showFavoritesOnly,
-  showActiveOnly,
+function SidebarContent({ 
+  searchTerm, 
+  showFavoritesOnly, 
+  showActiveOnly, 
   showTodayOnly,
   refreshTrigger,
   onRefreshStateChange,
-}: {
+}: { 
   searchTerm: string;
   showFavoritesOnly: boolean;
   showActiveOnly: boolean;
@@ -280,7 +280,7 @@ function SidebarContent({
     { id: 72, name: 'Eredivisie', country: 'Netherlands', short_code: 'ED', countryId: 38 },
     { id: 238, name: 'Primeira Liga', country: 'Portugal', short_code: 'PL', countryId: 20 },
   ], []);
-
+  
   // Toggle section collapse
   const toggleSection = useCallback((sectionId: string) => {
     setCollapsedSections((prev) => {
@@ -350,8 +350,8 @@ function SidebarContent({
         setLoadingCounts((prev) => {
           const newSet = new Set(prev);
           newSet.delete(countryId);
-          return newSet;
-        });
+      return newSet;
+    });
       }
     },
     []
@@ -363,28 +363,28 @@ function SidebarContent({
       new Set([
         41, // Europe
         147, // Africa
-        11240938, // Asia (AFC)
+    11240938, // Asia (AFC)
       ]),
     []
   );
 
   const isTournament = useCallback(
     (country: CountryWithLeagues) => {
-      if (KNOWN_TOURNAMENTS.has(country.id)) return true;
-
-      const name = (country.name || country.fifa_name || country.official_name || '').trim().toLowerCase();
-      if (!name) return false;
-
+    if (KNOWN_TOURNAMENTS.has(country.id)) return true;
+    
+    const name = (country.name || country.fifa_name || country.official_name || '').trim().toLowerCase();
+    if (!name) return false;
+    
       const continents = new Set(['africa', 'europe', 'asia', 'north america', 'south america', 'oceania', 'antarctica', 'world', 'international']);
-      if (continents.has(name)) return true;
-
-      const orgs = ['uefa', 'caf', 'afc', 'conmebol', 'concacaf', 'ofc', 'fifa'];
-      const code = (country.fifa_name || country.official_name || '').trim().toLowerCase();
+    if (continents.has(name)) return true;
+    
+    const orgs = ['uefa', 'caf', 'afc', 'conmebol', 'concacaf', 'ofc', 'fifa'];
+    const code = (country.fifa_name || country.official_name || '').trim().toLowerCase();
       if (orgs.some((org) => name.includes(org) || code.includes(org))) return true;
-
-      if (name.includes('continental') || name.includes('regional') || name.includes('intercontinental')) return true;
-
-      const tournamentKeywords = [
+    
+    if (name.includes('continental') || name.includes('regional') || name.includes('intercontinental')) return true;
+    
+    const tournamentKeywords = [
         'champions league',
         'europa league',
         'europa conference league',
@@ -405,8 +405,8 @@ function SidebarContent({
       ];
 
       if (tournamentKeywords.some((keyword) => name.includes(keyword))) return true;
-
-      return false;
+    
+    return false;
     },
     [KNOWN_TOURNAMENTS]
   );
@@ -415,7 +415,7 @@ function SidebarContent({
   const { countryItems, tournamentItems } = React.useMemo(() => {
     const countries: CountryWithLeagues[] = [];
     const tournaments: CountryWithLeagues[] = [];
-
+    
     for (const c of filteredCountries) {
       if (isTournament(c)) {
         tournaments.push(c);
@@ -460,7 +460,7 @@ function SidebarContent({
           for (const league of topLeagues) {
             await loadLeagueFixtureCounts(league.id, true);
           }
-        } finally {
+    } finally {
           onRefreshStateChange(false);
         }
       };
@@ -473,7 +473,11 @@ function SidebarContent({
   useEffect(() => {
     const visibleCountries = filteredCountries.slice(0, 20);
     visibleCountries.forEach((country) => {
-      if (country.leaguesCount > 0 && !loadingCounts.has(country.id) && !countryTodayCounts.has(country.id)) {
+      // Check if already loaded or currently loading using a ref to avoid dependency issues
+      const hasCount = countryTodayCounts.has(country.id);
+      const isLoading = loadingCounts.has(country.id);
+      
+      if (country.leaguesCount > 0 && !hasCount && !isLoading) {
         loadTodayFixtureCounts(country.id);
       }
     });
@@ -506,7 +510,7 @@ function SidebarContent({
     if (showTodayOnly) {
       filtered = filtered.filter((country) => (countryTodayCounts.get(country.id) || 0) > 0);
     }
-
+    
     // Apply sorting
     const sorted = sortCountries(filtered, countryTodayCounts, favorites);
 
@@ -526,7 +530,7 @@ function SidebarContent({
           <ArrowUpDown className="h-3 w-3 text-gray-600 dark:text-gray-400" />
           <span className="text-[10px] font-medium text-gray-700 dark:text-gray-300">Sort by:</span>
           <div className="flex gap-1">
-            <button
+        <button
               onClick={() => setSortBy('name')}
               className={`px-2 py-1 rounded-md text-[10px] font-medium transition-all duration-150 hover:scale-105 active:scale-95 ${
                 sortBy === 'name'
@@ -536,8 +540,8 @@ function SidebarContent({
               title="Sort alphabetically by name"
             >
               Name
-            </button>
-            <button
+        </button>
+                  <button
               onClick={() => setSortBy('fixtures')}
               className={`px-2 py-1 rounded-md text-[10px] font-medium transition-all duration-150 hover:scale-105 active:scale-95 ${
                 sortBy === 'fixtures'
@@ -547,8 +551,8 @@ function SidebarContent({
               title="Sort by fixture count (most first)"
             >
               Fixtures
-            </button>
-            <button
+                  </button>
+                    <button
               onClick={() => setSortBy('favorites')}
               className={`px-2 py-1 rounded-md text-[10px] font-medium transition-all duration-150 hover:scale-105 active:scale-95 ${
                 sortBy === 'favorites'
@@ -558,9 +562,9 @@ function SidebarContent({
               title="Show favorites first"
             >
               Favorites
-            </button>
-          </div>
-        </div>
+                    </button>
+                  </div>
+                </div>
       </div>
       
       {/* 1. Countries Section */}
@@ -618,7 +622,7 @@ function SidebarContentSkeleton() {
         <div className="h-6 bg-gray-100 dark:bg-gray-700 rounded animate-pulse"></div>
         <div className="h-6 bg-gray-100 dark:bg-gray-700 rounded animate-pulse"></div>
       </div>
-
+      
       {/* Leagues skeleton */}
       <div className="space-y-2">
         <div className="h-4 bg-gray-50 dark:bg-gray-600 rounded animate-pulse"></div>
