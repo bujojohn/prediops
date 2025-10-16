@@ -31,11 +31,12 @@ export function useSidebarData() {
   }, []);
 
   const loadCountryLeagues = useCallback(async (countryId: number) => {
-    if (countryLeagues.has(countryId)) {
-      return countryLeagues.get(countryId) || [];
-    }
-
-    setLoadingStates(prev => new Map(prev).set(countryId, true));
+    setLoadingStates(prev => {
+      if (prev.has(countryId)) {
+        return prev; // Already loading
+      }
+      return new Map(prev).set(countryId, true);
+    });
     
     try {
       const response = await fetch(`/api/sportmonks/leagues/country/${countryId}`);
@@ -61,7 +62,7 @@ export function useSidebarData() {
         return newMap;
       });
     }
-  }, [countryLeagues]);
+  }, []);
 
   const clearCache = useCallback(() => {
     setCountryLeagues(new Map());

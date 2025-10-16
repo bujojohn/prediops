@@ -8,11 +8,12 @@ export function useLeagueFixtures() {
   const [loadingLeagueCounts, setLoadingLeagueCounts] = useState<Set<number>>(new Set());
 
   const loadLeagueFixtureCounts = useCallback(async (leagueId: number, force = false) => {
-    if (!force && (loadingLeagueCounts.has(leagueId) || leagueFixtureCounts.has(leagueId))) {
-      return;
-    }
-
-    setLoadingLeagueCounts(prev => new Set(prev).add(leagueId));
+    setLoadingLeagueCounts(prev => {
+      if (!force && prev.has(leagueId)) {
+        return prev; // Already loading
+      }
+      return new Set(prev).add(leagueId);
+    });
 
     try {
       const today = new Date();
@@ -43,7 +44,7 @@ export function useLeagueFixtures() {
         return newSet;
       });
     }
-  }, [leagueFixtureCounts, loadingLeagueCounts]);
+  }, []);
 
   const clearCache = useCallback(() => {
     setLeagueFixtureCounts(new Map());

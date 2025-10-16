@@ -1,23 +1,29 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 /**
  * Custom hook for managing sidebar favorites
  * Persists favorites in localStorage
  */
 export function useFavorites() {
-  const [favorites, setFavorites] = useState<Set<number>>(() => {
+  const [favorites, setFavorites] = useState<Set<number>>(new Set());
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Load favorites from localStorage after hydration
+  useEffect(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('sidebar-favorites');
-      return stored ? new Set(JSON.parse(stored)) : new Set();
-    }
-    return new Set();
-  });
-
-  const saveFavorites = useCallback((newFavorites: Set<number>) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('sidebar-favorites', JSON.stringify(Array.from(newFavorites)));
+      if (stored) {
+        setFavorites(new Set(JSON.parse(stored)));
+      }
+      setIsHydrated(true);
     }
   }, []);
+
+  const saveFavorites = useCallback((newFavorites: Set<number>) => {
+    if (typeof window !== 'undefined' && isHydrated) {
+      localStorage.setItem('sidebar-favorites', JSON.stringify(Array.from(newFavorites)));
+    }
+  }, [isHydrated]);
 
   const toggleFavorite = useCallback((id: number) => {
     setFavorites(prev => {
