@@ -23,7 +23,11 @@ export function useRecentSearches() {
   }, []);
 
   const addToRecentSearches = useCallback((term: string) => {
-    if (!term || term.trim().length < 2 || !isHydrated) return;
+    console.log('Adding to recent searches:', term);
+    if (!term || term.trim().length < 2 || !isHydrated) {
+      console.log('Skipping add to recent searches - term too short or not hydrated');
+      return;
+    }
 
     const trimmedTerm = term.trim();
     setRecentSearches(prev => {
@@ -31,6 +35,7 @@ export function useRecentSearches() {
       
       if (typeof window !== 'undefined') {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        console.log('Updated recent searches in localStorage:', updated);
       }
       
       return updated;
@@ -38,9 +43,11 @@ export function useRecentSearches() {
   }, [isHydrated]);
 
   const clearRecentSearches = useCallback(() => {
+    console.log('Clearing recent searches');
     setRecentSearches([]);
     if (typeof window !== 'undefined' && isHydrated) {
       localStorage.removeItem(STORAGE_KEY);
+      console.log('Recent searches cleared from localStorage');
     }
   }, [isHydrated]);
 

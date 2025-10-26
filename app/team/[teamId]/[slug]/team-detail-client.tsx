@@ -91,6 +91,42 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
     }
   };
 
+  const getPositionName = (positionId: number): string => {
+    const positionMap: Record<number, string> = {
+      1: 'Goalkeeper',
+      2: 'Defender', 
+      3: 'Midfielder',
+      4: 'Attacker',
+      5: 'Forward',
+      6: 'Striker',
+      7: 'Winger',
+      8: 'Full-back',
+      9: 'Centre-back',
+      10: 'Defensive Midfielder',
+      11: 'Central Midfielder',
+      12: 'Attacking Midfielder',
+      13: 'Left Winger',
+      14: 'Right Winger',
+      15: 'Centre Forward',
+      16: 'Second Striker',
+      17: 'Left Back',
+      18: 'Right Back',
+      19: 'Centre Midfielder',
+      20: 'Left Midfielder',
+      21: 'Right Midfielder',
+      22: 'Central Defender',
+      23: 'Wing Back',
+      24: 'Holding Midfielder',
+      25: 'Box-to-box Midfielder',
+      26: 'Midfielder',
+      27: 'Defender',
+      28: 'Attacker',
+      29: 'Goalkeeper',
+      30: 'Defender'
+    };
+    return positionMap[positionId] || `Position ${positionId}`;
+  };
+
   // Helper functions
   const getActiveCoach = () => {
     return team.coaches?.find(coach => coach.active) || team.coaches?.[0];
@@ -109,7 +145,7 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
   };
 
   const getSidelinedPlayers = () => {
-    return team.sidelined?.filter(player => {
+    const sidelined = team.sidelined?.filter(player => {
       if (!player.end_date) return true;
       try {
         const endDate = new Date(player.end_date);
@@ -118,6 +154,12 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
         return true;
       }
     }) || [];
+    
+    // Debug: Log sidelined data structure
+    console.log('Sidelined players data:', sidelined);
+    console.log('First sidelined player:', sidelined[0]);
+    
+    return sidelined;
   };
 
   const getUpcomingFixtures = () => {
@@ -291,8 +333,39 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
                 <CardContent>
                   <div className="space-y-2">
                     {getSidelinedPlayers().slice(0, 3).map((player) => (
-                      <div key={player.id} className="flex items-center gap-2 text-sm">
-                        <span className="text-gray-600 dark:text-gray-400">Player #{player.player_id}</span>
+                      <div key={player.id} className="flex items-center gap-3 text-sm">
+                        <div className="relative w-8 h-8 rounded-full bg-red-100 dark:bg-red-900 flex items-center justify-center overflow-hidden">
+                          {player.player?.image_path ? (
+                            <Image 
+                              src={player.player.image_path} 
+                              alt={player.player.name || 'Player'} 
+                              width={32}
+                              height={32}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                              }}
+                            />
+                          ) : null}
+                          <UserX className={`w-4 h-4 text-red-600 dark:text-red-400 ${player.player?.image_path ? 'hidden' : ''}`} />
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-medium text-sm">
+                            {player.player?.name || player.player?.display_name || `Player #${player.player_id}`}
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            {player.player?.common_name && player.player.common_name !== player.player?.name && (
+                              <span className="block">{player.player.common_name}</span>
+                            )}
+                            {player.games_missed && (
+                              <span>{player.games_missed} games missed</span>
+                            )}
+                            {!player.player && (
+                              <span>Player ID: {player.player_id}</span>
+                            )}
+                          </div>
+                        </div>
                         <Badge variant="outline" className="text-xs">
                           {player.category || 'Injured'}
                         </Badge>
@@ -404,7 +477,7 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
           </div>
 
           {/* Key Players Section */}
-          {getCurrentPlayers().filter(p => p.captain || p.jersey_number <= 11).length > 0 && (
+          {getCurrentPlayers().filter(p => p.captain || (p.jersey_number !== null && p.jersey_number !== undefined && p.jersey_number <= 11)).length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -415,30 +488,60 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {getCurrentPlayers()
-                    .filter(p => p.captain || (p.jersey_number && p.jersey_number <= 11))
+                    .filter(p => p.captain || (p.jersey_number !== null && p.jersey_number !== undefined && p.jersey_number <= 11))
                     .slice(0, 6)
                     .map((player) => (
                     <div key={player.id} className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border rounded-lg">
-                      <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center border-2 border-blue-200 dark:border-blue-700">
-                        <span className="text-sm font-bold text-blue-700 dark:text-blue-300">
+                      <div className="relative w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center border-2 border-blue-200 dark:border-blue-700 overflow-hidden">
+                        {player.player?.image_path ? (
+                          <Image 
+                            src={player.player.image_path} 
+                            alt={player.player.name || 'Player'} 
+                            width={48}
+                            height={48}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                            }}
+                          />
+                        ) : null}
+                        <span className={`text-sm font-bold text-blue-700 dark:text-blue-300 ${player.player?.image_path ? 'hidden' : ''}`}>
                           {player.jersey_number || '?'}
                         </span>
                       </div>
                       <div className="flex-1">
-                        <div className="font-medium text-sm">
-                          Player #{player.player_id}
+                        <div className="font-medium text-sm flex items-center gap-2">
+                          {player.player?.name || player.player?.display_name || `Player #${player.player_id}`}
                           {player.captain && (
-                            <Badge variant="default" className="ml-2 text-xs bg-yellow-500">Captain</Badge>
+                            <Badge variant="default" className="text-xs bg-yellow-500">Captain</Badge>
                           )}
                         </div>
-                        <div className="text-xs text-gray-600 dark:text-gray-400">
-                          Position: {player.position_id}
-                        </div>
-                        {player.start && (
-                          <div className="text-xs text-green-600 dark:text-green-400">
-                            Since {formatYear(player.start)}
+                        <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                          <div className="font-medium text-blue-600 dark:text-blue-400">
+                            {getPositionName(player.position_id)}
                           </div>
-                        )}
+                          {player.player?.common_name && player.player.common_name !== player.player?.name && (
+                            <div className="text-gray-500 dark:text-gray-400">
+                              {player.player.common_name}
+                            </div>
+                          )}
+                          {player.player?.date_of_birth && (
+                            <div>
+                              Age: {new Date().getFullYear() - new Date(player.player.date_of_birth).getFullYear()}
+                            </div>
+                          )}
+                          {player.player?.height && (
+                            <div>
+                              Height: {player.player.height}cm
+                            </div>
+                          )}
+                          {player.start && (
+                            <div className="text-green-600 dark:text-green-400">
+                              Since {formatYear(player.start)}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -459,26 +562,57 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {getCurrentPlayers().map((player) => (
                   <div key={player.id} className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                    <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                      <span className="text-sm font-bold">
+                    <div className="relative w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
+                      {player.player?.image_path ? (
+                        <Image 
+                          src={player.player.image_path} 
+                          alt={player.player.name || 'Player'} 
+                          width={40}
+                          height={40}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                      ) : null}
+                      <span className={`text-sm font-bold ${player.player?.image_path ? 'hidden' : ''}`}>
                         {player.jersey_number || '?'}
                       </span>
                     </div>
                     <div className="flex-1">
-                      <div className="font-medium text-sm">
-                        Player #{player.player_id}
+                      <div className="font-medium text-sm flex items-center gap-2">
+                        {player.player?.name || player.player?.display_name || `Player #${player.player_id}`}
                         {player.captain && (
-                          <Badge variant="secondary" className="ml-2 text-xs">Captain</Badge>
+                          <Badge variant="secondary" className="text-xs">Captain</Badge>
                         )}
                       </div>
-                      <div className="text-xs text-gray-600 dark:text-gray-400">
-                        Position: {player.position_id}
-                      </div>
-                      {player.start && (
-                        <div className="text-xs text-gray-500">
-                          Joined: {formatYear(player.start)}
+                      <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                        <div className="font-medium text-blue-600 dark:text-blue-400">
+                          {getPositionName(player.position_id)}
                         </div>
-                      )}
+                        {player.player?.common_name && player.player.common_name !== player.player?.name && (
+                          <div className="text-gray-500 dark:text-gray-400">
+                            {player.player.common_name}
+                          </div>
+                        )}
+                        {player.player?.date_of_birth && (
+                          <div>
+                            Age: {new Date().getFullYear() - new Date(player.player.date_of_birth).getFullYear()}
+                          </div>
+                        )}
+                        {player.player?.height && (
+                          <div>
+                            {player.player.height}cm
+                            {player.player.weight && ` • ${player.player.weight}kg`}
+                          </div>
+                        )}
+                        {player.start && (
+                          <div className="text-gray-500">
+                            Joined: {formatYear(player.start)}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -502,21 +636,61 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {getSidelinedPlayers().map((player) => (
                     <div key={player.id} className="flex items-center gap-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                      <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900 flex items-center justify-center">
-                        <UserX className="w-5 h-5 text-red-600 dark:text-red-400" />
+                      <div className="relative w-10 h-10 rounded-full bg-red-100 dark:bg-red-900 flex items-center justify-center overflow-hidden">
+                        {player.player?.image_path ? (
+                          <Image 
+                            src={player.player.image_path} 
+                            alt={player.player.name || 'Player'} 
+                            width={40}
+                            height={40}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                            }}
+                          />
+                        ) : null}
+                        <UserX className={`w-5 h-5 text-red-600 dark:text-red-400 ${player.player?.image_path ? 'hidden' : ''}`} />
                       </div>
                       <div className="flex-1">
-                        <div className="font-medium text-sm">
-                          Player #{player.player_id}
+                        <div className="font-medium text-sm flex items-center gap-2">
+                          {player.player?.name || player.player?.display_name || `Player #${player.player_id}`}
+                          <Badge variant="outline" className="text-xs bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300">
+                            {player.category || 'Injured'}
+                          </Badge>
                         </div>
-                        <div className="text-xs text-gray-600 dark:text-gray-400">
-                          {player.category || 'Injured'}
+                        <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                          {player.player?.common_name && player.player.common_name !== player.player?.name && (
+                            <div className="text-gray-500 dark:text-gray-400">
+                              {player.player.common_name}
+                            </div>
+                          )}
+                          {player.player?.date_of_birth && (
+                            <div>
+                              Age: {new Date().getFullYear() - new Date(player.player.date_of_birth).getFullYear()}
+                            </div>
+                          )}
+                          {player.games_missed && (
+                            <div className="text-red-600 dark:text-red-400 font-medium">
+                              {player.games_missed} games missed
+                            </div>
+                          )}
+                          {player.start_date && (
+                            <div className="text-gray-500">
+                              Since: {formatDate(player.start_date)}
+                            </div>
+                          )}
+                          {player.end_date && (
+                            <div className="text-gray-500">
+                              Until: {formatDate(player.end_date)}
+                            </div>
+                          )}
+                          {!player.player && (
+                            <div className="text-gray-500">
+                              Player ID: {player.player_id}
+                            </div>
+                          )}
                         </div>
-                        {player.start_date && (
-                          <div className="text-xs text-red-600 dark:text-red-400">
-                            Since: {formatDate(player.start_date)}
-                          </div>
-                        )}
                       </div>
                     </div>
                   ))}
@@ -665,3 +839,4 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
     </div>
   );
 }
+

@@ -1,167 +1,189 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sportmonks } from '@/lib/sportmonks';
-import { Country } from '@/schemas/country.schema';
-import { League } from '@/schemas/league.schema';
-import { Team } from '@/schemas/team.schema';
-import { generateTeamUrl } from '@/lib/utils/routing';
-import { Fixture } from '@/schemas/fixture.schema';
 
+/**
+ * Unified search endpoint that searches across all SportMonks entities
+ * Uses server-side search for better performance and real-time data
+ */
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const query = searchParams.get('q');
-  const type = searchParams.get('type'); // 'all', 'countries', 'leagues', 'teams', 'fixtures'
-  const limit = parseInt(searchParams.get('limit') || '10');
-
-  if (!query || query.trim().length < 2) {
-    return NextResponse.json({ 
-      data: [], 
-      message: 'Search query must be at least 2 characters long' 
-    });
-  }
-
   try {
-    const results = [];
+    const { searchParams } = new URL(request.url);
+    const query = searchParams.get('q');
+    const scope = searchParams.get('scope') || 'all';
+    const limit = parseInt(searchParams.get('limit') || '10');
 
-    // Search countries
-    if (!type || type === 'all' || type === 'countries') {
-      try {
-        const countriesResponse = await sportmonks.getCountries({
-          filters: `name:${query}`,
-          include: 'continent',
-          per_page: Math.min(limit, 5)
-        });
-        
-        if (countriesResponse.data) {
-          results.push(...countriesResponse.data.map((country: Country) => ({
-            id: country.id,
-            type: 'country' as const,
-            name: country.name,
-            subtitle: country.official_name,
-            icon: '🌍',
-            url: `/countries/${country.id}`,
-            metadata: {
-              iso2: country.iso2,
-              continent: country.continent?.name
-            }
-          })));
-        }
-      } catch (error) {
-        console.error('Error searching countries:', error);
-      }
+    if (!query || query.trim().length < 2) {
+      return NextResponse.json({
+        success: false,
+        error: 'Search query must be at least 2 characters',
+      }, { status: 400 });
+    }
+
+    console.log(`API: Searching for "${query}" in scope: ${scope}`);
+    console.log('API: Search parameters:', { query, scope, limit });
+
+    const results: {
+      countries: Array<Record<string, unknown>>;
+      leagues: Array<Record<string, unknown>>;
+      teams: Array<Record<string, unknown>>;
+      fixtures: Array<Record<string, unknown>>;
+      totalResults: number;
+    } = {
+      countries: [],
+      leagues: [],
+      teams: [],
+      fixtures: [],
+      totalResults: 0,
+    };
+
+    // Search based on scope
+    const searchPromises = [];
+
+    // Always search countries (fast, local data)
+    if (scope === 'all' || scope === 'countries') {
+      searchPromises.push(
+        searchCountries(query, limit)
+          .then(data => { results.countries = data; })
+          .catch(err => console.error('Country search error:', err))
+      );
     }
 
     // Search leagues
-    if (!type || type === 'all' || type === 'leagues') {
-      try {
-        const leaguesResponse = await sportmonks.getLeagues({
-          filters: `name:${query}`,
-          include: 'country',
-          per_page: Math.min(limit, 5)
-        });
-        
-        if (leaguesResponse.data) {
-          results.push(...leaguesResponse.data.map((league: League) => ({
-            id: league.id,
-            type: 'league' as const,
-            name: league.name,
-            subtitle: league.country?.name || 'Unknown Country',
-            icon: '🏆',
-            url: `/leagues/${league.id}`,
-            metadata: {
-              type: league.type,
-              country: league.country?.name
-            }
-          })));
-        }
-      } catch (error) {
-        console.error('Error searching leagues:', error);
-      }
+    if (scope === 'all' || scope === 'leagues') {
+      searchPromises.push(
+        searchLeagues(query, limit)
+          .then(data => { results.leagues = data; })
+          .catch(err => console.error('League search error:', err))
+      );
     }
 
     // Search teams
-    if (!type || type === 'all' || type === 'teams') {
-      try {
-        const teamsResponse = await sportmonks.getTeams({
-          filters: `name:${query}`,
-          include: 'country',
-          per_page: Math.min(limit, 5)
-        });
-        
-        if (teamsResponse.data) {
-          results.push(...teamsResponse.data.map((team: Team) => ({
-            id: team.id,
-            type: 'team' as const,
-            name: team.name,
-            subtitle: team.country?.name || 'Unknown Country',
-            icon: '⚽',
-            url: generateTeamUrl(team),
-            metadata: {
-              founded: team.founded,
-              country: team.country?.name
-            }
-          })));
-        }
-      } catch (error) {
-        console.error('Error searching teams:', error);
-      }
+    if (scope === 'all' || scope === 'teams') {
+      searchPromises.push(
+        searchTeams(query, limit)
+          .then(data => { results.teams = data; })
+          .catch(err => console.error('Team search error:', err))
+      );
     }
 
-    // Search fixtures (upcoming matches)
-    if (!type || type === 'all' || type === 'fixtures') {
-      try {
-        const fixturesResponse = await sportmonks.getUpcomingFixtures({
-          filters: `name:${query}`,
-          include: 'participants;league',
-          per_page: Math.min(limit, 5)
-        });
-        
-        if (fixturesResponse.data) {
-          results.push(...fixturesResponse.data.map((fixture: Fixture) => ({
-            id: fixture.id,
-            type: 'fixture' as const,
-            name: `${fixture.participants?.[0]?.name || 'TBD'} vs ${fixture.participants?.[1]?.name || 'TBD'}`,
-            subtitle: fixture.league?.name || 'Unknown League',
-            icon: '🏟️',
-            url: `/fixtures/${fixture.id}`,
-            metadata: {
-              date: fixture.starting_at,
-              league: fixture.league?.name
-            }
-          })));
-        }
-      } catch (error) {
-        console.error('Error searching fixtures:', error);
-      }
+    // Search fixtures
+    if (scope === 'all' || scope === 'fixtures') {
+      searchPromises.push(
+        searchFixtures(query, limit)
+          .then(data => { results.fixtures = data; })
+          .catch(err => console.error('Fixture search error:', err))
+      );
     }
 
-    // Sort results by relevance (exact matches first, then partial matches)
-    const sortedResults = results.sort((a, b) => {
-      const aName = (a?.name || '').toString();
-      const bName = (b?.name || '').toString();
-      const aExact = aName.toLowerCase() === query.toLowerCase();
-      const bExact = bName.toLowerCase() === query.toLowerCase();
-      
-      if (aExact && !bExact) return -1;
-      if (!aExact && bExact) return 1;
-      
-      return aName.localeCompare(bName);
-    });
+    // Execute all searches in parallel
+    await Promise.all(searchPromises);
+
+    // Calculate total results
+    results.totalResults = results.countries.length + 
+                         results.leagues.length + 
+                         results.teams.length + 
+                         results.fixtures.length;
+
+    console.log(`API: Found ${results.totalResults} results for "${query}"`);
 
     return NextResponse.json({
-      data: sortedResults.slice(0, limit),
-      total: sortedResults.length,
+      success: true,
+      data: results,
       query,
-      type
+      scope,
+      timestamp: new Date().toISOString(),
     });
 
   } catch (error) {
-    console.error('Search API error:', error);
-    return NextResponse.json(
-      { 
-        error: 'Failed to perform search',
-        message: 'An error occurred while searching'
-      },
-      { status: 500 }
-    );
+    console.error('API: Search error:', error);
+    
+    return NextResponse.json({
+      success: false,
+      error: 'Search failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
+  }
+}
+
+/**
+ * Search countries using local data (fastest)
+ */
+async function searchCountries(query: string, limit: number) {
+  try {
+    // Use local countries data for fastest search
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/sportmonks/countries/optimized?populate=true`);
+    const data = await response.json();
+    
+    if (!data.success) return [];
+
+    const countries = data.data || [];
+    const searchLower = query.toLowerCase();
+    
+    return countries
+      .filter((country: { name?: string }) => {
+        const name = (country.name || '').toLowerCase();
+        return name.includes(searchLower);
+      })
+      .slice(0, limit);
+  } catch (error) {
+    console.error('Country search error:', error);
+    return [];
+  }
+}
+
+/**
+ * Search leagues using SportMonks API
+ */
+async function searchLeagues(query: string, limit: number) {
+  try {
+    console.log(`API: Searching leagues for "${query}"`);
+    const leaguesResponse = await sportmonks.getLeaguesBySearch(query, {
+      per_page: limit,
+      include: 'country;sport',
+    });
+
+    console.log(`API: Found ${leaguesResponse?.data?.length || 0} leagues`);
+    return leaguesResponse?.data || [];
+  } catch (error) {
+    console.error('League search error:', error);
+    return [];
+  }
+}
+
+/**
+ * Search teams using SportMonks API
+ */
+async function searchTeams(query: string, limit: number) {
+  try {
+    console.log(`API: Searching teams for "${query}"`);
+    const teamsResponse = await sportmonks.getTeamsBySearch(query, {
+      per_page: limit,
+      include: 'country',
+    });
+
+    console.log(`API: Found ${teamsResponse?.data?.length || 0} teams`);
+    return teamsResponse?.data || [];
+  } catch (error) {
+    console.error('Team search error:', error);
+    return [];
+  }
+}
+
+/**
+ * Search fixtures using SportMonks API
+ */
+async function searchFixtures(query: string, limit: number) {
+  try {
+    console.log(`API: Searching fixtures for "${query}"`);
+    const fixturesResponse = await sportmonks.getFixturesBySearchName(query, {
+      per_page: limit,
+      include: 'participants;scores;state;league.country;league.sport',
+    });
+
+    console.log(`API: Found ${fixturesResponse?.data?.length || 0} fixtures`);
+    return fixturesResponse?.data || [];
+  } catch (error) {
+    console.error('Fixture search error:', error);
+    return [];
   }
 }

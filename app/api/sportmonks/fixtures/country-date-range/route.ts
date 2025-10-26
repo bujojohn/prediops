@@ -27,17 +27,35 @@ export async function GET(request: NextRequest) {
     const allFixtures = fixturesResponse?.data || [];
     
     // Filter fixtures for the specific country
-    type FixtureWithCountry = { league?: { country?: { id?: number | string | null } | null } | null };
+    type FixtureWithCountry = { 
+      league?: { 
+        id?: number | string | null;
+        country?: { id?: number | string | null } | null 
+      } | null 
+    };
     const countryFixtures = allFixtures.filter((fixture: FixtureWithCountry) => {
       return fixture.league?.country?.id?.toString() === countryId;
     });
 
-    console.log(`API: Found ${countryFixtures.length} fixtures for country ${countryId} between ${startDate} and ${endDate}`);
+    // Count unique leagues that have fixtures (not total fixtures)
+    const leaguesWithFixtures = new Set();
+    countryFixtures.forEach((fixture: FixtureWithCountry) => {
+      if (fixture.league?.id) {
+        leaguesWithFixtures.add(fixture.league.id);
+      }
+    });
+
+    const leagueCount = leaguesWithFixtures.size;
+    const fixtureCount = countryFixtures.length;
+
+    console.log(`API: Found ${fixtureCount} fixtures across ${leagueCount} leagues for country ${countryId} between ${startDate} and ${endDate}`);
 
     return NextResponse.json({
       success: true,
       data: countryFixtures,
-      count: countryFixtures.length,
+      count: leagueCount, // Return count of leagues with fixtures, not total fixtures
+      fixtureCount: fixtureCount, // Also provide total fixture count for reference
+      leaguesWithFixtures: Array.from(leaguesWithFixtures),
       timestamp: new Date().toISOString()
     });
   } catch (error) {

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, memo, useCallback, useRef } from 'react';
 import { Input } from '@/components/ui/input';
-import { Search, Settings, RefreshCw, Calendar, Eye, Download, Star, ArrowUpDown } from 'lucide-react';
+import { Search, Settings, RefreshCw, Calendar, Eye, Star, ArrowUpDown } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { SidebarTheme } from './SidebarTheme';
 import { Logo } from '@/components/ui/Logo';
@@ -20,6 +20,7 @@ import { useLeagueFixtures } from './sidebar/hooks/useLeagueFixtures';
 import { useRecentSearches } from './sidebar/hooks/useRecentSearches';
 import { useKeyboardShortcuts } from './sidebar/hooks/useKeyboardShortcuts';
 import { useSorting } from './sidebar/hooks/useSorting';
+// Removed getFixtureCountDateRange import as counting features are removed
 
 // Import types
 import type { CountryWithLeagues, TopLeague } from './sidebar/types';
@@ -189,27 +190,6 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
               
               <button
                 className="flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md bg-white/60 dark:bg-gray-800/60 hover:bg-white/80 dark:hover:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 text-muted-foreground hover:text-foreground"
-                title="Export favorites"
-                onClick={() => {
-                  // Export favorites to JSON
-                  const favorites = localStorage.getItem('sidebar-favorites');
-                  if (favorites) {
-                    const blob = new Blob([favorites], { type: 'application/json' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'favorites.json';
-                    a.click();
-                    URL.revokeObjectURL(url);
-                  }
-                }}
-              >
-                <Download className="h-3 w-3" />
-                <span className="hidden sm:inline">Export</span>
-              </button>
-              
-              <button
-                className="flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md bg-white/60 dark:bg-gray-800/60 hover:bg-white/80 dark:hover:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 text-muted-foreground hover:text-foreground"
                 title="Keyboard shortcuts: Ctrl+K (Search), Ctrl+F (Favorites), Ctrl+A (Active), Ctrl+T (Today), Ctrl+R (Refresh)"
                 onClick={() => {
                   // Show keyboard shortcuts help
@@ -224,7 +204,7 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
         </div>
 
         {/* Dynamic Content Area - This will stream in */}
-        <div className="flex-1 overflow-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent hover:scrollbar-thumb-gray-400 dark:hover:scrollbar-thumb-gray-500 scrollbar-thumb-rounded-full">
+        <div className="flex-1 overflow-auto scrollbar-thick">
           <SidebarContent 
             searchTerm={searchTerm} 
             showFavoritesOnly={showFavoritesOnly}
@@ -258,14 +238,13 @@ function SidebarContent({
   // Use custom hooks
   const { favorites, toggleFavorite } = useFavorites();
   const { allCountries, countryLeagues, loadingStates, loadCountriesWithLeagues, loadCountryLeagues, clearCache: clearDataCache } = useSidebarData();
-  const { leagueFixtureCounts, loadingLeagueCounts, loadLeagueFixtureCounts, clearCache: clearFixturesCache } = useLeagueFixtures();
+  const { clearCache: clearFixturesCache } = useLeagueFixtures(); // Removed counting-related destructuring
   const { sortBy, setSortBy, sortCountries } = useSorting();
 
   // Local state
   const [filteredCountries, setFilteredCountries] = useState<CountryWithLeagues[]>([]);
   const [expandedCountries, setExpandedCountries] = useState<Set<number>>(new Set());
-  const [countryTodayCounts, setCountryTodayCounts] = useState<Map<number, number>>(new Map());
-  const [loadingCounts, setLoadingCounts] = useState<Set<number>>(new Set());
+  // Removed counting-related state as counting features are removed
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
   const [isLoading] = useState(false);
 
@@ -303,64 +282,16 @@ function SidebarContent({
           newExpanded.delete(countryId);
         } else {
           newExpanded.add(countryId);
-          // Load leagues when expanding
-          loadCountryLeagues(countryId).then((leagues) => {
-            // Load fixture counts for the leagues
-            leagues.forEach((league: { id: number }) => {
-              loadLeagueFixtureCounts(league.id);
-            });
-          });
+          // Load leagues when expanding - simplified without counting
+          loadCountryLeagues(countryId);
         }
         return newExpanded;
       });
     },
-    [loadCountryLeagues, loadLeagueFixtureCounts]
+    [loadCountryLeagues]
   );
 
-  // Load upcoming fixture counts for a country (next 7 days)
-  const loadTodayFixtureCounts = useCallback(
-    async (countryId: number) => {
-      setLoadingCounts((prev) => {
-        if (prev.has(countryId)) {
-          return prev; // Already loading
-        }
-        return new Set(prev).add(countryId);
-      });
-
-      try {
-        const today = new Date();
-        const nextWeek = new Date();
-        nextWeek.setDate(today.getDate() + 7);
-        
-        const startDate = today.toISOString().split('T')[0];
-        const endDate = nextWeek.toISOString().split('T')[0];
-        
-        console.log(`Loading fixture count for country ${countryId} from ${startDate} to ${endDate}`);
-        const response = await fetch(`/api/sportmonks/fixtures/country-date-range?startDate=${startDate}&endDate=${endDate}&countryId=${countryId}`);
-        const data = await response.json();
-
-        console.log(`Fixture count response for country ${countryId}:`, data);
-
-        if (data.success && data.count !== undefined) {
-          console.log(`Setting fixture count for country ${countryId}: ${data.count}`);
-          setCountryTodayCounts((prev) => new Map(prev).set(countryId, data.count));
-        } else {
-          console.log(`No fixtures found for country ${countryId}, setting count to 0`);
-          setCountryTodayCounts((prev) => new Map(prev).set(countryId, 0));
-        }
-      } catch (error) {
-        console.error('Error loading fixture counts for country:', countryId, error);
-        setCountryTodayCounts((prev) => new Map(prev).set(countryId, 0));
-      } finally {
-        setLoadingCounts((prev) => {
-          const newSet = new Set(prev);
-          newSet.delete(countryId);
-      return newSet;
-    });
-      }
-    },
-    []
-  );
+  // Removed loadTodayFixtureCounts function as counting features are removed
 
   // Tournament detection logic
   const KNOWN_TOURNAMENTS = React.useMemo(
@@ -436,12 +367,7 @@ function SidebarContent({
     loadCountriesWithLeagues();
   }, [loadCountriesWithLeagues]);
 
-  // Load fixture counts for top leagues on mount
-  useEffect(() => {
-    topLeagues.forEach((league) => {
-      loadLeagueFixtureCounts(league.id);
-    });
-  }, [topLeagues, loadLeagueFixtureCounts]);
+  // Removed fixture counting useEffect for top leagues as counting features are removed
 
   // Handle refresh trigger
   useEffect(() => {
@@ -462,10 +388,7 @@ function SidebarContent({
           // Reload countries
           await loadCountriesWithLeagues();
 
-          // Reload top leagues fixture counts (force refresh)
-          for (const league of topLeagues) {
-            await loadLeagueFixtureCounts(league.id, true);
-          }
+          // Removed top leagues fixture counting as counting features are removed
     } finally {
           onRefreshStateChange(false);
         }
@@ -473,33 +396,12 @@ function SidebarContent({
 
       performRefresh();
     }
-  }, [refreshTrigger, onRefreshStateChange, topLeagues, clearDataCache, clearFixturesCache, loadCountriesWithLeagues, loadLeagueFixtureCounts]);
+  }, [refreshTrigger, onRefreshStateChange, topLeagues, clearDataCache, clearFixturesCache, loadCountriesWithLeagues]);
 
   // Ref to track processed countries to avoid infinite loops
   const processedCountriesRef = useRef(new Set<number>());
 
-  // Load fixture counts for visible countries
-  useEffect(() => {
-    const visibleCountries = filteredCountries.slice(0, 20);
-    console.log(`Processing ${visibleCountries.length} visible countries for fixture counts`);
-    
-    visibleCountries.forEach((country) => {
-      const isProcessed = processedCountriesRef.current.has(country.id);
-      const hasCount = countryTodayCounts.has(country.id);
-      const isLoading = loadingCounts.has(country.id);
-      
-      console.log(`Country ${country.id} (${country.name}): processed=${isProcessed}, hasCount=${hasCount}, isLoading=${isLoading}, leaguesCount=${country.leaguesCount}`);
-      
-      if (country.leaguesCount > 0 && 
-          !isProcessed &&
-          !hasCount && 
-          !isLoading) {
-        console.log(`Loading fixture count for country ${country.id}`);
-        processedCountriesRef.current.add(country.id);
-        loadTodayFixtureCounts(country.id);
-      }
-    });
-  }, [filteredCountries, loadTodayFixtureCounts]); // Stable dependencies only
+  // Removed fixture counting useEffect as counting features are removed
 
   // Filter and sort countries based on search term, filter options, and sort preference
   useEffect(() => {
@@ -524,16 +426,16 @@ function SidebarContent({
       filtered = filtered.filter((country) => (country.leaguesCount || 0) > 0);
     }
 
-    // Apply today's fixtures filter
+    // Apply today's fixtures filter - simplified without counting
     if (showTodayOnly) {
-      filtered = filtered.filter((country) => (countryTodayCounts.get(country.id) || 0) > 0);
+      filtered = filtered.filter((country) => country.leagues && country.leagues.length > 0);
     }
     
-    // Apply sorting
-    const sorted = sortCountries(filtered, countryTodayCounts, favorites);
+    // Apply sorting - simplified without counting
+    const sorted = sortCountries(filtered, new Map(), favorites);
 
     setFilteredCountries(sorted);
-  }, [searchTerm, allCountries, showFavoritesOnly, showActiveOnly, showTodayOnly, favorites, countryTodayCounts, sortBy, sortCountries]);
+  }, [searchTerm, allCountries, showFavoritesOnly, showActiveOnly, showTodayOnly, favorites, sortBy, sortCountries]);
 
   // Show skeleton while data is loading
   if (isLoading || allCountries.length === 0) {
@@ -594,10 +496,8 @@ function SidebarContent({
         onToggleCountry={toggleCountry}
         countryLeagues={countryLeagues}
         loadingStates={loadingStates}
-        countryTodayCounts={countryTodayCounts}
-        loadingCounts={loadingCounts}
-        leagueFixtureCounts={leagueFixtureCounts}
-        loadingLeagueCounts={loadingLeagueCounts}
+        // Removed counting-related props as counting features are removed
+        // Removed league counting props as counting features are removed
         favorites={favorites}
         onToggleFavorite={toggleFavorite}
       />
@@ -606,8 +506,7 @@ function SidebarContent({
       <TopLeaguesSection
         isCollapsed={collapsedSections.has('top-leagues')}
         onToggle={() => toggleSection('top-leagues')}
-        leagueFixtureCounts={leagueFixtureCounts}
-        loadingLeagueCounts={loadingLeagueCounts}
+        // Removed league counting props as counting features are removed
       />
 
       {/* 3. Tournaments Section */}
@@ -619,10 +518,8 @@ function SidebarContent({
         onToggleCountry={toggleCountry}
         countryLeagues={countryLeagues}
         loadingStates={loadingStates}
-        countryTodayCounts={countryTodayCounts}
-        loadingCounts={loadingCounts}
-        leagueFixtureCounts={leagueFixtureCounts}
-        loadingLeagueCounts={loadingLeagueCounts}
+        // Removed counting-related props as counting features are removed
+        // Removed league counting props as counting features are removed
         favorites={favorites}
         onToggleFavorite={toggleFavorite}
       />

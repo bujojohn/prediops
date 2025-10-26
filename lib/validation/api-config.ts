@@ -24,6 +24,7 @@ export const leaguesConfigSchema = apiConfigSchema.extend({
     types: z.union([z.number(), z.array(z.number())]).optional(),
     active: z.boolean().optional(),
     sport: z.number().optional(),
+    populate: z.string().optional(),
   }).optional(),
 });
 
