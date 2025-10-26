@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, memo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, memo, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Search, Settings, RefreshCw, Calendar, Eye, Star, ArrowUpDown } from 'lucide-react';
 import { usePathname } from 'next/navigation';
@@ -237,7 +237,7 @@ function SidebarContent({
 }) {
   // Use custom hooks
   const { favorites, toggleFavorite } = useFavorites();
-  const { allCountries, countryLeagues, loadingStates, loadCountriesWithLeagues, loadCountryLeagues, clearCache: clearDataCache } = useSidebarData();
+  const { allCountries, loadCountriesWithLeagues, loadCountryLeagues, clearCache: clearDataCache } = useSidebarData();
   const { clearCache: clearFixturesCache } = useLeagueFixtures(); // Removed counting-related destructuring
   const { sortBy, setSortBy, sortCountries } = useSorting();
 
@@ -378,9 +378,7 @@ function SidebarContent({
             // Clear all caches first
             clearDataCache();
             clearFixturesCache();
-            setCountryTodayCounts(new Map());
             setExpandedCountries(new Set());
-            processedCountriesRef.current.clear();
 
           // Wait a tick for state updates to propagate
           await new Promise(resolve => setTimeout(resolve, 0));
@@ -397,9 +395,6 @@ function SidebarContent({
       performRefresh();
     }
   }, [refreshTrigger, onRefreshStateChange, topLeagues, clearDataCache, clearFixturesCache, loadCountriesWithLeagues]);
-
-  // Ref to track processed countries to avoid infinite loops
-  const processedCountriesRef = useRef(new Set<number>());
 
   // Removed fixture counting useEffect as counting features are removed
 
@@ -494,8 +489,6 @@ function SidebarContent({
         onToggle={() => toggleSection('countries')}
         expandedCountries={expandedCountries}
         onToggleCountry={toggleCountry}
-        countryLeagues={countryLeagues}
-        loadingStates={loadingStates}
         // Removed counting-related props as counting features are removed
         // Removed league counting props as counting features are removed
         favorites={favorites}
@@ -516,8 +509,6 @@ function SidebarContent({
         onToggle={() => toggleSection('tournaments')}
         expandedCountries={expandedCountries}
         onToggleCountry={toggleCountry}
-        countryLeagues={countryLeagues}
-        loadingStates={loadingStates}
         // Removed counting-related props as counting features are removed
         // Removed league counting props as counting features are removed
         favorites={favorites}
