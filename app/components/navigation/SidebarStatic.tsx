@@ -17,7 +17,6 @@ import { TournamentsSection } from './sidebar/TournamentsSection';
 import { useFavorites } from './sidebar/hooks/useFavorites';
 import { useSidebarData } from './sidebar/hooks/useSidebarData';
 import { useLeagueFixtures } from './sidebar/hooks/useLeagueFixtures';
-import { useRecentSearches } from './sidebar/hooks/useRecentSearches';
 import { useKeyboardShortcuts } from './sidebar/hooks/useKeyboardShortcuts';
 import { useSorting } from './sidebar/hooks/useSorting';
 // Removed getFixtureCountDateRange import as counting features are removed
@@ -43,10 +42,6 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
   // Refresh state
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-
-  // Recent searches
-  const { recentSearches, addToRecentSearches, clearRecentSearches } = useRecentSearches();
-  const [showRecentSearches, setShowRecentSearches] = useState(false);
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
@@ -81,48 +76,7 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
               className="pl-10 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200/50 dark:border-gray-700/50 focus:border-blue-500/70 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 hover:bg-white/90 dark:hover:bg-gray-800/90 shadow-sm hover:shadow-md"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              onFocus={() => setShowRecentSearches(true)}
-              onBlur={() => setTimeout(() => setShowRecentSearches(false), 200)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && searchTerm.trim()) {
-                  addToRecentSearches(searchTerm);
-                  setShowRecentSearches(false);
-                }
-              }}
             />
-            
-            {/* Recent Searches Dropdown */}
-            {showRecentSearches && recentSearches.length > 0 && !searchTerm && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md border border-gray-200/50 dark:border-gray-700/50 rounded-lg shadow-xl z-50 animate-in slide-in-from-top-2 duration-200">
-                <div className="p-2">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">Recent Searches</div>
-                    <button
-                      onClick={clearRecentSearches}
-                      className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors hover:scale-105 active:scale-95"
-                    >
-                      Clear
-                    </button>
-                  </div>
-                  <div className="space-y-1">
-                    {recentSearches.map((search, index) => (
-                      <button
-                        key={`${search}-${index}`}
-                        className="w-full text-left px-3 py-2 text-xs rounded-md hover:bg-gray-100/80 dark:hover:bg-gray-700/80 transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] hover:shadow-sm"
-                        onMouseDown={(e) => {
-                          e.preventDefault(); // Prevent blur
-                          setSearchTerm(search);
-                          setShowRecentSearches(false);
-                        }}
-                      >
-                        <Search className="inline h-3 w-3 mr-2 text-gray-400" />
-                        <span className="text-gray-700 dark:text-gray-300">{search}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
             
             {/* Search Results Dropdown */}
             <SearchResults searchTerm={searchTerm} />

@@ -9,7 +9,6 @@ import { TopLeaguesSection } from './sidebar/TopLeaguesSection';
 import { CountriesSection } from './sidebar/CountriesSection';
 import { TournamentsSection } from './sidebar/TournamentsSection';
 import { useFavorites } from './sidebar/hooks/useFavorites';
-import { useRecentSearches } from './sidebar/hooks/useRecentSearches';
 import { useKeyboardShortcuts } from './sidebar/hooks/useKeyboardShortcuts';
 import { useSorting } from './sidebar/hooks/useSorting';
 // Removed fixture count import as per requirements
@@ -36,7 +35,6 @@ export function SidebarWithTanStackQuery({
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [showActiveOnly, setShowActiveOnly] = useState(false);
   const [showTodayOnly, setShowTodayOnly] = useState(false);
-  const [showRecentSearches, setShowRecentSearches] = useState(false);
   const [expandedCountries, setExpandedCountries] = useState<Set<number>>(new Set());
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set(['top-leagues', 'tournaments'])); // Start with countries open, others collapsed
   // Removed counting-related state as per requirements
@@ -49,7 +47,6 @@ export function SidebarWithTanStackQuery({
   
   // Custom hooks
   const { favorites, toggleFavorite, isFavorite } = useFavorites();
-  const { recentSearches, addToRecentSearches, clearRecentSearches } = useRecentSearches();
   const { sortBy, setSortBy, sortCountries } = useSorting();
   
   // TanStack Query hooks - optimized for SportMonks best practices
@@ -117,11 +114,7 @@ export function SidebarWithTanStackQuery({
   // Handle search
   const handleSearch = useCallback((term: string) => {
     setSearchTerm(term);
-    if (term.trim().length >= 2) {
-      addToRecentSearches(term);
-    }
-    setShowRecentSearches(false);
-  }, [addToRecentSearches]);
+  }, []);
 
   // Handle refresh - simplified without counting features
   const handleRefresh = useCallback(async () => {
@@ -223,32 +216,8 @@ export function SidebarWithTanStackQuery({
             placeholder="Search countries, leagues..."
             value={searchTerm}
             onChange={(e) => handleSearch(e.target.value)}
-            onFocus={() => setShowRecentSearches(true)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
-          
-          {/* Recent Searches Dropdown */}
-          {showRecentSearches && recentSearches.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
-              {recentSearches.map((search, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleSearch(search)}
-                  className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600"
-                >
-                  {search}
-                </button>
-              ))}
-              <div className="border-t border-gray-200 dark:border-gray-600">
-                <button
-                  onClick={clearRecentSearches}
-                  className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-600"
-                >
-                  Clear History
-                </button>
-              </div>
-            </div>
-          )}
         </div>
 
 

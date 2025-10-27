@@ -14,7 +14,6 @@ import { TournamentsSection } from './sidebar/TournamentsSection';
 
 // Import custom hooks
 import { useFavorites } from './sidebar/hooks/useFavorites';
-import { useRecentSearches } from './sidebar/hooks/useRecentSearches';
 import { useKeyboardShortcuts } from './sidebar/hooks/useKeyboardShortcuts';
 import { useSorting } from './sidebar/hooks/useSorting';
 import { useCountriesQuery } from '@/app/hooks/useSidebarQueries';
@@ -50,7 +49,6 @@ export function SidebarOptimized({
 
   // Custom hooks
   const { favorites, toggleFavorite } = useFavorites();
-  const { recentSearches, addToRecentSearches, clearRecentSearches } = useRecentSearches();
   const { sortCountries } = useSorting();
 
   // Load local countries data from the optimized API endpoint
@@ -144,24 +142,12 @@ export function SidebarOptimized({
   const handleSearch = useCallback((term: string) => {
     console.log('SidebarOptimized: handleSearch called with:', term);
     setSearchTerm(term);
-    if (term.trim()) {
-      addToRecentSearches(term);
-    }
-  }, [addToRecentSearches]);
+  }, []);
 
   // Handle search scope change
   const handleSearchScopeChange = useCallback((scope: SearchScope) => {
     setSearchScope(scope);
   }, []);
-
-  // Handle recent search click
-  const handleRecentSearchClick = useCallback((search: string) => {
-    console.log('SidebarOptimized: Recent search clicked:', search);
-    setSearchTerm(search);
-    addToRecentSearches(search);
-    // Trigger the search with the selected term
-    handleSearch(search);
-  }, [addToRecentSearches, handleSearch]);
 
   // Handle refresh - simplified without counting
   const handleRefresh = useCallback(async () => {
@@ -226,10 +212,6 @@ export function SidebarOptimized({
                 onScopeChange={handleSearchScopeChange}
                 searchScope={searchScope}
                 placeholder="Search"
-                recentSearches={recentSearches}
-                onRecentSearchClick={handleRecentSearchClick}
-                onClearRecentSearches={clearRecentSearches}
-                showRecentSearches={true}
               />
               {/* Search Results positioned relative to input */}
               <ServerSideSearchResults searchTerm={searchTerm} searchScope={searchScope} />
@@ -266,10 +248,6 @@ export function SidebarOptimized({
               onScopeChange={handleSearchScopeChange}
               searchScope={searchScope}
               placeholder="Search"
-              recentSearches={recentSearches}
-              onRecentSearchClick={handleRecentSearchClick}
-              onClearRecentSearches={clearRecentSearches}
-              showRecentSearches={true}
             />
             {/* Search Results positioned relative to input */}
             <ServerSideSearchResults searchTerm={searchTerm} searchScope={searchScope} />
