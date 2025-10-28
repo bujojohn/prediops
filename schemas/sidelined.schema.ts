@@ -17,6 +17,8 @@ export type Sidelined = {
   end_date?: string | null;
   description?: string | null;
   category?: string | null;
+  games_missed?: number | null;
+  completed?: boolean | null;
   sideline_detail?: {
     player_id?: number | null;
     type_id?: number | null;
@@ -45,6 +47,8 @@ export const SidelinedSchema: z.ZodType<Sidelined> = z.lazy(() =>
     end_date: z.string().nullable().optional(),
     description: z.string().nullable().optional(),
     category: z.string().nullable().optional(),
+    games_missed: z.number().int().nullable().optional(),
+    completed: z.boolean().nullable().optional(),
     sideline_detail: z.object({
         player_id: z.number().int().nullable().optional(),
         type_id: z.number().int().nullable().optional(),

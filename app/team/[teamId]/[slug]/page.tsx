@@ -17,13 +17,18 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
   
   try {
     // Fetch detailed team data with all includes
-    const teamResponse = await sportmonks.getTeamWithDetails(teamId, {
-      include: "country;coaches;rivals;players;latest;upcoming;seasons;activeSeasons;sidelined;sidelinedHistory;trophies;socials;rankings"
+    const teamResponse = await sportmonks.getTeamWithDetails(teamId, { 
+      include: "country;coaches;rivals;players.player;latest;upcoming;seasons;activeSeasons;sidelined.player;sidelinedHistory;trophies;socials;rankings"
     });
     
     if (!teamResponse.data) {
       notFound();
     }
+    
+    // Debug: Log the response data structure
+    console.log('Team API Response:', JSON.stringify(teamResponse.data, null, 2));
+    console.log('Sidelined players from API:', teamResponse.data?.sidelined);
+    console.log('First sidelined player:', teamResponse.data?.sidelined?.[0]);
     
     // Validate the response data
     const team = TeamDetailedSchema.parse(teamResponse.data);
@@ -33,7 +38,7 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
     
     // If URL doesn't include slug or slug is incorrect, redirect to correct URL
     if (!urlSlug || expectedSlug !== urlSlug) {
-      redirect(`/team/${teamId}/${expectedSlug}`);
+      redirect(`/team/${teamId}/${expectedSlug}/`);
     }
 
     // Fetch upcoming fixtures for the team (next 14 days)

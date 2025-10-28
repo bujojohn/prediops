@@ -5,38 +5,29 @@ import { ChevronDown, ChevronRight, Star, StarOff, ExternalLink } from 'lucide-r
 import { Badge } from '@/components/ui/badge';
 import { usePathname } from 'next/navigation';
 import { getCountryPredictionsUrl, generateLeagueSlug } from '@/lib/utils/country-utils';
-import type { CountryWithLeagues, League } from './types';
+import { SIDEBAR_CONFIG } from './config';
+import type { CountryWithLeagues } from './types';
 
 interface TournamentsSectionProps {
-  tournaments: CountryWithLeagues[];
+  tournaments?: CountryWithLeagues[];
   isCollapsed: boolean;
   onToggle: () => void;
-  expandedCountries: Set<number>;
-  onToggleCountry: (countryId: number) => void;
-  countryLeagues: Map<number, League[]>;
-  loadingStates: Map<number, boolean>;
-  countryTodayCounts: Map<number, number>;
-  loadingCounts: Set<number>;
-  leagueFixtureCounts: Map<number, number>;
-  loadingLeagueCounts: Set<number>;
-  favorites: Set<number>;
-  onToggleFavorite: (id: number) => void;
+  expandedCountries?: Set<number>;
+  onToggleCountry?: (countryId: number) => void;
+  // Removed counting-related props as per requirements
+  favorites?: Set<number>;
+  onToggleFavorite?: (id: number) => void;
 }
 
 export function TournamentsSection({
-  tournaments,
+  tournaments = [],
   isCollapsed,
   onToggle,
-  expandedCountries,
-  onToggleCountry,
-  countryLeagues,
-  loadingStates,
-  countryTodayCounts,
-  loadingCounts,
-  leagueFixtureCounts,
-  loadingLeagueCounts,
-  favorites,
-  onToggleFavorite,
+  expandedCountries = new Set(),
+  onToggleCountry = () => {},
+  // Removed counting-related props as per requirements
+  favorites = new Set(),
+  onToggleFavorite = () => {},
 }: TournamentsSectionProps) {
   const pathname = usePathname();
 
@@ -69,8 +60,8 @@ export function TournamentsSection({
         <div className="space-y-0.5">
           {tournaments.map((tournament) => {
             const isExpanded = expandedCountries.has(tournament.id);
-            const leagues = countryLeagues.get(tournament.id) || [];
-            const isLoadingLeagues = loadingStates.get(tournament.id) || false;
+            const leagues = tournament.leagues || [];
+            const isLoadingLeagues = false; // Simplified - no loading states
             const tournamentName = tournament.name || tournament.fifa_name || tournament.official_name || '';
 
             return (
@@ -87,9 +78,7 @@ export function TournamentsSection({
                       <ChevronRight className="h-3.5 w-3.5 flex-shrink-0" />
                     )}
                     <span
-                      className={`font-medium truncate text-sm max-w-[100px] ${
-                        (tournament.leaguesCount || 0) === 0 ? 'text-muted-foreground italic' : ''
-                      }`}
+                      className="font-medium truncate text-sm max-w-[100px]"
                       title={tournamentName}
                     >
                       {tournamentName}
@@ -100,25 +89,6 @@ export function TournamentsSection({
                     >
                       Tournament
                     </Badge>
-                    {loadingCounts.has(tournament.id) ? (
-                      <div className="ml-1 h-4 w-6 bg-muted animate-pulse rounded flex-shrink-0" />
-                    ) : (
-                      <Badge
-                        variant="outline"
-                        className={`text-[10px] ml-1 flex-shrink-0 ${
-                          (countryTodayCounts.get(tournament.id) ?? 0) > 0
-                            ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
-                            : 'bg-muted text-muted-foreground'
-                        }`}
-                        title={
-                          (countryTodayCounts.get(tournament.id) ?? 0) > 0
-                            ? `${countryTodayCounts.get(tournament.id)} fixtures today`
-                            : 'No fixtures today'
-                        }
-                      >
-                        {countryTodayCounts.get(tournament.id) ?? 0}
-                      </Badge>
-                    )}
                   </button>
 
                   <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -157,8 +127,6 @@ export function TournamentsSection({
                     ) : leagues.length > 0 ? (
                       leagues.map((league) => {
                         const active = pathname?.includes(`/predictions/league/${league.id}/`);
-                        const fixtureCount = leagueFixtureCounts.get(league.id) ?? 0;
-                        const isLoadingCount = loadingLeagueCounts.has(league.id);
 
                         return (
                           <div
@@ -181,21 +149,6 @@ export function TournamentsSection({
                                   className={`text-xs px-1 py-0.5 flex-shrink-0 ${active ? 'border-primary text-primary' : ''}`}
                                 >
                                   {league.short_code}
-                                </Badge>
-                              )}
-                              {isLoadingCount ? (
-                                <div className="h-4 w-6 bg-muted animate-pulse rounded flex-shrink-0" />
-                              ) : (
-                                <Badge
-                                  variant="outline"
-                                  className={`text-[10px] flex-shrink-0 ${
-                                    fixtureCount > 0
-                                      ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
-                                      : 'bg-muted text-muted-foreground'
-                                  }`}
-                                  title={fixtureCount > 0 ? `${fixtureCount} fixtures in next 7 days` : 'No fixtures in next 7 days'}
-                                >
-                                  {fixtureCount}
                                 </Badge>
                               )}
                             </a>

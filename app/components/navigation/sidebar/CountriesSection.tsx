@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ChevronDown, ChevronRight, Globe, Star, StarOff, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { usePathname } from 'next/navigation';
 import { getCountryPredictionsUrl, generateLeagueSlug } from '@/lib/utils/country-utils';
-import type { CountryWithLeagues, League } from './types';
+import { SIDEBAR_CONFIG } from './config';
+import type { CountryWithLeagues } from './types';
 
 interface CountriesSectionProps {
   countries: CountryWithLeagues[];
@@ -14,12 +15,7 @@ interface CountriesSectionProps {
   onToggle: () => void;
   expandedCountries: Set<number>;
   onToggleCountry: (countryId: number) => void;
-  countryLeagues: Map<number, League[]>;
-  loadingStates: Map<number, boolean>;
-  countryTodayCounts: Map<number, number>;
-  loadingCounts: Set<number>;
-  leagueFixtureCounts: Map<number, number>;
-  loadingLeagueCounts: Set<number>;
+  // Removed counting-related props as per requirements
   favorites: Set<number>;
   onToggleFavorite: (id: number) => void;
 }
@@ -30,24 +26,39 @@ export function CountriesSection({
   onToggle,
   expandedCountries,
   onToggleCountry,
-  countryLeagues,
-  loadingStates,
-  countryTodayCounts,
-  loadingCounts,
-  leagueFixtureCounts,
-  loadingLeagueCounts,
+  // Removed counting-related props as per requirements
   favorites,
   onToggleFavorite,
 }: CountriesSectionProps) {
   const pathname = usePathname();
   const countriesContainerRef = useRef<HTMLDivElement>(null);
+  const [isHydrated, setIsHydrated] = useState(false);
 
-  // Setup virtual scrolling for countries list
+  // Prevent hydration mismatches
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+
+  // Setup virtual scrolling for countries list (only after hydration)
   const countriesVirtualizer = useVirtualizer({
     count: countries.length,
     getScrollElement: () => countriesContainerRef.current,
     estimateSize: () => 45, // Estimated height of each country item
     overscan: 5, // Render 5 extra items above and below visible area
+    enabled: isHydrated, // Only enable after hydration
+    measureElement: (element) => {
+      try {
+        // Add comprehensive null checks to prevent parentNode errors
+        if (!element || !element.parentNode || !element.getBoundingClientRect) {
+          return 45; // Return estimated size if element is not properly attached
+        }
+        const rect = element.getBoundingClientRect();
+        return rect.height || 45; // Fallback to estimated size if height is 0
+      } catch (error) {
+        console.warn('Error measuring element in virtualizer:', error);
+        return 45; // Return estimated size on any error
+      }
+    },
   });
 
   return (
@@ -76,7 +87,7 @@ export function CountriesSection({
       {!isCollapsed && (
         <div
           ref={countriesContainerRef}
-          className="max-h-[calc(100vh/3)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent"
+          className="h-[400px] overflow-y-auto scrollbar-thick"
           style={{ position: 'relative' }}
         >
           <div
@@ -86,18 +97,29 @@ export function CountriesSection({
               position: 'relative',
             }}
           >
-            {countriesVirtualizer.getVirtualItems().map((virtualItem) => {
+            {countries.length > 0 && countriesVirtualizer.getVirtualItems().map((virtualItem) => {
               const country = countries[virtualItem.index];
+              
+              // Safety check to prevent errors if country is undefined
+              if (!country) {
+                return null;
+              }
+              
               const isExpanded = expandedCountries.has(country.id);
-              const leagues = countryLeagues.get(country.id) || [];
-              const isLoadingLeagues = loadingStates.get(country.id) || false;
+              // Simplified without counting features - use country.leagues directly
+              const leagues = country.leagues || [];
+              const isLoadingLeagues = false; // Simplified without loading states
               const countryName = country.name || country.fifa_name || country.official_name || '';
 
               return (
                 <div
                   key={virtualItem.key}
                   data-index={virtualItem.index}
-                  ref={countriesVirtualizer.measureElement}
+                  ref={(el) => {
+                    if (el && countriesVirtualizer.measureElement) {
+                      countriesVirtualizer.measureElement(el);
+                    }
+                  }}
                   className="space-y-0.5"
                   id={`country-${country.id}`}
                   style={{
@@ -127,25 +149,14 @@ export function CountriesSection({
                       >
                         {countryName}
                       </span>
-                      {loadingCounts.has(country.id) ? (
-                        <div className="ml-1 h-4 w-6 bg-muted animate-pulse rounded flex-shrink-0" />
-                      ) : (
-                        <Badge
-                          variant="outline"
-                          className={`text-[10px] ml-1 flex-shrink-0 ${
-                            (countryTodayCounts.get(country.id) ?? 0) > 0
-                              ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
-                              : 'bg-muted text-muted-foreground'
-                          }`}
-                          title={
-                            (countryTodayCounts.get(country.id) ?? 0) > 0
-                              ? `${countryTodayCounts.get(country.id)} fixtures today`
-                              : 'No fixtures today'
-                          }
-                        >
-                          {countryTodayCounts.get(country.id) ?? 0}
-                        </Badge>
-                      )}
+                      {/* Simplified without counting features */}
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] ml-1 flex-shrink-0 bg-muted text-muted-foreground"
+                        title={`${country.leagues?.length || 0} leagues`}
+                      >
+                        {country.leagues?.length || 0}
+                      </Badge>
                     </button>
 
                     <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -184,8 +195,7 @@ export function CountriesSection({
                       ) : leagues.length > 0 ? (
                         leagues.map((league) => {
                           const active = pathname?.includes(`/predictions/league/${league.id}/`);
-                          const fixtureCount = leagueFixtureCounts.get(league.id) ?? 0;
-                          const isLoadingCount = loadingLeagueCounts.has(league.id);
+                          // Simplified without counting features
 
                           return (
                             <div
@@ -210,21 +220,7 @@ export function CountriesSection({
                                     {league.short_code}
                                   </Badge>
                                 )}
-                                {isLoadingCount ? (
-                                  <div className="h-4 w-6 bg-muted animate-pulse rounded flex-shrink-0" />
-                                ) : (
-                                  <Badge
-                                    variant="outline"
-                                    className={`text-[10px] flex-shrink-0 ${
-                                      fixtureCount > 0
-                                        ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
-                                        : 'bg-muted text-muted-foreground'
-                                    }`}
-                                    title={fixtureCount > 0 ? `${fixtureCount} fixtures in next 7 days` : 'No fixtures in next 7 days'}
-                                  >
-                                    {fixtureCount}
-                                  </Badge>
-                                )}
+                                {/* Simplified without counting features */}
                               </a>
                             </div>
                           );

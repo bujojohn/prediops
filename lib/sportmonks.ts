@@ -577,6 +577,19 @@ export const sportmonks = {
     return response.data;
   },
 
+  /**
+   * Returns all the teams that match your search query with configurable options
+   * Doc: https://docs.sportmonks.com/football/endpoints-and-entities/endpoints/teams/get-teams-by-search-by-name
+   * @param searchQuery - Search query string
+   * @param config - ApiConfig with include options like 'country'
+   * @returns ApiListResponse<Team>
+   */
+  async getTeamsBySearch(searchQuery: string, config?: ApiConfig): Promise<ApiListResponse<Team>> {
+    const url = `/teams/search/${encodeURIComponent(searchQuery)}`;
+    const response = await api.get(url, { params: makeParams(config) });
+    return response.data;
+  },
+
   // Get team with detailed information (all includes)
   async getTeamWithDetails(teamId: string, config?: ApiConfig) {
     const defaultIncludes = "country;coaches;rivals;players;latest;upcoming;seasons;activeSeasons;sidelined;sidelinedHistory;trophies;socials";

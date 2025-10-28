@@ -12,7 +12,7 @@ export interface CountryWithLeagues extends Country {
 export interface League {
   id: number;
   name: string;
-  active: boolean;
+  active?: boolean | null;
   type?: string;
   short_code?: string;
   country_id?: number;

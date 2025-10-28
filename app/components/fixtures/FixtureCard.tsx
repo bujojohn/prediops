@@ -18,6 +18,7 @@ import { LoadingIndicator } from "@/app/components/ui/loading-indicator";
 import { FixturesContext } from "@/app/contexts/FixturesContext";
 import { useQuery } from "@tanstack/react-query";
 import type { Odd } from "@/schemas/odds.schema";
+import { usePathname } from "next/navigation";
 // import { useHeadToHead } from "@/app/hooks/useHeadToHead";
 // import H2HModal from "@/app/components/h2h/H2HModal";
 import { useValueBet } from "@/app/hooks/useValueBet";
@@ -220,6 +221,8 @@ export const FixtureCard = memo(function FixtureCard({
   fixture: Fixture;
   compact?: boolean;
 }) {
+  const pathname = usePathname();
+  
   // Use context if available, otherwise fallback to prop
   const context = useContext(FixturesContext);
   const fixture =
@@ -452,10 +455,10 @@ export const FixtureCard = memo(function FixtureCard({
   //   enabled: showH2H,
   // });
 
-  // ValueBet React Query
+  // ValueBet React Query - only fetch on value-bets page
   const { data: valueBetData, isLoading: valueBetLoading, error: valueBetError } = useValueBet({
     fixtureId: fixture.id,
-    enabled: true,
+    enabled: pathname === '/value-bets', // Only fetch on value-bets page
   });
 
   // Determine ValueBet state and extract data

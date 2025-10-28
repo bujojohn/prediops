@@ -10,15 +10,12 @@ import type { TopLeague } from './types';
 interface TopLeaguesSectionProps {
   isCollapsed: boolean;
   onToggle: () => void;
-  leagueFixtureCounts: Map<number, number>;
-  loadingLeagueCounts: Set<number>;
+  // Removed counting-related props as per requirements
 }
 
 export function TopLeaguesSection({
   isCollapsed,
   onToggle,
-  leagueFixtureCounts,
-  loadingLeagueCounts,
 }: TopLeaguesSectionProps) {
   const pathname = usePathname();
 
@@ -59,8 +56,6 @@ export function TopLeaguesSection({
       {!isCollapsed && (
         <div className="space-y-0.5">
           {topLeagues.map((league) => {
-            const fixtureCount = leagueFixtureCounts.get(league.id) ?? 0;
-            const isLoadingCount = loadingLeagueCounts.has(league.id);
             const active = pathname?.includes(`/predictions/league/${league.id}/`);
 
             return (
@@ -80,21 +75,6 @@ export function TopLeaguesSection({
                   <Badge variant="outline" className={`text-[9px] px-1 flex-shrink-0 ${active ? 'border-primary text-primary' : ''}`}>
                     {league.short_code}
                   </Badge>
-                  {isLoadingCount ? (
-                    <div className="h-4 w-6 bg-muted animate-pulse rounded flex-shrink-0" />
-                  ) : (
-                    <Badge
-                      variant="outline"
-                      className={`text-[10px] flex-shrink-0 ${
-                        fixtureCount > 0
-                          ? 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
-                          : 'bg-muted text-muted-foreground'
-                      }`}
-                      title={fixtureCount > 0 ? `${fixtureCount} fixtures in next 7 days` : 'No fixtures in next 7 days'}
-                    >
-                      {fixtureCount}
-                    </Badge>
-                  )}
                 </a>
                 <a
                   href={`/predictions/league/${league.id}/${generateLeagueSlug({ name: league.name, id: league.id })}`}

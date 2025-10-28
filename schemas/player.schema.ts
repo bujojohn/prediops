@@ -62,7 +62,7 @@ export const PlayerSchema: z.ZodType<Player> = z.lazy(() =>
     name: z.string().nullable().optional(),
     display_name: z.string().nullable().optional(),
     image_path: z.string().url().nullable().optional(),
-    date_of_birth: z.string().datetime({ precision: 0, message: "Invalid datetime string" }).nullable().optional(),
+    date_of_birth: z.iso.date().nullable().optional(),
     gender: z.string().nullable().optional(),
     height: z.number().int().nullable().optional(),
     weight: z.number().int().nullable().optional(),
