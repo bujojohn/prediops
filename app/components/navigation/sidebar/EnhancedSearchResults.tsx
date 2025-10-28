@@ -146,8 +146,10 @@ export function EnhancedSearchResults({ searchTerm, searchScope }: EnhancedSearc
             if (leaguesData.success) {
               // Flatten leagues from the grouped response
               const allLeagues: League[] = [];
-              Object.values(leaguesData.data).forEach((countryLeagues: League[]) => {
-                allLeagues.push(...countryLeagues);
+              Object.values(leaguesData.data).forEach((countryLeagues: unknown) => {
+                if (Array.isArray(countryLeagues)) {
+                  allLeagues.push(...(countryLeagues as League[]));
+                }
               });
               leagues = allLeagues;
               setCachedData(searchDataCache.leagues, leagues);

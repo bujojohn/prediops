@@ -1,12 +1,17 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import type { Country as SchemaCountry } from '@/schemas/country.schema';
+
+interface CountryData {
+  data: SchemaCountry[];
+}
 
 export interface Country {
   id: number;
-  name: string;
-  image_path: string;
-  fifa_name?: string;
-  official_name?: string;
+  name?: string | null;
+  image_path?: string | null;
+  fifa_name?: string | null;
+  official_name?: string | null;
   leagues?: League[];
   leaguesCount?: number;
   fixtureCount?: number;
@@ -27,7 +32,7 @@ export interface League {
 export function loadCountriesData(): Country[] {
   try {
     const dataPath = join(process.cwd(), 'data', 'countries.json');
-    const countriesData = JSON.parse(readFileSync(dataPath, 'utf8'));
+    const countriesData: CountryData = JSON.parse(readFileSync(dataPath, 'utf8'));
     
     if (!countriesData?.data) {
       console.warn('No countries data found in local file');
@@ -35,7 +40,7 @@ export function loadCountriesData(): Country[] {
     }
 
     // Transform the data to include leagues and counts
-    return countriesData.data.map((country: any) => ({
+    return countriesData.data.map((country: SchemaCountry) => ({
       ...country,
       leagues: [], // Will be populated when needed
       leaguesCount: 0, // Will be calculated when needed
@@ -54,7 +59,7 @@ export function loadCountriesData(): Country[] {
 export function loadCountriesWithLeaguesData(): Country[] {
   try {
     const dataPath = join(process.cwd(), 'data', 'countries.json');
-    const countriesData = JSON.parse(readFileSync(dataPath, 'utf8'));
+    const countriesData: CountryData = JSON.parse(readFileSync(dataPath, 'utf8'));
     
     if (!countriesData?.data) {
       console.warn('No countries data found in local file');
@@ -63,7 +68,7 @@ export function loadCountriesWithLeaguesData(): Country[] {
 
     // For now, return countries without leagues
     // In a real implementation, you would load leagues data and populate them
-    return countriesData.data.map((country: any) => ({
+    return countriesData.data.map((country: SchemaCountry) => ({
       ...country,
       leagues: [], // Will be populated when needed
       leaguesCount: 0, // Will be calculated when needed

@@ -3,12 +3,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { SearchScope } from '@/app/components/navigation/sidebar/SearchScopeDropdown';
+import type { Country } from '@/schemas/country.schema';
+import type { League } from '@/schemas/league.schema';
+import type { Team } from '@/schemas/team.schema';
+import type { Fixture } from '@/schemas/fixture.schema';
 
 interface SearchResult {
-  countries: any[];
-  leagues: any[];
-  teams: any[];
-  fixtures: any[];
+  countries: Country[];
+  leagues: League[];
+  teams: Team[];
+  fixtures: Fixture[];
   totalResults: number;
 }
 
