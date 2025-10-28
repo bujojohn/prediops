@@ -111,14 +111,7 @@ export function ServerSideSearchResults({ searchTerm, searchScope }: ServerSideS
                 Upcoming Matches ({results.fixtures.length})
               </div>
               <div className="space-y-1">
-                {(expandedSections.fixtures ? results.fixtures : results.fixtures.slice(0, 3)).map((fixture: { 
-                  id: number; 
-                  participants?: Array<{ name: string }>; 
-                  league?: { id: number; name: string; country?: { name: string } }; 
-                  starting_at?: string;
-                  state?: { name: string };
-                  scores?: Array<{ score?: string; goals?: string; [key: string]: unknown }>;
-                }, index: number) => {
+                {(expandedSections.fixtures ? results.fixtures : results.fixtures.slice(0, 3)).map((fixture, index: number) => {
                   // Format date and time
                   const formatDateTime = (dateString?: string) => {
                     if (!dateString) return '';
@@ -152,7 +145,7 @@ export function ServerSideSearchResults({ searchTerm, searchScope }: ServerSideS
                     
                     // For now, let's avoid showing scores until we understand the structure better
                     // This prevents the [object Object] issue
-                    return formatDateTime(fixture.starting_at);
+                    return formatDateTime(fixture.starting_at || undefined);
                   };
 
                   // Get appropriate icon based on match state
@@ -175,10 +168,10 @@ export function ServerSideSearchResults({ searchTerm, searchScope }: ServerSideS
                       {getMatchIcon()}
                       <div className="flex-1 min-w-0">
                         <div className="truncate text-xs font-medium">
-                          {fixture.participants?.[0]?.name} vs {fixture.participants?.[1]?.name}
+                          {fixture.participants?.[0]?.name || 'Team 1'} vs {fixture.participants?.[1]?.name || 'Team 2'}
                         </div>
                         <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                          {fixture.league?.name}
+                          {fixture.league?.name || 'Unknown League'}
                           {fixture.league?.country?.name && ` (${fixture.league.country.name})`}
                         </div>
                         <div className="text-xs text-gray-600 dark:text-gray-300 font-medium">
@@ -217,7 +210,7 @@ export function ServerSideSearchResults({ searchTerm, searchScope }: ServerSideS
                 Teams ({results.teams.length})
               </div>
               <div className="space-y-1">
-                {(expandedSections.teams ? results.teams : results.teams.slice(0, 4)).map((team: { id: number; name: string; country?: { name: string } }, index: number) => (
+                {(expandedSections.teams ? results.teams : results.teams.slice(0, 4)).map((team, index: number) => (
                   <a
                     key={`${team.id}-${index}`}
                     href={`/team/${team.id}/${generateTeamSlug({ id: team.id, name: team.name })}`}
@@ -226,7 +219,7 @@ export function ServerSideSearchResults({ searchTerm, searchScope }: ServerSideS
                     <Users className="h-4 w-4 text-purple-500" />
                     <span className="truncate flex-1">{team.name}</span>
                     <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
-                      ({team.country?.name})
+                      ({team.country?.name || 'Unknown Country'})
                     </span>
                   </a>
                 ))}
@@ -259,16 +252,16 @@ export function ServerSideSearchResults({ searchTerm, searchScope }: ServerSideS
                 Leagues ({results.leagues.length})
               </div>
               <div className="space-y-1">
-                {(expandedSections.leagues ? results.leagues : results.leagues.slice(0, 4)).map((league: { id: number; name: string; country?: { name: string } }, index: number) => (
+                {(expandedSections.leagues ? results.leagues : results.leagues.slice(0, 4)).map((league, index: number) => (
                   <a
                     key={`${league.id}-${index}`}
-                    href={`/predictions/league/${league.id}/${generateLeagueSlug({ name: league.name, id: league.id })}`}
+                    href={`/predictions/league/${league.id}/${generateLeagueSlug({ name: league.name || '', id: league.id })}`}
                     className="flex items-center gap-2 text-sm p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   >
                     <Trophy className="h-4 w-4 text-green-500" />
-                    <span className="truncate flex-1">{league.name}</span>
+                    <span className="truncate flex-1">{league.name || 'Unknown League'}</span>
                     <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
-                      ({league.country?.name})
+                      ({league.country?.name || 'Unknown Country'})
                     </span>
                   </a>
                 ))}
@@ -301,16 +294,16 @@ export function ServerSideSearchResults({ searchTerm, searchScope }: ServerSideS
                 Countries ({results.countries.length})
               </div>
               <div className="space-y-1">
-                {(expandedSections.countries ? results.countries : results.countries.slice(0, 3)).map((country: { id: number; name: string; leaguesCount?: number }) => (
+                {(expandedSections.countries ? results.countries : results.countries.slice(0, 3)).map((country) => (
                   <a
                     key={country.id}
                     href={getCountryPredictionsUrl(country)}
                     className="flex items-center gap-2 text-sm p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   >
                     <Globe className="h-4 w-4 text-blue-500" />
-                    <span className="truncate flex-1">{country.name}</span>
+                    <span className="truncate flex-1">{country.name || 'Unknown Country'}</span>
                     <Badge variant="outline" className="text-xs">
-                      {country.leaguesCount || 0}
+                      {country.leagues?.length || 0}
                     </Badge>
                   </a>
                 ))}

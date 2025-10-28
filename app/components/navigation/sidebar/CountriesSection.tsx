@@ -6,7 +6,6 @@ import { ChevronDown, ChevronRight, Globe, Star, StarOff, ExternalLink } from 'l
 import { Badge } from '@/components/ui/badge';
 import { usePathname } from 'next/navigation';
 import { getCountryPredictionsUrl, generateLeagueSlug } from '@/lib/utils/country-utils';
-import { SIDEBAR_CONFIG } from './config';
 import type { CountryWithLeagues } from './types';
 
 interface CountriesSectionProps {
@@ -209,7 +208,7 @@ export function CountriesSection({
                                 className={`flex items-center gap-1.5 flex-1 text-xs min-w-0 ${active ? 'text-primary font-medium' : ''}`}
                                 title={`League ID: ${league.id}`}
                               >
-                                <span className="truncate max-w-[100px]" title={league.name}>
+                                <span className="truncate max-w-[100px]" title={league.name || undefined}>
                                   {league.name}
                                 </span>
                                 {league.short_code && (
