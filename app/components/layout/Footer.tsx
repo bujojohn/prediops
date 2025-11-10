@@ -11,15 +11,15 @@ export function Footer() {
   const copyrightYear = currentYear === startYear ? startYear : `${startYear}-${currentYear}`;
 
   return (
-    <footer className="bg-slate-100 text-gray-800 border-slate-200 dark:bg-slate-900 dark:border-slate-800">
+    <footer className="bg-slate-900 text-white border-t border-slate-800">
       <div className="container mx-auto px-6 py-12">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
           {/* Brand Section */}
           <div className="space-y-4">
             <Logo size="lg" showText={true} className="text-white" />
-            <p className="text-slate-600 text-sm leading-relaxed">
-              Sports predictions and value betting opportunities across 111+ leagues worldwide.
+            <p className="text-slate-400 text-sm leading-relaxed">
+              AI-powered sports predictions and value betting opportunities across 111+ leagues worldwide.
             </p>
                          <div className="flex items-center gap-2">
                <Badge variant="secondary" className="text-xs">
@@ -110,7 +110,7 @@ export function Footer() {
         </div>
 
         {/* Bottom Section */}
-        <div className="border-t border-slate-300 pt-8 dark:border-slate-800">
+        <div className="border-t border-slate-800 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             {/* Copyright */}
             <div className="text-sm text-slate-400">

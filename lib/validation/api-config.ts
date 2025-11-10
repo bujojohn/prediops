@@ -12,7 +12,7 @@ export const apiConfigSchema = z.object({
   order: z.enum(['asc', 'desc']).optional(), // Basic ordering
   sortBy: z.string().optional(), // Custom sorting field
   page: z.number().min(1).optional(), // Page number for pagination
-  per_page: z.number().min(1).max(1000).optional(), // SportMonks allows higher limits when using populate filters
+  per_page: z.number().min(1).max(50).optional(), // Results per page (range 1-50)
   populate: z.boolean().optional(), // Use _filters=populate_ for higher pagination limit
 });
 
@@ -24,7 +24,6 @@ export const leaguesConfigSchema = apiConfigSchema.extend({
     types: z.union([z.number(), z.array(z.number())]).optional(),
     active: z.boolean().optional(),
     sport: z.number().optional(),
-    populate: z.string().optional(),
   }).optional(),
 });
 

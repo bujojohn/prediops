@@ -3,12 +3,8 @@ import type { Participant } from '@/schemas/participant.schema';
 import type { Fixture } from '@/schemas/fixture.schema';
 import type { Country } from '@/schemas/country.schema';
 import type { League } from '@/schemas/league.schema';
-import {
-  generateTeamSlug,
-  generateLeagueSlug,
-  generateCountrySlug,
-  generateFixtureSlug
-} from './slug-utils';
+import { generateTeamSlug } from './team-utils';
+import { generateCountrySlug } from './country-utils';
 
 /**
  * Centralized route definitions for the application
@@ -29,17 +25,16 @@ export const ROUTES = {
   
   // Country routes
   COUNTRY_BASE: '/country',
-  COUNTRY_DETAIL: (countryId: string | number, slug: string) => `/country/${countryId}/${slug}`,
-  COUNTRY_PREDICTIONS: (countryId: string | number, slug: string) => `/predictions/country/${countryId}/${slug}`,
+  COUNTRY_DETAIL: (countryId: string) => `/country/${countryId}`,
+  COUNTRY_PREDICTIONS: (countryId: string, slug: string) => `/predictions/country/${slug}?id=${countryId}`,
   
   // League routes
   LEAGUE_BASE: '/league',
-  LEAGUE_DETAIL: (leagueId: string | number, slug: string) => `/league/${leagueId}/${slug}`,
-  LEAGUE_PREDICTIONS: (leagueId: string | number, slug: string) => `/predictions/league/${leagueId}/${slug}`,
+  LEAGUE_DETAIL: (leagueId: string) => `/league/${leagueId}`,
+  LEAGUE_PREDICTIONS: (leagueId: string, slug: string) => `/predictions/league/${slug}?id=${leagueId}`,
   
   // Fixture routes
-  FIXTURE_BASE: '/fixture',
-  FIXTURE_DETAIL: (fixtureId: string | number, slug: string) => `/fixture/${fixtureId}/${slug}`,
+  FIXTURE_DETAIL: (fixtureId: string) => `/fixtures/${fixtureId}`,
 } as const;
 
 /**
@@ -70,8 +65,7 @@ export function generateTeamFixtureUrl(team: Team | Participant, fixtureId?: str
  * Generate URL for a country
  */
 export function generateCountryUrl(country: Country): string {
-  const slug = generateCountrySlug(country);
-  return ROUTES.COUNTRY_DETAIL(country.id, slug);
+  return ROUTES.COUNTRY_DETAIL(country.id.toString());
 }
 
 /**
@@ -79,31 +73,29 @@ export function generateCountryUrl(country: Country): string {
  */
 export function generateCountryPredictionsUrl(country: Country): string {
   const slug = generateCountrySlug(country);
-  return ROUTES.COUNTRY_PREDICTIONS(country.id, slug);
+  return ROUTES.COUNTRY_PREDICTIONS(country.id.toString(), slug);
 }
 
 /**
  * Generate URL for a league
  */
 export function generateLeagueUrl(league: League): string {
-  const slug = generateLeagueSlug(league);
-  return ROUTES.LEAGUE_DETAIL(league.id, slug);
+  return ROUTES.LEAGUE_DETAIL(league.id.toString());
 }
 
 /**
  * Generate URL for a league's predictions
  */
 export function generateLeaguePredictionsUrl(league: League): string {
-  const slug = generateLeagueSlug(league);
-  return ROUTES.LEAGUE_PREDICTIONS(league.id, slug);
+  const slug = league.name?.toLowerCase().replace(/\s+/g, '-') || `league-${league.id}`;
+  return ROUTES.LEAGUE_PREDICTIONS(league.id.toString(), slug);
 }
 
 /**
  * Generate URL for a fixture
  */
 export function generateFixtureUrl(fixture: Fixture): string {
-  const slug = generateFixtureSlug(fixture);
-  return ROUTES.FIXTURE_DETAIL(fixture.id, slug);
+  return ROUTES.FIXTURE_DETAIL(fixture.id.toString());
 }
 
 /**

@@ -9,13 +9,10 @@ A modern Next.js application for football predictions, live match tracking, and 
 - npm or yarn
 - Sportmonks API token (Worldwide + Predictions plan)
 
-### Current Version: v2.9.0
+### Current Version: v2.8.0
 - ✅ Professional brand logo implementation
 - ✅ Theme-aware logo with light/dark variants
 - ✅ Enhanced sidebar with favorites and search
-- ✅ Unified sidebar tools (Favorites, Active, Today, Sorting, Refresh, Help modal)
-- ✅ Per-scope filter persistence (localStorage)
-- ✅ Minimal count badges in tools (Static variant shows real counts)
 - ✅ ValueBet indicators with color-coded states
 - ✅ Performance optimizations and lazy loading
 - ✅ Fixed API issues with venue parameters
@@ -93,31 +90,6 @@ docs/                  # Project documentation
 - **[App Router Architecture](docs/APP_ROUTER_ARCHITECTURE.md)** - Next.js App Router patterns
 - **[Sportmonks API Analysis](docs/SPORTMONKS_API_ANALYSIS.md)** - API integration details
 - **[Sportmonks Summary](docs/SPORTMONKS_SUMMARY.md)** - Quick API reference
-- **[Sidebar Feature Placement](docs/SIDEBAR-FEATURE-PLACEMENT.md)** - Latest sidebar contents and tools
-
-### 🧭 Sidebar Tools Overview
-- Shared components in `app/components/navigation/sidebar/tools/`
-- Reuse `FilterTools`, `SortControl`, `ActionButtons`, `HelpModal`
-- Filter state persists per search scope
-
-## 📸 Screenshots
-
-> Replace the placeholder paths below with your captured images in `public/images/screenshots/`.
-
-- Enhanced Search with Scope and Inline Results
-  - `public/images/screenshots/enhanced-search.png`
-- Unified Tools (Favorites, Active, Today, Sorting, Refresh)
-  - `public/images/screenshots/sidebar-tools.png`
-- Help Modal (Keyboard Shortcuts)
-  - `public/images/screenshots/help-modal.png`
-- Static Sidebar with Real Counts
-  - `public/images/screenshots/sidebar-static-counts.png`
-
-Example embedding (Markdown):
-
-```md
-![Enhanced Search](public/images/screenshots/enhanced-search.png)
-```
 
 ### 📈 Growth & Expansion
 - **[Post-Launch Expansion Plan](docs/POST_LAUNCH_EXPANSION_PLAN.md)** - Future roadmap and features
@@ -182,12 +154,6 @@ The project includes:
 - **Zod schemas** for data validation
 - **TypeScript** for compile-time error checking
 - **ESLint** for code quality
-
-## 📸 Screenshot Capture
-
-- Interactive: `npm run screenshots`
-- Headless: `npm run screenshots:headless`
-- See [Screenshot Guide](docs/SCREENSHOTS.md) for details
 
 ## 🚀 Deployment
 

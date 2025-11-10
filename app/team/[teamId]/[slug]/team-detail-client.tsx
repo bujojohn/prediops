@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Users, 
   Trophy, 
@@ -22,8 +22,8 @@ import { Badge } from '@/components/ui/badge';
 import type { TeamDetailed } from '@/schemas/team-detailed.schema';
 import type { Fixture } from '@/schemas/fixture.schema';
 import { formatFoundedYear, getTeamTypeDisplay } from '@/lib/utils/team-utils';
-import { generateFixtureSlug } from '@/lib/utils/slug-utils';
-import { TeamMatchesContent } from './team-matches-content';
+import { TeamPredictionsContent } from './team-predictions-content';
+import { TeamFixturesDisplay } from '@/app/components/team/TeamFixturesDisplay';
 
 interface TeamDetailClientProps {
   team: TeamDetailed;
@@ -31,28 +31,19 @@ interface TeamDetailClientProps {
 }
 
 export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClientProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [isClient, setIsClient] = useState(false);
 
-  // Get active tab from hash or default to 'overview'
-  const [activeTab, setActiveTab] = useState('overview');
+  // Get active tab from URL or default to 'overview'
+  const activeTab = searchParams.get('tab') || 'overview';
 
-  // Handle hash-based tab navigation
-  useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '') || 'overview';
-      setActiveTab(hash);
-    };
-
-    handleHashChange();
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
-
-  // Handle tab change with hash update
+  // Handle tab change with URL update
   const handleTabChange = useCallback((value: string) => {
-    window.location.hash = value;
-    setActiveTab(value);
-  }, []);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', value);
+    router.push(`/team/${team.id}/${team.name?.toLowerCase().replace(/\s+/g, '-') || 'team'}?${params.toString()}`);
+  }, [router, searchParams, team]);
 
   // Ensure we're on the client side to prevent hydration issues
   useEffect(() => {
@@ -93,42 +84,6 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
     }
   };
 
-  const getPositionName = (positionId: number): string => {
-    const positionMap: Record<number, string> = {
-      1: 'Goalkeeper',
-      2: 'Defender', 
-      3: 'Midfielder',
-      4: 'Attacker',
-      5: 'Forward',
-      6: 'Striker',
-      7: 'Winger',
-      8: 'Full-back',
-      9: 'Centre-back',
-      10: 'Defensive Midfielder',
-      11: 'Central Midfielder',
-      12: 'Attacking Midfielder',
-      13: 'Left Winger',
-      14: 'Right Winger',
-      15: 'Centre Forward',
-      16: 'Second Striker',
-      17: 'Left Back',
-      18: 'Right Back',
-      19: 'Centre Midfielder',
-      20: 'Left Midfielder',
-      21: 'Right Midfielder',
-      22: 'Central Defender',
-      23: 'Wing Back',
-      24: 'Holding Midfielder',
-      25: 'Box-to-box Midfielder',
-      26: 'Midfielder',
-      27: 'Defender',
-      28: 'Attacker',
-      29: 'Goalkeeper',
-      30: 'Defender'
-    };
-    return positionMap[positionId] || `Position ${positionId}`;
-  };
-
   // Helper functions
   const getActiveCoach = () => {
     return team.coaches?.find(coach => coach.active) || team.coaches?.[0];
@@ -147,7 +102,7 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
   };
 
   const getSidelinedPlayers = () => {
-    const sidelined = team.sidelined?.filter(player => {
+    return team.sidelined?.filter(player => {
       if (!player.end_date) return true;
       try {
         const endDate = new Date(player.end_date);
@@ -156,12 +111,6 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
         return true;
       }
     }) || [];
-    
-    // Debug: Log sidelined data structure
-    console.log('Sidelined players data:', sidelined);
-    console.log('First sidelined player:', sidelined[0]);
-    
-    return sidelined;
   };
 
   const getUpcomingFixtures = () => {
@@ -286,10 +235,11 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
       {/* Tabs - Only render on client to prevent hydration issues */}
       {isClient ? (
         <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="matches">Matches</TabsTrigger>
           <TabsTrigger value="squad">Squad</TabsTrigger>
+          <TabsTrigger value="fixtures">Fixtures</TabsTrigger>
+          <TabsTrigger value="predictions">Predictions</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
           <TabsTrigger value="statistics">Statistics</TabsTrigger>
           <TabsTrigger value="rivals">Rivals</TabsTrigger>
@@ -335,39 +285,8 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
                 <CardContent>
                   <div className="space-y-2">
                     {getSidelinedPlayers().slice(0, 3).map((player) => (
-                      <div key={player.id} className="flex items-center gap-3 text-sm">
-                        <div className="relative w-8 h-8 rounded-full bg-red-100 dark:bg-red-900 flex items-center justify-center overflow-hidden">
-                          {player.player?.image_path ? (
-                            <Image 
-                              src={player.player.image_path} 
-                              alt={player.player.name || 'Player'} 
-                              width={32}
-                              height={32}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                                e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                              }}
-                            />
-                          ) : null}
-                          <UserX className={`w-4 h-4 text-red-600 dark:text-red-400 ${player.player?.image_path ? 'hidden' : ''}`} />
-                        </div>
-                        <div className="flex-1">
-                          <div className="font-medium text-sm">
-                            {player.player?.name || player.player?.display_name || `Player #${player.player_id}`}
-                          </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">
-                            {player.player?.common_name && player.player.common_name !== player.player?.name && (
-                              <span className="block">{player.player.common_name}</span>
-                            )}
-                            {player.games_missed && (
-                              <span>{player.games_missed} games missed</span>
-                            )}
-                            {!player.player && (
-                              <span>Player ID: {player.player_id}</span>
-                            )}
-                          </div>
-                        </div>
+                      <div key={player.id} className="flex items-center gap-2 text-sm">
+                        <span className="text-gray-600 dark:text-gray-400">Player #{player.player_id}</span>
                         <Badge variant="outline" className="text-xs">
                           {player.category || 'Injured'}
                         </Badge>
@@ -397,11 +316,7 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
               <CardContent>
                 <div className="space-y-3">
                   {getRecentFixtures().map((fixture) => (
-                    <Link
-                      key={fixture.id}
-                      href={`/fixture/${fixture.id}/${generateFixtureSlug(fixture)}`}
-                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                    >
+                    <div key={fixture.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                       <div className="flex-1">
                         <div className="font-medium text-sm">{fixture.name}</div>
                         <div className="text-xs text-gray-600 dark:text-gray-400">
@@ -411,7 +326,7 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
                       <div className="text-xs text-gray-500">
                         {fixture.result_info || 'No result'}
                       </div>
-                    </Link>
+                    </div>
                   ))}
                   {getRecentFixtures().length === 0 && (
                     <p className="text-center text-gray-500 text-sm">No recent matches</p>
@@ -431,11 +346,7 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
               <CardContent>
                 <div className="space-y-3">
                   {getUpcomingFixtures().map((fixture) => (
-                    <Link
-                      key={fixture.id}
-                      href={`/fixture/${fixture.id}/${generateFixtureSlug(fixture)}`}
-                      className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
-                    >
+                    <div key={fixture.id} className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                       <div className="flex-1">
                         <div className="font-medium text-sm">{fixture.name}</div>
                         <div className="text-xs text-gray-600 dark:text-gray-400">
@@ -446,7 +357,7 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
                         <Clock className="w-3 h-3 inline mr-1" />
                         {formatTime(fixture.starting_at)}
                       </div>
-                    </Link>
+                    </div>
                   ))}
                   {getUpcomingFixtures().length === 0 && (
                     <p className="text-center text-gray-500 text-sm">No upcoming matches</p>
@@ -487,7 +398,7 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
           </div>
 
           {/* Key Players Section */}
-          {getCurrentPlayers().filter(p => p.captain || (p.jersey_number !== null && p.jersey_number !== undefined && p.jersey_number <= 11)).length > 0 && (
+          {getCurrentPlayers().filter(p => p.captain || p.jersey_number <= 11).length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -498,60 +409,30 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {getCurrentPlayers()
-                    .filter(p => p.captain || (p.jersey_number !== null && p.jersey_number !== undefined && p.jersey_number <= 11))
+                    .filter(p => p.captain || (p.jersey_number && p.jersey_number <= 11))
                     .slice(0, 6)
                     .map((player) => (
                     <div key={player.id} className="flex items-center gap-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border rounded-lg">
-                      <div className="relative w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center border-2 border-blue-200 dark:border-blue-700 overflow-hidden">
-                        {player.player?.image_path ? (
-                          <Image 
-                            src={player.player.image_path} 
-                            alt={player.player.name || 'Player'} 
-                            width={48}
-                            height={48}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                              e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                            }}
-                          />
-                        ) : null}
-                        <span className={`text-sm font-bold text-blue-700 dark:text-blue-300 ${player.player?.image_path ? 'hidden' : ''}`}>
+                      <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center border-2 border-blue-200 dark:border-blue-700">
+                        <span className="text-sm font-bold text-blue-700 dark:text-blue-300">
                           {player.jersey_number || '?'}
                         </span>
                       </div>
                       <div className="flex-1">
-                        <div className="font-medium text-sm flex items-center gap-2">
-                          {player.player?.name || player.player?.display_name || `Player #${player.player_id}`}
+                        <div className="font-medium text-sm">
+                          Player #{player.player_id}
                           {player.captain && (
-                            <Badge variant="default" className="text-xs bg-yellow-500">Captain</Badge>
+                            <Badge variant="default" className="ml-2 text-xs bg-yellow-500">Captain</Badge>
                           )}
                         </div>
-                        <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                          <div className="font-medium text-blue-600 dark:text-blue-400">
-                            {getPositionName(player.position_id)}
+                        <div className="text-xs text-gray-600 dark:text-gray-400">
+                          Position: {player.position_id}
+                        </div>
+                        {player.start && (
+                          <div className="text-xs text-green-600 dark:text-green-400">
+                            Since {formatYear(player.start)}
                           </div>
-                          {player.player?.common_name && player.player.common_name !== player.player?.name && (
-                            <div className="text-gray-500 dark:text-gray-400">
-                              {player.player.common_name}
-                            </div>
-                          )}
-                          {player.player?.date_of_birth && (
-                            <div>
-                              Age: {new Date().getFullYear() - new Date(player.player.date_of_birth).getFullYear()}
-                            </div>
-                          )}
-                          {player.player?.height && (
-                            <div>
-                              Height: {player.player.height}cm
-                            </div>
-                          )}
-                          {player.start && (
-                            <div className="text-green-600 dark:text-green-400">
-                              Since {formatYear(player.start)}
-                            </div>
-                          )}
-                        </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -572,57 +453,26 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {getCurrentPlayers().map((player) => (
                   <div key={player.id} className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                    <div className="relative w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
-                      {player.player?.image_path ? (
-                        <Image 
-                          src={player.player.image_path} 
-                          alt={player.player.name || 'Player'} 
-                          width={40}
-                          height={40}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                          }}
-                        />
-                      ) : null}
-                      <span className={`text-sm font-bold ${player.player?.image_path ? 'hidden' : ''}`}>
+                    <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                      <span className="text-sm font-bold">
                         {player.jersey_number || '?'}
                       </span>
                     </div>
                     <div className="flex-1">
-                      <div className="font-medium text-sm flex items-center gap-2">
-                        {player.player?.name || player.player?.display_name || `Player #${player.player_id}`}
+                      <div className="font-medium text-sm">
+                        Player #{player.player_id}
                         {player.captain && (
-                          <Badge variant="secondary" className="text-xs">Captain</Badge>
+                          <Badge variant="secondary" className="ml-2 text-xs">Captain</Badge>
                         )}
                       </div>
-                      <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                        <div className="font-medium text-blue-600 dark:text-blue-400">
-                          {getPositionName(player.position_id)}
+                      <div className="text-xs text-gray-600 dark:text-gray-400">
+                        Position: {player.position_id}
+                      </div>
+                      {player.start && (
+                        <div className="text-xs text-gray-500">
+                          Joined: {formatYear(player.start)}
                         </div>
-                        {player.player?.common_name && player.player.common_name !== player.player?.name && (
-                          <div className="text-gray-500 dark:text-gray-400">
-                            {player.player.common_name}
-                          </div>
-                        )}
-                        {player.player?.date_of_birth && (
-                          <div>
-                            Age: {new Date().getFullYear() - new Date(player.player.date_of_birth).getFullYear()}
-                          </div>
-                        )}
-                        {player.player?.height && (
-                          <div>
-                            {player.player.height}cm
-                            {player.player.weight && ` • ${player.player.weight}kg`}
-                          </div>
-                        )}
-                        {player.start && (
-                          <div className="text-gray-500">
-                            Joined: {formatYear(player.start)}
-                          </div>
-                        )}
-                      </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -646,61 +496,21 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {getSidelinedPlayers().map((player) => (
                     <div key={player.id} className="flex items-center gap-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                      <div className="relative w-10 h-10 rounded-full bg-red-100 dark:bg-red-900 flex items-center justify-center overflow-hidden">
-                        {player.player?.image_path ? (
-                          <Image 
-                            src={player.player.image_path} 
-                            alt={player.player.name || 'Player'} 
-                            width={40}
-                            height={40}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                              e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                            }}
-                          />
-                        ) : null}
-                        <UserX className={`w-5 h-5 text-red-600 dark:text-red-400 ${player.player?.image_path ? 'hidden' : ''}`} />
+                      <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900 flex items-center justify-center">
+                        <UserX className="w-5 h-5 text-red-600 dark:text-red-400" />
                       </div>
                       <div className="flex-1">
-                        <div className="font-medium text-sm flex items-center gap-2">
-                          {player.player?.name || player.player?.display_name || `Player #${player.player_id}`}
-                          <Badge variant="outline" className="text-xs bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300">
-                            {player.category || 'Injured'}
-                          </Badge>
+                        <div className="font-medium text-sm">
+                          Player #{player.player_id}
                         </div>
-                        <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                          {player.player?.common_name && player.player.common_name !== player.player?.name && (
-                            <div className="text-gray-500 dark:text-gray-400">
-                              {player.player.common_name}
-                            </div>
-                          )}
-                          {player.player?.date_of_birth && (
-                            <div>
-                              Age: {new Date().getFullYear() - new Date(player.player.date_of_birth).getFullYear()}
-                            </div>
-                          )}
-                          {player.games_missed && (
-                            <div className="text-red-600 dark:text-red-400 font-medium">
-                              {player.games_missed} games missed
-                            </div>
-                          )}
-                          {player.start_date && (
-                            <div className="text-gray-500">
-                              Since: {formatDate(player.start_date)}
-                            </div>
-                          )}
-                          {player.end_date && (
-                            <div className="text-gray-500">
-                              Until: {formatDate(player.end_date)}
-                            </div>
-                          )}
-                          {!player.player && (
-                            <div className="text-gray-500">
-                              Player ID: {player.player_id}
-                            </div>
-                          )}
+                        <div className="text-xs text-gray-600 dark:text-gray-400">
+                          {player.category || 'Injured'}
                         </div>
+                        {player.start_date && (
+                          <div className="text-xs text-red-600 dark:text-red-400">
+                            Since: {formatDate(player.start_date)}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -710,11 +520,69 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
           )}
         </TabsContent>
 
-        {/* Matches Tab - Merged Fixtures + Predictions */}
-        <TabsContent value="matches" className="space-y-6">
-          <TeamMatchesContent
+        {/* Fixtures Tab */}
+        <TabsContent value="fixtures" className="space-y-6">
+          {/* Form Summary */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-green-600">W</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Wins</div>
+                <div className="text-xs text-gray-500">
+                  Last 5: {getRecentFixtures().filter(f => f.result_info?.includes('W')).length}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-yellow-600">D</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Draws</div>
+                <div className="text-xs text-gray-500">
+                  Last 5: {getRecentFixtures().filter(f => f.result_info?.includes('D')).length}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-red-600">L</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Losses</div>
+                <div className="text-xs text-gray-500">
+                  Last 5: {getRecentFixtures().filter(f => f.result_info?.includes('L')).length}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <Activity className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                <div className="text-2xl font-bold">{getUpcomingFixtures().length}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Upcoming</div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Team Fixtures Display */}
+          <TeamFixturesDisplay
             teamId={team.id.toString()}
-            teamName={team.name || 'Team'}
+            initialFixtures={initialFixtures}
+            variant="detailed"
+            showSearchAndFilter={true}
+            searchAndFilterVariant="compact"
+            searchAndFilterOptions={{
+              showSearch: false, // Not needed on team page
+              showLeagueFilter: true,
+              showTeamFilter: false, // Not needed on team page
+              showStatusFilter: true,
+              showDateFilter: true,
+              showPredictionsFilter: true,
+              showValueBetsFilter: true,
+            }}
+          />
+        </TabsContent>
+
+        {/* Predictions Tab */}
+        <TabsContent value="predictions" className="space-y-6">
+          <TeamPredictionsContent 
+            teamName={team.name} 
             initialFixtures={initialFixtures}
           />
         </TabsContent>
@@ -849,4 +717,3 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
     </div>
   );
 }
-

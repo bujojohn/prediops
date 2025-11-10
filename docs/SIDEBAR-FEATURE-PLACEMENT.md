@@ -5,18 +5,15 @@ This document outlines the finalized layout and sidebar structure for the MVP ve
 
 ---
 
-## ✅ Sidebar Contents (Current)
+## ✅ Sidebar Contents (MVP)
 
-The sidebar now includes:
+The sidebar will contain:
 
-- 🔍 **Enhanced Search Input** – With scope selection (All, Countries, Leagues, Teams, Fixtures) and inline results.
-- 🌍 **Countries, Top Leagues, Tournaments** – Collapsible sections with favorites support.
-- 🛠️ **Unified Tools Section** – Shared tools across all sidebar variants:
-  - ⭐ Favorites, 👁 Active, 📅 Today filters (with minimal count badges)
-  - ↕️ Sorting (Name, Favorites; Fixtures optional per variant)
-  - 🔄 Refresh and a Help modal with keyboard shortcuts
-- 🧠 **Persisted Filters per Scope** – Favorites/Active/Today states remembered by scope.
-- 📂 **Collapsible Sidebar** – Optimized for small screens.
+- 🔍 **Search Input** – Users can search for leagues, teams, fixtures, etc.
+- 🌍 **List of Countries** – Main navigation for accessing football leagues and data.
+- 📅 **Quick Filters** – Such as Today, Tomorrow, Weekend, Top Bets.
+- 📂 **Collapsible Sidebar** – To enhance usability on smaller screens.
+- 🎯 **Navigation Links** – Quick access to Predictions, Value Bets, Live Matches.
 
 ---
 
@@ -43,28 +40,6 @@ The top navigation bar will contain:
 | ⭐ Favorite Items       | User Dashboard/Profile     | Personalized content should be scoped to user context       |
 | ⚖️ Legal Links (Terms) | Footer                     | Footer is the conventional place for legal information      |
 | 🧪 API Test            | Development Only           | Should be removed from production navigation                |
-
----
-
-## 🆕 What Changed Recently
-
-- Introduced a unified tools system used by `SidebarOptimized`, `SidebarStatic`, and `SidebarWithTanStackQuery`.
-- Added per-scope filter persistence via `useFilterPreferences` (stored in localStorage).
-- Replaced alert-based help with a non-blocking `HelpModal` listing shortcuts.
-- Added minimal count badges for filters (favorites/active/today). Static variant now computes real counts.
-- Normalized styling and spacing to match the enhanced search component.
-
-### Keyboard Shortcuts
-- Ctrl/Cmd + K: Focus search
-- Ctrl/Cmd + F: Toggle favorites
-- Ctrl/Cmd + A: Toggle active
-- Ctrl/Cmd + T: Toggle today
-- Ctrl/Cmd + R: Refresh
-
-### Developer Notes
-- Unified tools live under `app/components/navigation/sidebar/tools/*`.
-- Prefer reusing `FilterTools`, `SortControl`, `ActionButtons`, and `HelpModal` instead of custom UIs.
-- Persisted filters are scoped by the current search scope string key.
 
 ---
 

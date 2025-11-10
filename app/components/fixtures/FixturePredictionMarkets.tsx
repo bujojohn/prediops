@@ -171,28 +171,13 @@ export function FixturePredictionMarkets({
   const marketsMap = useMemo(() => {
     const map: Record<string, PredictionMarket> = {};
     
-    if (process.env.NODE_ENV === 'development' && predictions.length > 0) {
-      console.log(`[FixturePredictionMarkets] Processing ${predictions.length} predictions for fixture ${fixture?.id}`);
-    }
-    
-    predictions.forEach((prediction, index) => {
+    predictions.forEach((prediction) => {
       const pred = prediction.predictions;
       const typeName = prediction.type?.name || 'Unknown Market';
       const typeCode = prediction.type?.code || '';
       
       // Generate a unique key for this market
       const marketKey = typeCode || typeName.toLowerCase().replace(/[^a-z0-9]/g, '_');
-      
-      // Debug first few predictions
-      if (process.env.NODE_ENV === 'development' && index < 3) {
-        console.log(`[FixturePredictionMarkets] Prediction ${index}:`, {
-          typeId: prediction.type_id,
-          typeName,
-          predStructure: pred ? Object.keys(pred) : null,
-          hasHome: pred && 'home' in pred,
-          hasYes: pred && 'yes' in pred,
-        });
-      }
       
       // Helper function to check if prediction has yes/no structure
       const isYesNoPred = (p: unknown): p is { yes: number | null; no: number | null } => {
@@ -301,7 +286,7 @@ export function FixturePredictionMarkets({
     });
     
     return map;
-  }, [predictions, fixture?.id]);
+  }, [predictions]);
 
   // Set default selected market; prefer Full Time Result if available
   useMemo(() => {
@@ -434,31 +419,7 @@ export function FixturePredictionMarkets({
   });
 
   if (!marketsMap || Object.keys(marketsMap).length === 0) {
-    // Debug: Log why predictions aren't showing (development only)
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[FixturePredictionMarkets] No markets to display:', {
-        predictions: predictions?.length || 0,
-        marketsMap: marketsMap ? Object.keys(marketsMap).length : 0,
-        fixtureId: fixture?.id,
-        samplePrediction: predictions?.[0] ? {
-          typeId: predictions[0].type_id,
-          typeName: predictions[0].type?.name,
-          predictions: predictions[0].predictions
-        } : null
-      });
-    }
-    
-    // Show helpful fallback for fixtures without probability predictions
-    return (
-      <div className={cn(
-        "flex items-center justify-center text-xs text-muted-foreground/60 italic",
-        className
-      )}>
-        <span title="Probability predictions not available for this fixture">
-          No predictions
-        </span>
-      </div>
-    );
+    return null;
   }
 
   const selectedMarket = marketsMap[selectedMarketKey];

@@ -4,7 +4,7 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(.98 0 0);
+  --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
@@ -200,7 +200,7 @@
 
   /* Status indicators */
   .status-live {
-    @apply bg-red-300 text-red-600 border-red-200;
+    @apply bg-red-100 text-red-600 border-red-200;
   }
 
   .status-finished {
@@ -255,40 +255,6 @@
   .scrollbar-thin::-webkit-scrollbar {
     width: 6px;
     height: 6px;
-  }
-
-  /* Thick scrollbar for sidebar countries list */
-  .scrollbar-thick {
-    scrollbar-width: auto;
-  }
-
-  .scrollbar-thick::-webkit-scrollbar {
-    width: 12px;
-    height: 12px;
-  }
-
-  .scrollbar-thick::-webkit-scrollbar-track {
-    background: transparent;
-    border-radius: 6px;
-  }
-
-  .scrollbar-thick::-webkit-scrollbar-thumb {
-    background-color: #d1d5db;
-    border-radius: 6px;
-    border: 2px solid transparent;
-    background-clip: content-box;
-  }
-
-  .scrollbar-thick::-webkit-scrollbar-thumb:hover {
-    background-color: #9ca3af;
-  }
-
-  .dark .scrollbar-thick::-webkit-scrollbar-thumb {
-    background-color: #4b5563;
-  }
-
-  .dark .scrollbar-thick::-webkit-scrollbar-thumb:hover {
-    background-color: #6b7280;
   }
 
   .scrollbar-thumb-gray-300::-webkit-scrollbar-thumb {

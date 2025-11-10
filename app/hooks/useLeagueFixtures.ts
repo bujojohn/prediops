@@ -44,7 +44,7 @@ export function useLeagueFixtures({
   } = useFixtureManagement({
     initialFixtures,
     apiEndpoint: `/api/sportmonks/leagues/${leagueId}/fixtures`,
-    enableInfiniteScroll: false, // League fixtures API doesn't support pagination
+    enableInfiniteScroll: true,
     enableDateFiltering: true,
     pageSize: 50,
   });

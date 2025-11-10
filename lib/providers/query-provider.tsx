@@ -10,16 +10,14 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 5 * 60 * 1000, // 5 minutes - data is fresh
-            gcTime: 10 * 60 * 1000, // 10 minutes - garbage collection
-            refetchOnWindowFocus: false, // Don't refetch on window focus
-            refetchOnReconnect: false, // Don't refetch on reconnect
+            staleTime: 60 * 1000, // 1 minute
+            gcTime: 10 * 60 * 1000, // 10 minutes
             retry: (failureCount, error) => {
               // Don't retry on 4xx errors
               if (error instanceof Error && error.message.includes('4')) {
                 return false;
               }
-              return failureCount < 2; // Retry twice max
+              return failureCount < 3;
             },
           },
           mutations: {

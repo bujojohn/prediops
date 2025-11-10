@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     console.log(`API: Fetching fixtures for country ${countryId} on ${date}`);
 
     const fixturesResponse = await sportmonks.getFixturesByDate(date, {
-      include: 'participants;scores;state;predictions;predictions.type;league.country;periods.type;events.period;events.type;metadata.type',
+      include: 'participants;scores;state;predictions.type;league.country;periods.type;events.period;events.type;metadata.type',
       per_page: 50,
       page: 1,
     });

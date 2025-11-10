@@ -173,7 +173,7 @@ function makeParams(
     }
   }
   
-  if (populate) params.filters = "populate";
+  if (populate) params._filters = "populate_";
   return params;
 }
 
@@ -351,9 +351,7 @@ export const sportmonks = {
   Doc: https://docs.sportmonks.com/football/endpoints-and-entities/endpoints/fixtures/get-fixtures-by-search-by-name
   */
  async getFixturesBySearchName(searchQuery: string, config?: ApiConfig) {
-  // URL encode the search query to handle special characters and spaces
-  const encodedQuery = encodeURIComponent(searchQuery.trim());
-  const url = `/fixtures/search/${encodedQuery}`;
+  const url = `/fixtures/search/${searchQuery}`;
   const response = await api.get(url, { params: makeParams(config) });
   return response.data;
  },
@@ -576,19 +574,6 @@ export const sportmonks = {
     const response = await api.get(url, { 
       params: makeParams({ ...config, filters }) 
     });
-    return response.data;
-  },
-
-  /**
-   * Returns all the teams that match your search query with configurable options
-   * Doc: https://docs.sportmonks.com/football/endpoints-and-entities/endpoints/teams/get-teams-by-search-by-name
-   * @param searchQuery - Search query string
-   * @param config - ApiConfig with include options like 'country'
-   * @returns ApiListResponse<Team>
-   */
-  async getTeamsBySearch(searchQuery: string, config?: ApiConfig): Promise<ApiListResponse<Team>> {
-    const url = `/teams/search/${encodeURIComponent(searchQuery)}`;
-    const response = await api.get(url, { params: makeParams(config) });
     return response.data;
   },
 

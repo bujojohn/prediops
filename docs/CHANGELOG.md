@@ -1,42 +1,4 @@
 # Changelog
-## [2.9.0] - 2025-11-10
-
-### Added
-- Fixture detail route (`/fixture/[fixtureId]/[slug]`) with tabs for overview, statistics, lineups, predictions, and odds.
-- Dedicated SportMonks fixture API proxy with optional statistics, lineups, and odds hydration.
-- Sidebar tools component suite (`FilterTools`, `ActionButtons`, `HelpModal`, `SortControl`) shared across sidebar variants.
-- Documentation covering fixture page design, MCP integration steps, and sidebar tools analysis.
-
-### Changed
-- Prediction styling now reflects prediction success/failure states with green/red accents.
-- Odds summary callouts moved into a dedicated tab with neutral theme-aligned styling.
-- Extended fixture search date window to 12 months to surface future matches.
-- Bumped application version to `2.9.0` in metadata and README quick start.
-
-### Fixed
-- SportMonks team schema now tolerates `null` detailed position values.
-- Resolved Next.js timer overflow warnings by lowering sidebar cache durations.
-- Prevented nested API responses from triggering fixture 404s via resilient parsing.
-
-## [2.8.1] - 2025-10-30
-
-### Added
-- Unified Sidebar Tools across all variants (`SidebarOptimized`, `SidebarStatic`, `SidebarWithTanStackQuery`):
-  - Favorites, Active, Today filters with minimal count badges
-  - Sorting control (Name, Favorites; Fixtures optional)
-  - Refresh action and non-blocking Help modal with keyboard shortcuts
-- Per-scope filter persistence via `useFilterPreferences` (localStorage-backed)
-- Real counts surfaced in `SidebarStatic` tools (Active/Today)
-
-### Changed
-- Standardized tools UI/UX and spacing to match the enhanced search component
-- Replaced alert-based help with `HelpModal`
-- Consolidated tools into reusable components under `app/components/navigation/sidebar/tools/`
-
-### Fixed
-- TypeScript null-safety issues in sidebar components (titles, mappings)
-- ESLint violations (unused symbols, any types) in search and data helpers
-
 
 All notable changes to Prediops will be documented in this file.
 
