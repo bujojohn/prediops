@@ -3,9 +3,6 @@ import { useEffect, RefObject } from 'react';
 interface KeyboardShortcutsConfig {
   searchInputRef: RefObject<HTMLInputElement | null>;
   onToggleFavorites?: () => void;
-  onToggleActive?: () => void;
-  onToggleToday?: () => void;
-  onRefresh?: () => void;
 }
 
 /**
@@ -14,9 +11,6 @@ interface KeyboardShortcutsConfig {
 export function useKeyboardShortcuts({
   searchInputRef,
   onToggleFavorites,
-  onToggleActive,
-  onToggleToday,
-  onRefresh,
 }: KeyboardShortcutsConfig) {
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -48,27 +42,6 @@ export function useKeyboardShortcuts({
         return;
       }
 
-      // Ctrl/Cmd + A: Toggle active filter
-      if (isModifierPressed && e.key.toLowerCase() === 'a') {
-        e.preventDefault();
-        onToggleActive?.();
-        return;
-      }
-
-      // Ctrl/Cmd + T: Toggle today filter
-      if (isModifierPressed && e.key.toLowerCase() === 't') {
-        e.preventDefault();
-        onToggleToday?.();
-        return;
-      }
-
-      // Ctrl/Cmd + R: Refresh (override default browser refresh)
-      if (isModifierPressed && e.key.toLowerCase() === 'r') {
-        e.preventDefault();
-        onRefresh?.();
-        return;
-      }
-
       // Escape: Clear search when focused
       if (e.key === 'Escape' && searchInputRef.current && searchInputRef.current === document.activeElement) {
         e.preventDefault();
@@ -82,6 +55,6 @@ export function useKeyboardShortcuts({
     return () => {
       window.removeEventListener('keydown', handleKeyPress);
     };
-  }, [searchInputRef, onToggleFavorites, onToggleActive, onToggleToday, onRefresh]);
+  }, [searchInputRef, onToggleFavorites]);
 }
 

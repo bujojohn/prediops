@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useCallback, useRef } from 'react';
-import { RefreshCw, Calendar, Eye, Star } from 'lucide-react';
+// Icons moved into tools components
 import { SidebarTheme } from './SidebarTheme';
 import { Logo } from '@/components/ui/Logo';
 
@@ -19,11 +19,16 @@ import { useSorting } from './sidebar/hooks/useSorting';
 import { useCountriesQuery } from '@/app/hooks/useSidebarQueries';
 import { useServerSideLeagues } from '@/app/hooks/useServerSideLeagues';
 import { SearchScope } from './sidebar/SearchScopeDropdown';
+import { SidebarToolsSection } from './sidebar/tools/SidebarToolsSection';
+import { FilterTools } from './sidebar/tools/FilterTools';
+import { SortControl } from './sidebar/tools/SortControl';
+import { ActionButtons } from './sidebar/tools/ActionButtons';
+import { HelpModal } from './sidebar/tools/HelpModal';
+import { useFilterPreferences } from './sidebar/tools/hooks/useFilterPreferences';
 
 
 interface SidebarOptimizedProps {
   showLogo?: boolean;
-  onRefreshStateChange?: (isRefreshing: boolean) => void;
 }
 
 /**
@@ -31,25 +36,27 @@ interface SidebarOptimizedProps {
  * No API calls, instant loading, follows SportMonks best practices
  */
 export function SidebarOptimized({ 
-  showLogo = false, 
-  onRefreshStateChange 
+  showLogo = false,
 }: SidebarOptimizedProps) {
   // State management
   const [searchTerm, setSearchTerm] = useState('');
   const [searchScope, setSearchScope] = useState<SearchScope>('all');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
-  const [showActiveOnly, setShowActiveOnly] = useState(false);
-  const [showTodayOnly, setShowTodayOnly] = useState(false);
   const [expandedCountries, setExpandedCountries] = useState<Set<number>>(new Set());
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set(['tournaments']));
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   // Refs
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Custom hooks
   const { favorites, toggleFavorite } = useFavorites();
-  const { sortCountries } = useSorting();
+  const { sortCountries, sortBy, setSortBy } = useSorting();
+  const filterPrefs = useFilterPreferences(searchScope);
+
+  React.useEffect(() => {
+    setShowFavoritesOnly(filterPrefs.state.favorites);
+  }, [filterPrefs.state]);
 
   // Load local countries data from the optimized API endpoint
   // This endpoint reads from data/countries.json with 30-day caching
@@ -108,18 +115,6 @@ export function SidebarOptimized({
       filteredTournaments = filteredTournaments.filter((tournament) => favorites.has(tournament.id));
     }
 
-    // Apply active leagues filter
-    if (showActiveOnly) {
-      filteredCountries = filteredCountries.filter((country) => country.leaguesCount > 0);
-      filteredTournaments = filteredTournaments.filter((tournament) => tournament.leaguesCount > 0);
-    }
-
-    // Apply today's fixtures filter - simplified without counting
-    if (showTodayOnly) {
-      filteredCountries = filteredCountries.filter((country) => country.leagues && country.leagues.length > 0);
-      filteredTournaments = filteredTournaments.filter((tournament) => tournament.leagues && tournament.leagues.length > 0);
-    }
-
     // Apply sorting - simplified without counting
     const sortedCountries = sortCountries(filteredCountries, new Map(), favorites);
     const sortedTournaments = sortCountries(filteredTournaments, new Map(), favorites);
@@ -128,14 +123,16 @@ export function SidebarOptimized({
       filteredAndSortedCountries: sortedCountries,
       tournaments: sortedTournaments
     };
-  }, [searchTerm, allCountries, leaguesByCountry, KNOWN_TOURNAMENTS, showFavoritesOnly, showActiveOnly, showTodayOnly, favorites, sortCountries]);
+  }, [searchTerm, allCountries, leaguesByCountry, KNOWN_TOURNAMENTS, showFavoritesOnly, favorites, sortCountries]);
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
     searchInputRef,
-    onToggleFavorites: () => setShowFavoritesOnly(prev => !prev),
-    onToggleActive: () => setShowActiveOnly(prev => !prev),
-    onToggleToday: () => setShowTodayOnly(prev => !prev),
+    onToggleFavorites: () => {
+      const next = !showFavoritesOnly;
+      setShowFavoritesOnly(next);
+      filterPrefs.setFavorites(next);
+    },
   });
 
   // Handle search
@@ -149,20 +146,6 @@ export function SidebarOptimized({
     setSearchScope(scope);
   }, []);
 
-  // Handle refresh - simplified without counting
-  const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
-    onRefreshStateChange?.(true);
-    
-    try {
-      // For local data, we don't need to refresh anything
-      // Just simulate a brief delay for UX
-      await new Promise(resolve => setTimeout(resolve, 500));
-    } finally {
-      setIsRefreshing(false);
-      onRefreshStateChange?.(false);
-    }
-  }, [onRefreshStateChange]);
 
   // Handle country toggle - simplified without counting
   const handleCountryToggle = useCallback((countryId: number) => {
@@ -253,69 +236,25 @@ export function SidebarOptimized({
             <ServerSideSearchResults searchTerm={searchTerm} searchScope={searchScope} />
           </div>
 
-          {/* Filters */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-                className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all duration-150 hover:scale-105 active:scale-95 ${
-                  showFavoritesOnly 
-                    ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' 
-                    : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-                }`}
-              >
-                <Star className="h-3 w-3" />
-                Favorites
-              </button>
-              <button
-                onClick={() => setShowActiveOnly(!showActiveOnly)}
-                className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all duration-150 hover:scale-105 active:scale-95 ${
-                  showActiveOnly 
-                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' 
-                    : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-                }`}
-              >
-                <Eye className="h-3 w-3" />
-                Active
-              </button>
-              <button
-                onClick={() => setShowTodayOnly(!showTodayOnly)}
-                className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all duration-150 hover:scale-105 active:scale-95 ${
-                  showTodayOnly 
-                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' 
-                    : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-                }`}
-              >
-                <Calendar className="h-3 w-3" />
-                Today
-              </button>
-            </div>
-          </div>
+          <SidebarToolsSection>
+            <FilterTools
+              favoritesActive={showFavoritesOnly}
+              onToggleFavorites={() => {
+                const next = !showFavoritesOnly;
+                setShowFavoritesOnly(next);
+                filterPrefs.setFavorites(next);
+              }}
+            />
 
-          {/* Actions */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleRefresh}
-                disabled={isRefreshing}
-                className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-150 hover:scale-105 active:scale-95 disabled:opacity-50"
-              >
-                <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
-                Refresh
-              </button>
-            </div>
-          </div>
+            <SortControl value={sortBy} onChange={setSortBy} />
+
+            <ActionButtons onShowHelp={() => setHelpOpen(true)} />
+          </SidebarToolsSection>
         </div>
 
         {/* Content */}
         <div className="flex-1 overflow-auto scrollbar-thick">
           <div className="p-1">
-            {/* Top Leagues Section */}
-            <TopLeaguesSection
-              isCollapsed={collapsedSections.has('top-leagues')}
-              onToggle={() => handleSectionToggle('top-leagues')}
-            />
-
             {/* Countries Section */}
             <CountriesSection
               countries={filteredAndSortedCountries}
@@ -325,6 +264,12 @@ export function SidebarOptimized({
               onToggleCountry={handleCountryToggle}
               favorites={favorites}
               onToggleFavorite={toggleFavorite}
+            />
+
+            {/* Top Leagues Section */}
+            <TopLeaguesSection
+              isCollapsed={collapsedSections.has('top-leagues')}
+              onToggle={() => handleSectionToggle('top-leagues')}
             />
 
             {/* Tournaments Section */}
@@ -340,6 +285,7 @@ export function SidebarOptimized({
           </div>
         </div>
       </div>
+      <HelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
     </SidebarTheme>
   );
 }

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, memo, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
-import { Search, Settings, RefreshCw, Calendar, Eye, Star, ArrowUpDown } from 'lucide-react';
+import { Search, ArrowUpDown } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { SidebarTheme } from './SidebarTheme';
 import { Logo } from '@/components/ui/Logo';
@@ -16,13 +16,18 @@ import { TournamentsSection } from './sidebar/TournamentsSection';
 // Import custom hooks
 import { useFavorites } from './sidebar/hooks/useFavorites';
 import { useSidebarData } from './sidebar/hooks/useSidebarData';
-import { useLeagueFixtures } from './sidebar/hooks/useLeagueFixtures';
 import { useKeyboardShortcuts } from './sidebar/hooks/useKeyboardShortcuts';
 import { useSorting } from './sidebar/hooks/useSorting';
 // Removed getFixtureCountDateRange import as counting features are removed
+import { SidebarToolsSection } from './sidebar/tools/SidebarToolsSection';
+import { FilterTools } from './sidebar/tools/FilterTools';
+// import { SortControl } from './sidebar/tools/SortControl';
+import { ActionButtons } from './sidebar/tools/ActionButtons';
+import { HelpModal } from './sidebar/tools/HelpModal';
+import { useFilterPreferences } from './sidebar/tools/hooks/useFilterPreferences';
 
 // Import types
-import type { CountryWithLeagues, TopLeague } from './sidebar/types';
+import type { CountryWithLeagues } from './sidebar/types';
 
 interface SidebarStaticProps {
   showLogo?: boolean;
@@ -36,20 +41,18 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
   
   // Filter states
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
-  const [showActiveOnly, setShowActiveOnly] = useState(false);
-  const [showTodayOnly, setShowTodayOnly] = useState(false);
-
-  // Refresh state
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const filterPrefs = useFilterPreferences('all');
+  const [toolCounts, setToolCounts] = useState<{ favorites: number }>({ favorites: 0 });
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
     searchInputRef,
-    onToggleFavorites: () => setShowFavoritesOnly(prev => !prev),
-    onToggleActive: () => setShowActiveOnly(prev => !prev),
-    onToggleToday: () => setShowTodayOnly(prev => !prev),
-    onRefresh: () => setRefreshTrigger(prev => prev + 1),
+    onToggleFavorites: () => {
+      const next = !showFavoritesOnly;
+      setShowFavoritesOnly(next);
+      filterPrefs.setFavorites(next);
+    },
   });
   
   if (isHomePage) {
@@ -82,79 +85,24 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
             <SearchResults searchTerm={searchTerm} />
           </div>
           
-          {/* Utility Tools Row */}
-          <div className="flex items-center justify-between gap-1 mb-2">
-            {/* Left side - Filter tools */}
-            <div className="flex items-center gap-1">
-              <button
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md ${
-                  showFavoritesOnly 
-                    ? 'text-yellow-700 bg-gradient-to-r from-yellow-100 to-yellow-200 dark:from-yellow-900/40 dark:to-yellow-800/40 dark:text-yellow-300 border border-yellow-200/50 dark:border-yellow-700/50'
-                    : 'text-muted-foreground hover:text-foreground bg-white/60 dark:bg-gray-800/60 hover:bg-white/80 dark:hover:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50'
-                }`}
-                title="Show only favorites (Ctrl+F)"
-                onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-              >
-                <Star className={`h-3 w-3 ${showFavoritesOnly ? 'fill-current' : ''}`} />
-                <span className="hidden sm:inline">Fav</span>
-              </button>
-              
-              <button
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md ${
-                  showActiveOnly 
-                    ? 'text-green-700 bg-gradient-to-r from-green-100 to-green-200 dark:from-green-900/40 dark:to-green-800/40 dark:text-green-300 border border-green-200/50 dark:border-green-700/50'
-                    : 'text-muted-foreground hover:text-foreground bg-white/60 dark:bg-gray-800/60 hover:bg-white/80 dark:hover:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50'
-                }`}
-                title="Show only active leagues (Ctrl+A)"
-                onClick={() => setShowActiveOnly(!showActiveOnly)}
-              >
-                <Eye className="h-3 w-3" />
-                <span className="hidden sm:inline">Active</span>
-              </button>
-              
-              <button
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md ${
-                  showTodayOnly 
-                    ? 'text-blue-700 bg-gradient-to-r from-blue-100 to-blue-200 dark:from-blue-900/40 dark:to-blue-800/40 dark:text-blue-300 border border-blue-200/50 dark:border-blue-700/50'
-                    : 'text-muted-foreground hover:text-foreground bg-white/60 dark:bg-gray-800/60 hover:bg-white/80 dark:hover:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50'
-                }`}
-                title="Show leagues with upcoming fixtures (Ctrl+T)"
-                onClick={() => setShowTodayOnly(!showTodayOnly)}
-              >
-                <Calendar className="h-3 w-3" />
-                <span className="hidden sm:inline">Upcoming</span>
-              </button>
-            </div>
-            
-            {/* Right side - Action tools */}
-            <div className="flex items-center gap-1">
-              <button
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md bg-white/60 dark:bg-gray-800/60 hover:bg-white/80 dark:hover:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 text-muted-foreground hover:text-foreground ${
-                  isRefreshing ? 'cursor-wait' : ''
-                }`}
-                title="Refresh data (Ctrl+R)"
-                disabled={isRefreshing}
-                onClick={() => {
-                  setRefreshTrigger((prev) => prev + 1);
-                }}
-              >
-                <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
-                <span className="hidden sm:inline">{isRefreshing ? 'Loading...' : ''}</span>
-              </button>
-              
-              <button
-                className="flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md bg-white/60 dark:bg-gray-800/60 hover:bg-white/80 dark:hover:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 text-muted-foreground hover:text-foreground"
-                title="Keyboard shortcuts: Ctrl+K (Search), Ctrl+F (Favorites), Ctrl+A (Active), Ctrl+T (Today), Ctrl+R (Refresh)"
-                onClick={() => {
-                  // Show keyboard shortcuts help
-                  alert('Keyboard Shortcuts:\n\nCtrl+K or Cmd+K: Focus search\nCtrl+F or Cmd+F: Toggle favorites\nCtrl+A or Cmd+A: Toggle active filter\nCtrl+T or Cmd+T: Toggle today filter\nCtrl+R or Cmd+R: Refresh data\nEsc: Clear search and unfocus');
-                }}
-              >
-                <Settings className="h-3 w-3" />
-                <span className="hidden sm:inline">Help</span>
-              </button>
-            </div>
-          </div>
+        {/* Unified Tools Section */}
+        <SidebarToolsSection>
+          <FilterTools
+            favoritesActive={showFavoritesOnly}
+            count={toolCounts.favorites}
+            onToggleFavorites={() => {
+              const next = !showFavoritesOnly;
+              setShowFavoritesOnly(next);
+              filterPrefs.setFavorites(next);
+            }}
+          />
+
+          {/* Sorting is handled within the content section */}
+
+          <ActionButtons
+            onShowHelp={() => setHelpOpen(true)}
+          />
+        </SidebarToolsSection>
         </div>
 
         {/* Dynamic Content Area - This will stream in */}
@@ -162,12 +110,10 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
           <SidebarContent 
             searchTerm={searchTerm} 
             showFavoritesOnly={showFavoritesOnly}
-            showActiveOnly={showActiveOnly}
-            showTodayOnly={showTodayOnly}
-            refreshTrigger={refreshTrigger}
-            onRefreshStateChange={setIsRefreshing}
+            onCountsChange={setToolCounts}
           />
         </div>
+        <HelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
       </div>
     </SidebarTheme>
   );
@@ -177,22 +123,15 @@ export const SidebarStatic = memo(function SidebarStatic({ showLogo = false }: S
 function SidebarContent({ 
   searchTerm, 
   showFavoritesOnly, 
-  showActiveOnly, 
-  showTodayOnly,
-  refreshTrigger,
-  onRefreshStateChange,
+  onCountsChange,
 }: { 
   searchTerm: string;
   showFavoritesOnly: boolean;
-  showActiveOnly: boolean;
-  showTodayOnly: boolean;
-  refreshTrigger: number;
-  onRefreshStateChange: (isRefreshing: boolean) => void;
+  onCountsChange?: (counts: { favorites: number }) => void;
 }) {
   // Use custom hooks
   const { favorites, toggleFavorite } = useFavorites();
-  const { allCountries, loadCountriesWithLeagues, loadCountryLeagues, clearCache: clearDataCache } = useSidebarData();
-  const { clearCache: clearFixturesCache } = useLeagueFixtures(); // Removed counting-related destructuring
+  const { allCountries, loadCountriesWithLeagues, loadCountryLeagues } = useSidebarData();
   const { sortBy, setSortBy, sortCountries } = useSorting();
 
   // Local state
@@ -203,17 +142,6 @@ function SidebarContent({
   const [isLoading] = useState(false);
 
   // Top leagues data - memoized to prevent dependency issues
-  const topLeagues: TopLeague[] = React.useMemo(() => [
-    { id: 8, name: 'Premier League', country: 'England', short_code: 'EPL', countryId: 462 },
-    { id: 564, name: 'La Liga', country: 'Spain', short_code: 'LL', countryId: 32 },
-    { id: 384, name: 'Serie A', country: 'Italy', short_code: 'SA', countryId: 251 },
-    { id: 351, name: 'Bundesliga', country: 'Germany', short_code: 'BL', countryId: 11 },
-    { id: 301, name: 'Ligue 1', country: 'France', short_code: 'L1', countryId: 17 },
-    { id: 7, name: 'Championship', country: 'England', short_code: 'CH', countryId: 462 },
-    { id: 72, name: 'Eredivisie', country: 'Netherlands', short_code: 'ED', countryId: 38 },
-    { id: 238, name: 'Primeira Liga', country: 'Portugal', short_code: 'PL', countryId: 20 },
-  ], []);
-  
   // Toggle section collapse
   const toggleSection = useCallback((sectionId: string) => {
     setCollapsedSections((prev) => {
@@ -322,33 +250,7 @@ function SidebarContent({
   }, [loadCountriesWithLeagues]);
 
   // Removed fixture counting useEffect for top leagues as counting features are removed
-
-  // Handle refresh trigger
-  useEffect(() => {
-    if (refreshTrigger > 0) {
-      const performRefresh = async () => {
-        onRefreshStateChange(true);
-        try {
-            // Clear all caches first
-            clearDataCache();
-            clearFixturesCache();
-            setExpandedCountries(new Set());
-
-          // Wait a tick for state updates to propagate
-          await new Promise(resolve => setTimeout(resolve, 0));
-
-          // Reload countries
-          await loadCountriesWithLeagues();
-
-          // Removed top leagues fixture counting as counting features are removed
-    } finally {
-          onRefreshStateChange(false);
-        }
-      };
-
-      performRefresh();
-    }
-  }, [refreshTrigger, onRefreshStateChange, topLeagues, clearDataCache, clearFixturesCache, loadCountriesWithLeagues]);
+  // Removed refresh trigger useEffect - refresh functionality removed as it's not relevant for static navigation data
 
   // Removed fixture counting useEffect as counting features are removed
 
@@ -369,22 +271,16 @@ function SidebarContent({
     if (showFavoritesOnly) {
       filtered = filtered.filter((country) => favorites.has(country.id));
     }
-
-    // Apply active leagues filter
-    if (showActiveOnly) {
-      filtered = filtered.filter((country) => (country.leaguesCount || 0) > 0);
-    }
-
-    // Apply today's fixtures filter - simplified without counting
-    if (showTodayOnly) {
-      filtered = filtered.filter((country) => country.leagues && country.leagues.length > 0);
-    }
     
     // Apply sorting - simplified without counting
     const sorted = sortCountries(filtered, new Map(), favorites);
 
     setFilteredCountries(sorted);
-  }, [searchTerm, allCountries, showFavoritesOnly, showActiveOnly, showTodayOnly, favorites, sortBy, sortCountries]);
+    // Update header tool counts (favorites uses favorites Set)
+    onCountsChange?.({
+      favorites: favorites.size,
+    });
+  }, [searchTerm, allCountries, showFavoritesOnly, favorites, sortBy, sortCountries, onCountsChange]);
 
   // Show skeleton while data is loading
   if (isLoading || allCountries.length === 0) {

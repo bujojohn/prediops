@@ -10,16 +10,16 @@ export const SIDEBAR_CONFIG = {
     STALE_TIME: {
       COUNTRIES: 7 * 24 * 60 * 60 * 1000, // 7 days for countries (local data)
       COUNTRY_LEAGUES: 24 * 60 * 60 * 1000, // 24 hours for country leagues (as per requirements)
-      TYPES: 30 * 24 * 60 * 60 * 1000, // 30 days for types (static data)
-      STATES: 30 * 24 * 60 * 60 * 1000, // 30 days for states (static data)
+      TYPES: 20 * 24 * 60 * 60 * 1000, // 20 days for types (static data)
+      STATES: 20 * 24 * 60 * 60 * 1000, // 20 days for states (static data)
     },
     
     // How long data stays in cache after becoming stale - Extended for local data
     GC_TIME: {
-      COUNTRIES: 30 * 24 * 60 * 60 * 1000, // 30 days (local data)
+      COUNTRIES: 21 * 24 * 60 * 60 * 1000, // 21 days (local data, below Node timeout limit)
       COUNTRY_LEAGUES: 48 * 60 * 60 * 1000, // 48 hours
-      TYPES: 60 * 24 * 60 * 60 * 1000, // 60 days (static data)
-      STATES: 60 * 24 * 60 * 60 * 1000, // 60 days (static data)
+      TYPES: 21 * 24 * 60 * 60 * 1000, // 21 days (static data, below Node timeout limit)
+      STATES: 21 * 24 * 60 * 60 * 1000, // 21 days (static data, below Node timeout limit)
     },
   },
   

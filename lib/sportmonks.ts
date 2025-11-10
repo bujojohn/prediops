@@ -173,7 +173,7 @@ function makeParams(
     }
   }
   
-  if (populate) params._filters = "populate_";
+  if (populate) params.filters = "populate";
   return params;
 }
 
@@ -351,7 +351,9 @@ export const sportmonks = {
   Doc: https://docs.sportmonks.com/football/endpoints-and-entities/endpoints/fixtures/get-fixtures-by-search-by-name
   */
  async getFixturesBySearchName(searchQuery: string, config?: ApiConfig) {
-  const url = `/fixtures/search/${searchQuery}`;
+  // URL encode the search query to handle special characters and spaces
+  const encodedQuery = encodeURIComponent(searchQuery.trim());
+  const url = `/fixtures/search/${encodedQuery}`;
   const response = await api.get(url, { params: makeParams(config) });
   return response.data;
  },

@@ -13,7 +13,6 @@ export async function GET() {
     
     // Fetch all leagues with country and sport information
     const leaguesResponse = await sportmonks.getLeagues({
-      include: undefined,
       filters: 'populate', // Only active leagues
       per_page: 1000,
       

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { 
   Users, 
   Trophy, 
@@ -21,6 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import type { TeamDetailed } from '@/schemas/team-detailed.schema';
 import type { Fixture } from '@/schemas/fixture.schema';
 import { formatFoundedYear, getTeamTypeDisplay } from '@/lib/utils/team-utils';
+import { generateFixtureSlug } from '@/lib/utils/slug-utils';
 import { TeamMatchesContent } from './team-matches-content';
 
 interface TeamDetailClientProps {
@@ -395,7 +397,11 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
               <CardContent>
                 <div className="space-y-3">
                   {getRecentFixtures().map((fixture) => (
-                    <div key={fixture.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <Link
+                      key={fixture.id}
+                      href={`/fixture/${fixture.id}/${generateFixtureSlug(fixture)}`}
+                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    >
                       <div className="flex-1">
                         <div className="font-medium text-sm">{fixture.name}</div>
                         <div className="text-xs text-gray-600 dark:text-gray-400">
@@ -405,7 +411,7 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
                       <div className="text-xs text-gray-500">
                         {fixture.result_info || 'No result'}
                       </div>
-                    </div>
+                    </Link>
                   ))}
                   {getRecentFixtures().length === 0 && (
                     <p className="text-center text-gray-500 text-sm">No recent matches</p>
@@ -425,7 +431,11 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
               <CardContent>
                 <div className="space-y-3">
                   {getUpcomingFixtures().map((fixture) => (
-                    <div key={fixture.id} className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                    <Link
+                      key={fixture.id}
+                      href={`/fixture/${fixture.id}/${generateFixtureSlug(fixture)}`}
+                      className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+                    >
                       <div className="flex-1">
                         <div className="font-medium text-sm">{fixture.name}</div>
                         <div className="text-xs text-gray-600 dark:text-gray-400">
@@ -436,7 +446,7 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
                         <Clock className="w-3 h-3 inline mr-1" />
                         {formatTime(fixture.starting_at)}
                       </div>
-                    </div>
+                    </Link>
                   ))}
                   {getUpcomingFixtures().length === 0 && (
                     <p className="text-center text-gray-500 text-sm">No upcoming matches</p>

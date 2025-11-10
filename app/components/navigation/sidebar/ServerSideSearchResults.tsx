@@ -5,6 +5,7 @@ import { Search, Clock, Users, Trophy, Globe, Loader2, Play, CheckCircle, Chevro
 import { Badge } from '@/components/ui/badge';
 import { getCountryPredictionsUrl, generateLeagueSlug } from '@/lib/utils/country-utils';
 import { generateTeamSlug } from '@/lib/utils/team-utils';
+import { generateFixtureSlug } from '@/lib/utils/slug-utils';
 import { useSearch } from '@/app/hooks/useSearch';
 import { SearchScope } from './SearchScopeDropdown';
 
@@ -162,7 +163,7 @@ export function ServerSideSearchResults({ searchTerm, searchScope }: ServerSideS
                   return (
                     <a
                       key={`${fixture.id}-${index}`}
-                      href={`/predictions/league/${fixture.league?.id}/${generateLeagueSlug({ name: fixture.league?.name || '', id: fixture.league?.id || 0 })}`}
+                      href={`/fixture/${fixture.id}/${generateFixtureSlug(fixture)}`}
                       className="flex items-center gap-2 text-sm p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                     >
                       {getMatchIcon()}

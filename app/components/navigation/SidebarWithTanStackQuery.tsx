@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useCallback, useRef } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { Search, RotateCcw, HelpCircle, Star, Clock, Calendar, ArrowUpDown } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 // Import existing components and hooks
 import { TopLeaguesSection } from './sidebar/TopLeaguesSection';
@@ -15,40 +14,42 @@ import { useSorting } from './sidebar/hooks/useSorting';
 
 // Import TanStack Query hooks
 import { 
-  useCountriesQuery, 
-  sidebarQueryKeys 
+  useCountriesQuery
 } from '@/app/hooks/useSidebarQueries';
+
+// Add unified tools imports
+import { SidebarToolsSection } from './sidebar/tools/SidebarToolsSection';
+import { FilterTools } from './sidebar/tools/FilterTools';
+import { SortControl } from './sidebar/tools/SortControl';
+import { ActionButtons } from './sidebar/tools/ActionButtons';
+import { HelpModal } from './sidebar/tools/HelpModal';
+import { useFilterPreferences } from './sidebar/tools/hooks/useFilterPreferences';
 
 // Removed League import as it's no longer used
 
 interface SidebarWithTanStackQueryProps {
   showLogo?: boolean;
-  onRefreshStateChange?: (isRefreshing: boolean) => void;
 }
 
 export function SidebarWithTanStackQuery({ 
-  showLogo = false, 
-  onRefreshStateChange 
+  showLogo = false,
 }: SidebarWithTanStackQueryProps) {
   // State management
   const [searchTerm, setSearchTerm] = useState('');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
-  const [showActiveOnly, setShowActiveOnly] = useState(false);
-  const [showTodayOnly, setShowTodayOnly] = useState(false);
   const [expandedCountries, setExpandedCountries] = useState<Set<number>>(new Set());
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set(['top-leagues', 'tournaments'])); // Start with countries open, others collapsed
+  const [helpOpen, setHelpOpen] = useState(false);
   // Removed counting-related state as per requirements
   
   // Refs
   const searchInputRef = useRef<HTMLInputElement>(null);
   
-  // TanStack Query client for cache invalidation
-  const queryClient = useQueryClient();
-  
   // Custom hooks
   const { favorites, toggleFavorite, isFavorite } = useFavorites();
   const { sortBy, setSortBy, sortCountries } = useSorting();
-  
+  const filterPrefs = useFilterPreferences('all');
+
   // TanStack Query hooks - optimized for SportMonks best practices
   const { 
     data: allCountries = [], 
@@ -79,20 +80,6 @@ export function SidebarWithTanStackQuery({
       );
     }
 
-    // Apply active filter (countries with leagues) - simplified without fixture counting
-    if (showActiveOnly) {
-      filtered = filtered.filter(country => 
-        country.leagues && country.leagues.length > 0
-      );
-    }
-
-    // Apply today filter (countries with leagues) - simplified without fixture counting
-    if (showTodayOnly) {
-      filtered = filtered.filter(country => 
-        country.leagues && country.leagues.length > 0
-      );
-    }
-
     // Sort countries - simplified without counting
     const countriesWithLeagues = filtered.map(country => ({
       ...country,
@@ -104,8 +91,6 @@ export function SidebarWithTanStackQuery({
     allCountries, 
     searchTerm, 
     showFavoritesOnly, 
-    showActiveOnly, 
-    showTodayOnly, 
     isFavorite,
     favorites,
     sortCountries
@@ -116,34 +101,15 @@ export function SidebarWithTanStackQuery({
     setSearchTerm(term);
   }, []);
 
-  // Handle refresh - simplified without counting features
-  const handleRefresh = useCallback(async () => {
-    onRefreshStateChange?.(true);
-    try {
-      // Clear local state
-      setExpandedCountries(new Set());
-      
-      // Invalidate all sidebar queries to force refresh
-      await queryClient.invalidateQueries({ 
-        queryKey: sidebarQueryKeys.all 
-      });
-      
-      // Refetch countries data
-      await refetchCountries();
-    } catch (error) {
-      console.error('Error refreshing sidebar data:', error);
-    } finally {
-      onRefreshStateChange?.(false);
-    }
-  }, [queryClient, refetchCountries, onRefreshStateChange]);
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
     searchInputRef,
-    onToggleFavorites: () => setShowFavoritesOnly(!showFavoritesOnly),
-    onToggleActive: () => setShowActiveOnly(!showActiveOnly),
-    onToggleToday: () => setShowTodayOnly(!showTodayOnly),
-    onRefresh: handleRefresh,
+    onToggleFavorites: () => {
+      const next = !showFavoritesOnly;
+      setShowFavoritesOnly(next);
+      filterPrefs.setFavorites(next);
+    },
   });
 
   // Simplified country toggle - leagues are now loaded via TanStack Query with 24-hour caching
@@ -159,8 +125,6 @@ export function SidebarWithTanStackQuery({
       return newSet;
     });
   }, []);
-
-  // Removed old country toggle function - replaced with simplified version above
 
   // Handle section collapse/expand
   const handleSectionToggle = useCallback((sectionName: string) => {
@@ -187,7 +151,9 @@ export function SidebarWithTanStackQuery({
         <div className="text-center p-4">
           <p className="text-red-600 dark:text-red-400 mb-2">Failed to load sidebar data</p>
           <button 
-            onClick={handleRefresh}
+            onClick={() => {
+              void refetchCountries();
+            }}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
             Retry
@@ -220,119 +186,22 @@ export function SidebarWithTanStackQuery({
           />
         </div>
 
+        {/* Unified Tools */}
+        <SidebarToolsSection>
+          <FilterTools
+            favoritesActive={showFavoritesOnly}
+            count={favorites.size}
+            onToggleFavorites={() => {
+              const next = !showFavoritesOnly;
+              setShowFavoritesOnly(next);
+              filterPrefs.setFavorites(next);
+            }}
+          />
 
-        {/* Sorting */}
-        <div className="flex items-center gap-2 mb-4">
-          <ArrowUpDown className="w-4 h-4 text-gray-400" />
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as 'name' | 'fixtures' | 'favorites')}
-            className="flex-1 px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="name">Name</option>
-            <option value="fixtures">Fixtures</option>
-            <option value="favorites">Favorites</option>
-          </select>
-        </div>
+          <SortControl value={sortBy} onChange={setSortBy} />
 
-        {/* Tools Grid - 3 columns, 1 row */}
-        <div className="grid grid-cols-3 gap-2">
-          {/* Column 1: Refresh */}
-          <button
-            onClick={handleRefresh}
-            disabled={isLoading}
-            className="flex items-center justify-center gap-1 px-2 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-            title="Refresh data"
-          >
-            <RotateCcw className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Refresh</span>
-          </button>
-          
-          {/* Column 2: Favorites Toggle */}
-          <button
-            onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-            className={`flex items-center justify-center gap-1 px-2 py-2 text-xs font-medium rounded-lg border transition-colors duration-200 ${
-              showFavoritesOnly
-                ? 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800'
-                : 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600'
-            }`}
-            title="Toggle favorites filter"
-          >
-            <Star className="w-3 h-3" />
-            <span className="hidden sm:inline">Fav</span>
-          </button>
-          
-          {/* Column 3: More Tools Popover */}
-          <div className="relative group">
-            <button
-              className="flex items-center justify-center gap-1 px-2 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
-              title="More tools"
-            >
-              <span className="text-xs">⋯</span>
-              <span className="hidden sm:inline">More</span>
-            </button>
-            
-            {/* Popover Content */}
-            <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-              <div className="p-3 space-y-2">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Tools & Filters</h3>
-                
-                {/* Active Filter */}
-                <button
-                  onClick={() => setShowActiveOnly(!showActiveOnly)}
-                  className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors duration-200 ${
-                    showActiveOnly
-                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
-                      : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                  }`}
-                >
-                  <Clock className="w-4 h-4" />
-                  Active Only
-                </button>
-                
-                {/* Today Filter */}
-                <button
-                  onClick={() => setShowTodayOnly(!showTodayOnly)}
-                  className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors duration-200 ${
-                    showTodayOnly
-                      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-                      : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                  }`}
-                >
-                  <Calendar className="w-4 h-4" />
-                  Today Only
-                </button>
-                
-                {/* Divider */}
-                <div className="border-t border-gray-200 dark:border-gray-600 my-2"></div>
-                
-                {/* Help */}
-                <button
-                  onClick={() => {
-                    alert(`Sidebar Help:
-
-🔍 Search: Type to filter countries and leagues
-⭐ Favorites: Toggle to show only favorited items  
-🕒 Active: Show only countries with upcoming fixtures
-📅 Today: Show only countries with fixtures today
-🔄 Refresh: Reload all data from server
-⌨️ Keyboard Shortcuts:
-  - Ctrl/Cmd + K: Focus search
-  - Ctrl/Cmd + F: Toggle favorites
-  - Ctrl/Cmd + A: Toggle active filter
-  - Ctrl/Cmd + T: Toggle today filter
-  - Ctrl/Cmd + R: Refresh data
-  - Esc: Clear search and unfocus`);
-                  }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
-                >
-                  <HelpCircle className="w-4 h-4" />
-                  Help & Shortcuts
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+          <ActionButtons onShowHelp={() => setHelpOpen(true)} />
+        </SidebarToolsSection>
       </div>
 
       {/* Content */}
@@ -347,12 +216,6 @@ export function SidebarWithTanStackQuery({
           </div>
         ) : (
           <div className="h-full flex flex-col">
-            {/* Top Leagues - simplified without counting */}
-            <TopLeaguesSection 
-              isCollapsed={collapsedSections.has('top-leagues')}
-              onToggle={() => handleSectionToggle('top-leagues')}
-            />
-
             {/* Countries - simplified without counting */}
             <CountriesSection
               countries={filteredAndSortedCountries}
@@ -363,6 +226,12 @@ export function SidebarWithTanStackQuery({
               // Removed counting-related props as per requirements
               favorites={favorites}
               onToggleFavorite={toggleFavorite}
+            />
+
+            {/* Top Leagues - simplified without counting */}
+            <TopLeaguesSection 
+              isCollapsed={collapsedSections.has('top-leagues')}
+              onToggle={() => handleSectionToggle('top-leagues')}
             />
 
             {/* Tournaments - simplified without counting */}
@@ -379,6 +248,8 @@ export function SidebarWithTanStackQuery({
           </div>
         )}
       </div>
+
+      <HelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
     </div>
   );
 }
