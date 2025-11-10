@@ -3,7 +3,7 @@
 import { Suspense } from 'react';
 import { usePathname } from 'next/navigation';
 import { Navbar } from './Navbar';
-import { SidebarStatic } from './SidebarStatic';
+import { SidebarOptimized } from './SidebarOptimized';
 import { useIsMobile } from '@/app/hooks/useMediaQuery';
 
 interface SidebarWrapperProps {
@@ -33,7 +33,7 @@ export function SidebarWrapper({ children }: SidebarWrapperProps) {
               </div>
             </div>
           }>
-            <SidebarStatic showLogo={isMobile} />
+            <SidebarOptimized showLogo={isMobile} />
           </Suspense>
         </div>
       )}

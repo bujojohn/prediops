@@ -41,7 +41,7 @@ export function useTeamFixtures({
     clearError,
   } = useFixtureManagement({
     initialFixtures,
-    apiEndpoint: `/api/sportmonks/teams/${teamId}/fixtures`,
+    apiEndpoint: '/api/sportmonks/fixtures', // Use main fixtures endpoint with team parameters
     enableInfiniteScroll: true,
     enableDateFiltering: false, // Teams typically show all fixtures
     pageSize: 50,
@@ -61,8 +61,15 @@ export function useTeamFixtures({
   // Team-specific fixture loading
   const loadTeamFixtures = useCallback(async () => {
     try {
+      // Set date range for team fixtures (last 30 days to next 30 days)
+      const today = new Date();
+      const startDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
+      const endDate = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
+      
       await loadFixtures({
-        team_id: teamId,
+        teamId: teamId,
+        startDate: startDate.toISOString().split('T')[0], // YYYY-MM-DD format
+        endDate: endDate.toISOString().split('T')[0], // YYYY-MM-DD format
         include: 'participants;scores;state;predictions.type;league.country;events',
       });
     } catch (err) {

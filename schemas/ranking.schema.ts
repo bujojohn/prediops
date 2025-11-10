@@ -9,4 +9,7 @@ export const RankingSchema = z.object({
   type: z.string(),
 });
 
+export const RankingsSchema = z.array(RankingSchema);
+
 export type Ranking = z.infer<typeof RankingSchema>;
+export type Rankings = z.infer<typeof RankingsSchema>;

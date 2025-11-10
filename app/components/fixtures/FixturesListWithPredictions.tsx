@@ -62,7 +62,7 @@ export function FixturesListWithPredictions({
   return (
     <FixtureList
       groups={fixtureGroups}
-      onRefresh={handleRefresh}
+      onRefresh={onRefresh ? handleRefresh : undefined}
       compact={compact}
     />
   );

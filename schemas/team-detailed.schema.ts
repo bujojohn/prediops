@@ -2,6 +2,7 @@ import { z } from "zod";
 import { CountrySchema } from "./country.schema";
 import { FixtureSchema } from "./fixture.schema";
 import { SeasonSchema } from "./season.schema";
+import { RankingSchema } from "./ranking.schema";
 // Team-coach relationship schema (not the coach entity itself)
 const TeamCoachSchema = z.object({
   id: z.number(),
@@ -13,18 +14,41 @@ const TeamCoachSchema = z.object({
   end: z.string().nullable(),
   temporary: z.boolean(),
 });
-// Team-player relationship schema (not the player entity itself)
+// Player schema for nested player data
+const PlayerSchema = z.object({
+  id: z.number(),
+  sport_id: z.number(),
+  country_id: z.number(),
+  nationality_id: z.number().nullable(),
+  city_id: z.number().nullable(),
+  position_id: z.number(),
+  detailed_position_id: z.number().nullable(),
+  type_id: z.number().nullable(),
+  common_name: z.string().nullable(),
+  firstname: z.string().nullable(),
+  lastname: z.string().nullable(),
+  name: z.string().nullable(),
+  display_name: z.string().nullable(),
+  image_path: z.string().nullable(),
+  height: z.number().nullable(),
+  weight: z.number().nullable(),
+  date_of_birth: z.string().nullable(),
+  gender: z.string().nullable(),
+});
+
+// Team-player relationship schema (now includes nested player data)
 const TeamPlayerSchema = z.object({
   id: z.number(),
   transfer_id: z.number().nullable(),
   player_id: z.number(),
   team_id: z.number(),
   position_id: z.number(),
-  detailed_position_id: z.number(),
+  detailed_position_id: z.number().nullable(),
   start: z.string().nullable(),
   end: z.string().nullable(),
   captain: z.boolean(),
-  jersey_number: z.number(),
+  jersey_number: z.number().nullable(),
+  player: PlayerSchema.optional(),
 });
 // Rival team schema (team objects in rivals array)
 const RivalTeamSchema = z.object({
@@ -89,6 +113,7 @@ export const TeamDetailedSchema = z.object({
   sidelinedHistory: z.array(SidelinedSchema).nullable().optional().describe("Historical sidelined players."),
   trophies: z.array(TeamTrophySchema).nullable().optional().describe("Team achievements and trophies."),
   socials: z.array(SocialSchema).nullable().optional().describe("Social media links."),
+  rankings: z.array(RankingSchema).nullable().optional().describe("Rankings of the team."),
 });
 
 export type TeamDetailed = z.infer<typeof TeamDetailedSchema>;
