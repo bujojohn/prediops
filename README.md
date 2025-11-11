@@ -9,7 +9,7 @@ A modern Next.js application for football predictions, live match tracking, and 
 - npm or yarn
 - Sportmonks API token (Worldwide + Predictions plan)
 
-### Current Version: v2.9.0
+### Current Version: v2.9.1
 - ✅ Professional brand logo implementation
 - ✅ Theme-aware logo with light/dark variants
 - ✅ Enhanced sidebar with favorites and search

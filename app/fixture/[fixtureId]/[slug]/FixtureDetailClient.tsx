@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { JSX } from 'react';
 import Link from 'next/link';
 import {
@@ -12,6 +12,7 @@ import {
   Trophy,
   TrendingUp,
   Users,
+  CloudSun,
   BarChart3,
   Target,
   Coins,
@@ -28,15 +29,21 @@ import { FixtureStatistics } from './components/FixtureStatistics';
 import { FixtureLineups } from './components/FixtureLineups';
 import { FixturePredictions } from './components/FixturePredictions';
 import { FixtureOdds } from './components/FixtureOdds';
+import { FixtureWeather } from './components/FixtureWeather';
+import { FixtureStandings, formatStandingsMeta, type ResolvedStandingGroup } from './components/FixtureStandings';
+import type { WeatherReport } from '@/schemas/weather-report.schema';
+import type { Standing } from '@/schemas/standing.schema';
 
 interface FixtureDetailClientProps {
   fixture: Fixture;
   statistics?: unknown;
   lineups?: unknown;
   odds?: unknown;
+  weatherReport?: WeatherReport | null;
+  standings?: unknown;
 }
 
-type TabType = 'overview' | 'statistics' | 'lineups' | 'predictions' | 'odds';
+type TabType = 'overview' | 'statistics' | 'lineups' | 'weather' | 'predictions' | 'standings' | 'odds';
 
 function TimelineSection({
   events,
@@ -62,6 +69,8 @@ export function FixtureDetailClient({
   statistics,
   lineups,
   odds,
+  weatherReport,
+  standings,
 }: FixtureDetailClientProps) {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
 
@@ -80,8 +89,13 @@ export function FixtureDetailClient({
     ? fixture.participants
     : null;
   const hasStatistics = statistics != null;
-  const hasLineups = lineups != null;
+  const lineupEntries = useMemo(() => extractLineupEntries(lineups), [lineups]);
+  const hasLineups = lineupEntries.length > 0;
   const hasOdds = odds != null;
+  const normalizedWeather = useMemo(() => extractWeatherReport(weatherReport), [weatherReport]);
+  const hasWeather = normalizedWeather != null;
+  const standingsGroups = useMemo(() => extractStandingGroups(standings), [standings]);
+  const hasStandings = standingsGroups.length > 0;
 
   // Get current score
   let homeScore = 0;
@@ -97,13 +111,41 @@ export function FixtureDetailClient({
     awayScore = awayScoreData?.score?.goals ?? 0;
   }
 
-  const tabs: { id: TabType; label: string; icon: JSX.Element }[] = [
-    { id: 'overview', label: 'Overview', icon: <BarChart3 className="h-4 w-4" /> },
-    { id: 'statistics', label: 'Statistics', icon: <TrendingUp className="h-4 w-4" /> },
-    { id: 'lineups', label: 'Lineups', icon: <Users className="h-4 w-4" /> },
-    { id: 'predictions', label: 'Predictions', icon: <Target className="h-4 w-4" /> },
-    { id: 'odds', label: 'Odds', icon: <Coins className="h-4 w-4" /> },
-  ];
+  const tabs: { id: TabType; label: string; icon: JSX.Element }[] = useMemo(() => {
+    const list: { id: TabType; label: string; icon: JSX.Element }[] = [
+      { id: 'overview', label: 'Overview', icon: <BarChart3 className="h-4 w-4" /> },
+    ];
+
+    if (hasStatistics) {
+      list.push({ id: 'statistics', label: 'Statistics', icon: <TrendingUp className="h-4 w-4" /> });
+    }
+
+    if (hasLineups) {
+      list.push({ id: 'lineups', label: 'Lineups', icon: <Users className="h-4 w-4" /> });
+    }
+
+    if (hasWeather) {
+      list.push({ id: 'weather', label: 'Weather', icon: <CloudSun className="h-4 w-4" /> });
+    }
+
+    list.push({ id: 'predictions', label: 'Predictions', icon: <Target className="h-4 w-4" /> });
+
+    if (hasStandings) {
+      list.push({ id: 'standings', label: 'Standings', icon: <Trophy className="h-4 w-4" /> });
+    }
+
+    list.push({ id: 'odds', label: 'Odds', icon: <Coins className="h-4 w-4" /> });
+
+    return list;
+  }, [hasStatistics, hasLineups, hasWeather, hasStandings]);
+
+  const availableTabIds = useMemo(() => tabs.map((tab) => tab.id), [tabs]);
+
+  useEffect(() => {
+    if (!availableTabIds.includes(activeTab)) {
+      setActiveTab('overview');
+    }
+  }, [availableTabIds, activeTab]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -204,6 +246,12 @@ export function FixtureDetailClient({
               ) : null}
 
               {/* Predictions Callout */}
+              {hasWeather && normalizedWeather ? (
+                <div className="rounded-lg border border-dashed border-border/60 p-6 dark:border-border/40">
+                  <FixtureWeather weatherReport={normalizedWeather} />
+                </div>
+              ) : null}
+
               {fixturePredictions.length > 0 ? (
                 <OverviewCallout
                   title="AI Predictions"
@@ -224,6 +272,16 @@ export function FixtureDetailClient({
                   meta={formatOddsMeta(odds)}
                 />
               ) : null}
+
+              {hasStandings ? (
+                <OverviewCallout
+                  title="Standings Snapshot"
+                  description="See the latest table heading into this fixture."
+                  actionLabel="View standings"
+                  onAction={() => setActiveTab('standings')}
+                  meta={formatStandingsMeta(standingsGroups)}
+                />
+              ) : null}
             </div>
           )}
 
@@ -239,12 +297,29 @@ export function FixtureDetailClient({
             ) : null
           ) : null}
 
+          {activeTab === 'weather' ? (
+            hasWeather && normalizedWeather ? (
+              <FixtureWeather weatherReport={normalizedWeather} />
+            ) : null
+          ) : null}
+
           {activeTab === 'predictions' && (
             <FixturePredictions 
               predictions={fixturePredictions}
               fixture={fixture} 
             />
           )}
+
+          {activeTab === 'standings' ? (
+            hasStandings ? (
+              <FixtureStandings
+                groups={standingsGroups}
+                participantIds={
+                  timelineParticipants?.map((p) => p.id).filter((id): id is number => typeof id === 'number') ?? []
+                }
+              />
+            ) : null
+          ) : null}
 
           {activeTab === 'odds' && (
             hasOdds ? <FixtureOdds odds={odds} /> : null
@@ -341,6 +416,155 @@ function summarizeOdds(
     bookmakers: bookmakerSet.size,
     markets: marketSet.size,
   };
+}
+
+function extractLineupEntries(rawLineups: unknown): unknown[] {
+  if (!rawLineups) {
+    return [];
+  }
+
+  if (Array.isArray(rawLineups)) {
+    return rawLineups;
+  }
+
+  if (typeof rawLineups === 'object') {
+    const obj = rawLineups as { data?: unknown };
+    if (Array.isArray(obj.data)) {
+      return obj.data;
+    }
+
+    if (obj.data && typeof obj.data === 'object') {
+      const nested = obj.data as { data?: unknown };
+      if (Array.isArray(nested.data)) {
+        return nested.data;
+      }
+    }
+  }
+
+  return [];
+}
+
+function extractWeatherReport(raw: unknown): WeatherReport | null {
+  if (!raw) {
+    return null;
+  }
+
+  if (Array.isArray(raw)) {
+    const first = raw.find((entry) => entry && typeof entry === 'object');
+    return (first as WeatherReport) ?? null;
+  }
+
+  if (typeof raw === 'object') {
+    const obj = raw as { data?: unknown };
+    if (Array.isArray(obj.data)) {
+      const first = obj.data.find((entry) => entry && typeof entry === 'object');
+      return (first as WeatherReport) ?? null;
+    }
+
+    if (obj.data && typeof obj.data === 'object') {
+      return extractWeatherReport(obj.data);
+    }
+  }
+
+  return raw as WeatherReport;
+}
+
+function extractStandingGroups(raw: unknown): ResolvedStandingGroup[] {
+  const candidates = normaliseCandidateArray(raw);
+  const groups: ResolvedStandingGroup[] = [];
+
+  candidates.forEach((candidate) => {
+    const standings = toStandingArray(candidate);
+    if (!standings || standings.length === 0) {
+      return;
+    }
+
+    const groupName =
+      candidate && typeof candidate === 'object' && 'name' in (candidate as Record<string, unknown>)
+        ? ((candidate as { name?: string | null }).name ?? null)
+        : null;
+
+    groups.push({
+      name: groupName ?? null,
+      standings,
+    });
+  });
+
+  if (groups.length > 0) {
+    return groups;
+  }
+
+  const directStandings = toStandingArray(raw);
+  if (directStandings && directStandings.length) {
+    return [{ name: null, standings: directStandings }];
+  }
+
+  return [];
+}
+
+function normaliseCandidateArray(raw: unknown): unknown[] {
+  if (!raw) {
+    return [];
+  }
+
+  if (Array.isArray(raw)) {
+    return raw;
+  }
+
+  if (typeof raw === 'object') {
+    const obj = raw as { data?: unknown };
+    if (Array.isArray(obj.data)) {
+      return obj.data;
+    }
+  }
+
+  return [];
+}
+
+function toStandingArray(candidate: unknown): Standing[] | null {
+  if (!candidate) {
+    return null;
+  }
+
+  if (Array.isArray(candidate) && candidate.every(isStandingLike)) {
+    return candidate as Standing[];
+  }
+
+  if (typeof candidate === 'object') {
+    const obj = candidate as Record<string, unknown>;
+
+    const directStandings = obj.standings;
+    if (Array.isArray(directStandings) && directStandings.every(isStandingLike)) {
+      return directStandings as Standing[];
+    }
+
+    if (directStandings && typeof directStandings === 'object') {
+      const nested = (directStandings as Record<string, unknown>).data;
+      if (Array.isArray(nested) && nested.every(isStandingLike)) {
+        return nested as Standing[];
+      }
+    }
+
+    const dataArray = obj.data;
+    if (Array.isArray(dataArray) && dataArray.every(isStandingLike)) {
+      return dataArray as Standing[];
+    }
+  }
+
+  return null;
+}
+
+function isStandingLike(value: unknown): value is Standing {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const standing = value as Standing;
+  return (
+    typeof standing.position === 'number' ||
+    typeof standing.points === 'number' ||
+    Boolean(standing.participant?.name)
+  );
 }
 
 

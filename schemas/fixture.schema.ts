@@ -26,6 +26,7 @@ import { CommentSchema, type Comment } from "./comment.schema";
 import { SidelinedSchema, type Sidelined } from "./sidelined.schema";
 import { BallCoordinatesSchema, type BallCoordinates } from "./ball-coordinates.schema";
 import { FixtureMetadataSchema, type FixtureMetadata } from "./fixture-metadata.schema"; // Import actual FixtureMetadataSchema and its type
+import { WeatherReportSchema, type WeatherReport } from "./weather-report.schema";
 import { PredictionSchema, type Prediction } from "./predictions.schema";
 
 // --- Forward declare the Fixture type for explicit annotation ---
@@ -75,6 +76,8 @@ export type Fixture = {
   sidelined?: Sidelined[] | null; // Use actual Sidelined type   
   ball_coordinates?: BallCoordinates[] | null; // Use actual BallCoordinates type
   metadata?: FixtureMetadata[] | null; // Use actual FixtureMetadata type    
+  weatherReport?: WeatherReport | null;
+  weatherreport?: WeatherReport | null;
 };
 
 // --- Main Fixture Schema based on SportMonks API Documentation ---
@@ -126,6 +129,8 @@ export const FixtureSchema: z.ZodType<Fixture> = z.lazy(() =>
     sidelined: z.array(SidelinedSchema).nullable().optional(), // Use actual SidelinedSchema
     ball_coordinates: z.array(BallCoordinatesSchema).nullable().optional(), // Use actual BallCoordinatesSchema
     metadata: z.array(FixtureMetadataSchema).nullable().optional(),
+    weatherReport: WeatherReportSchema.nullable().optional(),
+    weatherreport: WeatherReportSchema.nullable().optional(),
   })
 );
 

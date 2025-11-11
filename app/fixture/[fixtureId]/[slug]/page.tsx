@@ -53,7 +53,7 @@ export default async function FixturePage({ params }: FixturePageProps) {
   try {
     // Fetch fixture with essential data
     const fixtureResponse = await sportmonks.getFixturesById(fixtureId, {
-      include: 'participants;scores;state;league.country;league.sport;round.stage;events.type;events.period;events.player;predictions.type;periods.type',
+      include: 'participants;scores;state;league.country;league.sport;round.stage;events.type;events.period;events.player;predictions.type;periods.type;season;weatherreport',
       per_page: 1,
     });
 
@@ -64,27 +64,42 @@ export default async function FixturePage({ params }: FixturePageProps) {
       notFound();
     }
 
-    // Fetch additional data in parallel
-    const [statisticsResponse, lineupsResponse, oddsResponse] = await Promise.allSettled([
-      // Statistics - only fetch if match is live or finished
-      fixture.state?.name && ['inprogress', 'finished', 'ft'].includes(fixture.state.name.toLowerCase())
-        ? sportmonks.getFixtureStatistics(fixtureId, {
-            include: 'participant;type',
-          }).catch(() => null)
-        : Promise.resolve(null),
-      // Lineups - fetch if available
-      sportmonks.getFixtureLineupsById(fixtureId, {
-        include: 'player;position;formation',
-      }).catch(() => null),
-      // Odds - fetch if available
-      sportmonks.getOddsByFixtureId(fixtureId, {
+    // Current subscription does not expose the statistics or lineups endpoints.
+    const statisticsPromise = Promise.resolve(null);
+    const lineupsPromise = Promise.resolve(null);
+
+    const oddsPromise = sportmonks
+      .getOddsByFixtureId(fixtureId, {
         include: 'bookmaker;market',
-      }).catch(() => null),
+      });
+
+    const standingsPromise =
+      fixture.season_id != null
+        ? sportmonks.getLeagueStandings(String(fixture.season_id), {
+            include: 'participant;details',
+          })
+        : fixture.league_id != null
+          ? sportmonks.getLiveStandingsByLeagueId(String(fixture.league_id), {
+              include: 'participant;details',
+            })
+          : Promise.resolve(null);
+
+    // Fetch additional data in parallel
+    const [statisticsResponse, lineupsResponse, oddsResponse, standingsResponse] = await Promise.allSettled([
+      statisticsPromise,
+      lineupsPromise,
+      oddsPromise,
+      standingsPromise,
     ]);
 
     const statistics = statisticsResponse.status === 'fulfilled' ? statisticsResponse.value : null;
     const lineups = lineupsResponse.status === 'fulfilled' ? lineupsResponse.value : null;
     const odds = oddsResponse.status === 'fulfilled' ? oddsResponse.value : null;
+    const standings = standingsResponse.status === 'fulfilled' ? standingsResponse.value : null;
+    const weatherReport =
+      (fixture as Fixture & { weatherreport?: unknown }).weatherReport ??
+      (fixture as Fixture & { weatherreport?: unknown }).weatherreport ??
+      null;
 
     return (
       <FixtureDetailClient
@@ -92,6 +107,8 @@ export default async function FixturePage({ params }: FixturePageProps) {
         statistics={statistics}
         lineups={lineups}
         odds={odds}
+        weatherReport={weatherReport}
+        standings={standings}
       />
     );
   } catch (error) {

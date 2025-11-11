@@ -64,3 +64,4 @@ export { TeamSchema, type Team } from './team.schema';
 export { TeamDetailedSchema, type TeamDetailed} from './team-detailed.schema';
 export { SocialSchema, type Social } from './social.schema';
 export { RankingSchema, type Ranking } from './ranking.schema';
+export { WeatherReportSchema, type WeatherReport } from './weather-report.schema';

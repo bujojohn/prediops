@@ -817,14 +817,39 @@ export const sportmonks = {
 
   /**
    * Returns the lineups for your requested fixture FixtureId with configurable options.
+   * Note: lineups are exposed through the fixtures endpoint via includes rather than a dedicated lineups route.
    * Doc: https://docs.sportmonks.com/football/tutorials-and-guides/tutorials/includes/lineups
    * @param fixtureId 
    * @param config 
    * @returns ApiListResponse<Lineup>
    */
   async getFixtureLineupsById(fixtureId: string, config?: ApiConfig) {
-    const url = `/lineups/fixtures/${fixtureId}`;
-    const response = await api.get(url, { params: makeParams(config) });
+    const requiredIncludes = [
+      'lineups',
+      'lineups.player',
+      'lineups.position',
+      'lineups.formation',
+    ];
+
+    const includeSet = new Set(
+      config?.include
+        ? config.include.split(';').map((part) => part.trim()).filter(Boolean)
+        : []
+    );
+
+    requiredIncludes.forEach((item) => includeSet.add(item));
+
+    const include = includeSet.size > 0
+      ? Array.from(includeSet).join(';')
+      : requiredIncludes.join(';');
+
+    const url = `/fixtures/${fixtureId}`;
+    const response = await api.get(url, {
+      params: makeParams({
+        ...config,
+        include,
+      }),
+    });
     return response.data;
   },
     /**
