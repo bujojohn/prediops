@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Fixture } from '@/schemas/fixture.schema';
+import type { League } from '@/schemas/league.schema';
+import type { Country } from '@/schemas/country.schema';
+import type { Continent } from '@/schemas/continent.schema';
 import { FixtureCard } from './FixtureCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,10 +13,17 @@ import { ChevronDown, ChevronRight, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ErrorBoundary } from '@/app/components/error-boundary';
 
+export interface FixtureGroupMeta {
+  league?: League | null;
+  country?: Country | null;
+  continent?: Continent | null;
+}
+
 export interface FixtureGroup {
   id: string;
   title: string;
   fixtures: Fixture[];
+  meta?: FixtureGroupMeta;
 }
 
 interface FixtureListProps {

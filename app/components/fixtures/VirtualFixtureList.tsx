@@ -1,7 +1,10 @@
 'use client';
 
 import React, { memo, useMemo, useCallback, useState, useEffect } from 'react';
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+import { generateCountryUrl, generateLeagueUrl } from '@/lib/utils/routing';
 import type { Fixture } from '@/schemas/fixture.schema';
 import type { FixtureGroup } from '@/app/predictions/utils/grouping-utils';
 import { OptimizedFixtureCard } from './OptimizedFixtureCard';
@@ -99,25 +102,81 @@ export const VirtualFixtureList = memo<VirtualFixtureListProps>(({
             className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             onClick={() => toggleGroup(group.id)}
           >
-            <div className="flex items-center gap-2">
-              <div className={cn(
-                'w-2 h-2 rounded-full transition-colors',
-                isCollapsed ? 'bg-gray-400' : 'bg-blue-500'
-              )} />
-              <h3 className="font-medium text-sm text-gray-900 dark:text-gray-100">
-                {group.title}
-              </h3>
+            <div className="flex items-center gap-3 min-w-0">
+              {isCollapsed ? (
+                <ChevronRight className="h-4 w-4 text-gray-500" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-gray-500" />
+              )}
+              <nav
+                aria-label="Fixture league breadcrumb"
+                className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-gray-100 truncate"
+              >
+                {(() => {
+                  const crumbs: Array<{ label: string; href?: string }> = [];
+                  const country = group.meta?.country;
+                  const continent = group.meta?.continent;
+                  const league = group.meta?.league;
+
+                  if (country?.name && country?.id) {
+                    try {
+                      crumbs.push({
+                        label: country.name,
+                        href: generateCountryUrl(country),
+                      });
+                    } catch {
+                      crumbs.push({ label: country.name });
+                    }
+                  } else if (continent?.name) {
+                    crumbs.push({ label: continent.name });
+                  }
+
+                  if (league?.name && league?.id) {
+                    try {
+                      crumbs.push({
+                        label: league.name,
+                        href: generateLeagueUrl(league),
+                      });
+                    } catch {
+                      crumbs.push({ label: league.name });
+                    }
+                  }
+
+                  if (crumbs.length === 0) {
+                    crumbs.push({ label: group.title });
+                  }
+
+                  return crumbs.map((crumb, index) => (
+                    <span key={`${crumb.label}-${index}`} className="flex items-center gap-2 truncate">
+                      {crumb.href ? (
+                        <Link
+                          href={crumb.href}
+                          className="hover:text-blue-600 dark:hover:text-blue-400 truncate"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          {crumb.label}
+                        </Link>
+                      ) : (
+                        <span className="truncate">{crumb.label}</span>
+                      )}
+                      {index < crumbs.length - 1 && (
+                        <ChevronRight className="h-3 w-3 text-gray-400 shrink-0" />
+                      )}
+                    </span>
+                  ));
+                })()}
+              </nav>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-500">
                 {fixtureCount} fixture{fixtureCount !== 1 ? 's' : ''}
               </span>
-              <div className={cn(
-                'w-4 h-4 transition-transform',
-                isCollapsed ? 'rotate-0' : 'rotate-90'
-              )}>
-                ▶
-              </div>
+              <ChevronRight
+                className={cn(
+                  'h-4 w-4 text-gray-500 transition-transform',
+                  isCollapsed ? 'rotate-0' : 'rotate-90'
+                )}
+              />
             </div>
           </div>
         </div>

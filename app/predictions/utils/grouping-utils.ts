@@ -1,11 +1,21 @@
 import type { Fixture } from '@/schemas/fixture.schema';
+import type { League } from '@/schemas/league.schema';
+import type { Country } from '@/schemas/country.schema';
+import type { Continent } from '@/schemas/continent.schema';
 import { dateKeyUTC, formatDateLocal } from '@/lib/utils';
 import { createLeagueGroupTitle } from '@/lib/utils/league-utils';
+
+export interface FixtureGroupMeta {
+  league?: League | null;
+  country?: Country | null;
+  continent?: Continent | null;
+}
 
 export interface FixtureGroup {
   id: string;
   title: string;
   fixtures: Fixture[];
+  meta?: FixtureGroupMeta;
 }
 
 /**
@@ -22,23 +32,55 @@ export function groupByDate(fixtures: Fixture[]): FixtureGroup[] {
     map.set(key, entry);
   }
   
-  return Array.from(map.entries()).map(([id, { title, fixtures }]) => ({ id, title, fixtures }));
+  return Array.from(map.entries()).map(([id, { title, fixtures }]) => ({
+    id,
+    title,
+    fixtures,
+  }));
 }
 
 /**
  * Groups fixtures by league
  */
 export function groupByLeague(fixtures: Fixture[]): FixtureGroup[] {
-  const map = new Map<string, { title: string; fixtures: Fixture[] }>();
+  const map = new Map<
+    string,
+    { title: string; fixtures: Fixture[]; meta?: FixtureGroupMeta }
+  >();
   
   for (const fixture of fixtures) {
     const key = createLeagueGroupTitle(fixture.league || undefined);
-    const entry = map.get(key) || { title: key, fixtures: [] };
-    entry.fixtures.push(fixture);
-    map.set(key, entry);
+    const league = fixture.league ?? null;
+    const country = (league?.country as Country | undefined | null) ?? null;
+    const continent = country?.continent ?? null;
+
+    const existing = map.get(key);
+    if (existing) {
+      existing.fixtures.push(fixture);
+      existing.meta = {
+        league: existing.meta?.league ?? league,
+        country: existing.meta?.country ?? country ?? null,
+        continent: existing.meta?.continent ?? continent ?? null,
+      };
+    } else {
+      map.set(key, {
+        title: key,
+        fixtures: [fixture],
+        meta: {
+          league,
+          country: country ?? null,
+          continent: continent ?? null,
+        },
+      });
+    }
   }
   
-  return Array.from(map.entries()).map(([id, { title, fixtures }]) => ({ id, title, fixtures }));
+  return Array.from(map.entries()).map(([id, { title, fixtures, meta }]) => ({
+    id,
+    title,
+    fixtures,
+    meta,
+  }));
 }
 
 /**
