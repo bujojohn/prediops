@@ -1002,16 +1002,16 @@ export const FixtureCard = memo(function FixtureCard({
                     )}
                     aria-disabled={!fixtureUrl}
                   >
-                    {settings.showTeamImages && (
-                      <TeamLogo
+                  {settings.showTeamImages && (
+                    <TeamLogo
                         src={home.image_path ?? undefined}
                         alt={home.name || "Home"}
-                        className="rounded h-4 w-4"
-                      />
-                    )}
+                      className="rounded h-4 w-4"
+                    />
+                  )}
                     <span className="truncate">{home.name || "Home"}</span>
                   </Link>
-                ) : (
+                  ) : (
                   <span className="flex items-center gap-2 text-[12px] font-medium text-gray-800 dark:text-gray-200 truncate">
                     {settings.showTeamImages && (
                       <TeamLogo
@@ -1020,9 +1020,9 @@ export const FixtureCard = memo(function FixtureCard({
                         className="rounded h-4 w-4"
                       />
                     )}
-                    Home
-                  </span>
-                )}
+                      Home
+                    </span>
+                  )}
                 {away ? (
                   <Link
                     href={fixtureUrl || "#"}
@@ -1032,16 +1032,16 @@ export const FixtureCard = memo(function FixtureCard({
                     )}
                     aria-disabled={!fixtureUrl}
                   >
-                    {settings.showTeamImages && (
-                      <TeamLogo
+                  {settings.showTeamImages && (
+                    <TeamLogo
                         src={away.image_path ?? undefined}
                         alt={away.name || "Away"}
-                        className="rounded h-4 w-4"
-                      />
-                    )}
+                      className="rounded h-4 w-4"
+                    />
+                  )}
                     <span className="truncate">{away.name || "Away"}</span>
                   </Link>
-                ) : (
+                  ) : (
                   <span className="flex items-center gap-2 text-[12px] font-medium text-gray-800 dark:text-gray-200 truncate">
                     {settings.showTeamImages && (
                       <TeamLogo
@@ -1050,9 +1050,9 @@ export const FixtureCard = memo(function FixtureCard({
                         className="rounded h-4 w-4"
                       />
                     )}
-                    Away
-                  </span>
-                )}
+                      Away
+                    </span>
+                  )}
               </div>
 
               {/* Column 3: Scores */}
@@ -1146,9 +1146,9 @@ export const FixtureCard = memo(function FixtureCard({
             </div>
             {fixture.starting_at && (
               <div className="flex items-center">
-                <span className="hidden sm:inline">
-                  {formatDateLocal(fixture.starting_at || "")}
-                </span>
+              <span className="hidden sm:inline">
+                {formatDateLocal(fixture.starting_at || "")}
+              </span>
               </div>
             )}
           </div>
@@ -1167,23 +1167,23 @@ export const FixtureCard = memo(function FixtureCard({
                 )}
                 aria-disabled={!fixtureUrl}
               >
-                {settings.showTeamImages && (
-                  <TeamLogo
+              {settings.showTeamImages && (
+                <TeamLogo
                     src={home.image_path ?? undefined}
                     alt={home.name || "Home"}
-                    className="rounded h-5 w-5"
-                  />
-                )}
+                  className="rounded h-5 w-5"
+                />
+              )}
                 <span className="truncate">{home.name || "Home"}</span>
               </Link>
-            ) : (
+              ) : (
               <span className="flex items-center gap-2 min-w-0 font-medium truncate text-[12px] sm:text-[13px] text-gray-800">
                 {settings.showTeamImages && (
                   <TeamLogo src={undefined} alt="Home" className="rounded h-5 w-5" />
                 )}
-                Home
-              </span>
-            )}
+                  Home
+                </span>
+              )}
             <div className="flex items-center justify-center gap-2">
               {scoreHome !== null && scoreHome !== undefined && scoreAway !== null && scoreAway !== undefined ? (
                 <>
@@ -1207,7 +1207,7 @@ export const FixtureCard = memo(function FixtureCard({
                 valueBetData={valueBetInfo}
               />
             </div>
-            {away ? (
+              {away ? (
               <Link
                 href={fixtureUrl || "#"}
                 className={cn(
@@ -1217,13 +1217,13 @@ export const FixtureCard = memo(function FixtureCard({
                 aria-disabled={!fixtureUrl}
               >
                 <span className="truncate">{away.name || "Away"}</span>
-                {settings.showTeamImages && (
-                  <TeamLogo
+              {settings.showTeamImages && (
+                <TeamLogo
                     src={away.image_path ?? undefined}
                     alt={away.name || "Away"}
-                    className="rounded h-5 w-5"
-                  />
-                )}
+                  className="rounded h-5 w-5"
+                />
+              )}
               </Link>
             ) : (
               <span className="flex items-center gap-2 min-w-0 justify-end font-medium truncate text-[12px] sm:text-[13px] text-right text-gray-800">

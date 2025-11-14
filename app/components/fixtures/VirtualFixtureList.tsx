@@ -98,16 +98,23 @@ export const VirtualFixtureList = memo<VirtualFixtureListProps>(({
       
       return (
         <div style={style} className="px-2">
-          <div
-            className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            onClick={() => toggleGroup(group.id)}
-          >
+          <div className="flex items-center justify-between gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg transition-colors">
             <div className="flex items-center gap-3 min-w-0">
-              {isCollapsed ? (
-                <ChevronRight className="h-4 w-4 text-gray-500" />
-              ) : (
-                <ChevronDown className="h-4 w-4 text-gray-500" />
-              )}
+              <button
+                type="button"
+                aria-label={isCollapsed ? 'Expand fixtures' : 'Collapse fixtures'}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border/60 bg-white text-gray-600 transition hover:bg-gray-100 dark:border-border/40 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-700"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  toggleGroup(group.id);
+                }}
+          >
+                {isCollapsed ? (
+                  <ChevronRight className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </button>
               <nav
                 aria-label="Fixture league breadcrumb"
                 className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-gray-100 truncate"
@@ -167,17 +174,9 @@ export const VirtualFixtureList = memo<VirtualFixtureListProps>(({
                 })()}
               </nav>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500">
+            <span className="inline-flex items-center justify-center rounded-full border border-border/60 bg-white px-3 py-1 text-xs font-medium text-muted-foreground dark:border-border/40 dark:bg-gray-900">
                 {fixtureCount} fixture{fixtureCount !== 1 ? 's' : ''}
               </span>
-              <ChevronRight
-                className={cn(
-                  'h-4 w-4 text-gray-500 transition-transform',
-                  isCollapsed ? 'rotate-0' : 'rotate-90'
-                )}
-              />
-            </div>
           </div>
         </div>
       );

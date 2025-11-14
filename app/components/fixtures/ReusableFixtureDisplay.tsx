@@ -1,16 +1,22 @@
-'use client';
+"use client";
 
-import { useMemo, useRef, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
-import { Calendar, RefreshCw } from 'lucide-react';
-import { FixtureList } from './FixtureList';
-import { UnifiedDateFilterRow } from './UnifiedDateFilterRow';
-import { formatSemanticDateUTC } from '@/lib/utils';
-import type { Fixture } from '@/schemas/fixture.schema';
-import { groupByDate, groupByLeague, type FixtureGroup } from '@/app/predictions/utils/grouping-utils';
-import { useCollapsedDates } from '@/app/predictions/hooks/useCollapsedDates';
-import { useFixtureSearchAndFilter } from '@/app/hooks/useFixtureSearchAndFilter';
-import { FixtureFilters } from './fixture-search-utils';
+import { useMemo, useRef, useEffect } from "react";
+import { Card } from "@/components/ui/card";
+import { Calendar, RefreshCw } from "lucide-react";
+import { FixtureList } from "./FixtureList";
+import { UnifiedDateFilterRow } from "./UnifiedDateFilterRow";
+import { formatSemanticDateUTC } from "@/lib/utils";
+import type { Fixture } from "@/schemas/fixture.schema";
+import { generateLeagueUrl, generateCountryUrl } from "@/lib/utils/routing";
+import Link from "next/link";
+import {
+  groupByDate,
+  groupByLeague,
+  type FixtureGroup,
+} from "@/app/predictions/utils/grouping-utils";
+import { useCollapsedDates } from "@/app/predictions/hooks/useCollapsedDates";
+import { useFixtureSearchAndFilter } from "@/app/hooks/useFixtureSearchAndFilter";
+import { FixtureFilters } from "./fixture-search-utils";
 
 export interface ReusableFixtureDisplayProps {
   fixtures: Fixture[];
@@ -23,18 +29,18 @@ export interface ReusableFixtureDisplayProps {
   onTryNextWeek?: () => void;
   onTryToday?: () => void;
   onDateChange?: (date: string) => void;
-  
+
   // Display options
-  variant?: 'predictions' | 'league' | 'team' | 'live';
+  variant?: "predictions" | "league" | "team" | "live";
   showDateHeaders?: boolean;
   showLeagueHeaders?: boolean;
   showEmptyState?: boolean;
   compact?: boolean;
   autoCollapseNonSelectedDates?: boolean;
-  
+
   // Search and filter options
   showSearchAndFilter?: boolean;
-  searchAndFilterVariant?: 'compact' | 'full';
+  searchAndFilterVariant?: "compact" | "full";
   initialFilters?: Partial<FixtureFilters>;
   searchAndFilterOptions?: {
     showSearch?: boolean;
@@ -45,23 +51,28 @@ export interface ReusableFixtureDisplayProps {
     showPredictionsFilter?: boolean;
     showValueBetsFilter?: boolean;
   };
-  
+
   // Custom empty state messages
   emptyStateTitle?: string;
   emptyStateMessage?: string;
   emptyStateActions?: React.ReactNode;
-  
+
   // Custom grouping
   customGrouping?: (fixtures: Fixture[]) => FixtureGroup[];
-  
+
   // Custom header renderer
-  renderCustomHeader?: (args: { group: FixtureGroup; collapsed: boolean; toggle: () => void; count: number }) => React.ReactNode;
+  renderCustomHeader?: (args: {
+    group: FixtureGroup;
+    collapsed: boolean;
+    toggle: () => void;
+    count: number;
+  }) => React.ReactNode;
 }
 
 /**
  * Reusable fixture display component that can be used across different contexts:
  * - Predictions page
- * - League pages  
+ * - League pages
  * - Team pages
  * - Live matches
  * - Any other fixture display needs
@@ -77,7 +88,7 @@ export function ReusableFixtureDisplay({
   onTryNextWeek,
   onTryToday,
   onDateChange,
-  variant = 'predictions',
+  variant = "predictions",
   showDateHeaders = true,
   showLeagueHeaders = true,
   showEmptyState = true,
@@ -93,7 +104,7 @@ export function ReusableFixtureDisplay({
   renderCustomHeader,
 }: ReusableFixtureDisplayProps) {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-  
+
   // Search and filter functionality
   const {
     filters,
@@ -104,35 +115,37 @@ export function ReusableFixtureDisplay({
   } = useFixtureSearchAndFilter(fixtures, {
     initialFilters,
   });
-  
+
   // Determine fixtures to group based on search and filter
   const fixturesToGroup = showSearchAndFilter ? filteredFixtures : fixtures;
-  
+
   // Determine grouping strategy based on variant and options
   const groups = useMemo(() => {
     if (customGrouping) {
       return customGrouping(fixturesToGroup);
     }
-    
+
     if (showDateHeaders) {
       return groupByDate(fixturesToGroup);
     }
-    
+
     if (showLeagueHeaders) {
       return groupByLeague(fixturesToGroup);
     }
-    
+
     // Single group if no headers needed
-    return [{
-      id: 'all-fixtures',
-      title: 'Fixtures',
-      fixtures: fixturesToGroup
-    }];
+    return [
+      {
+        id: "all-fixtures",
+        title: "Fixtures",
+        fixtures: fixturesToGroup,
+      },
+    ];
   }, [fixturesToGroup, customGrouping, showDateHeaders, showLeagueHeaders]);
-  
+
   const { collapsedDates, toggleDateCollapse } = useCollapsedDates({
     groups,
-    selectedDate: selectedDate || '',
+    selectedDate: selectedDate || "",
     autoCollapseNonSelectedDates,
   });
 
@@ -140,13 +153,16 @@ export function ReusableFixtureDisplay({
   useEffect(() => {
     if (!sentinelRef.current || !hasMore || !onLoadMore) return;
     const node = sentinelRef.current;
-    const observer = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.isIntersecting) {
-          onLoadMore();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            onLoadMore();
+          }
         }
-      }
-    }, { rootMargin: '200px' });
+      },
+      { rootMargin: "200px" }
+    );
     observer.observe(node);
     return () => observer.unobserve(node);
   }, [hasMore, onLoadMore]);
@@ -157,8 +173,12 @@ export function ReusableFixtureDisplay({
       <Card className="p-8">
         <div className="text-center">
           <RefreshCw className="w-16 h-16 text-gray-400 mx-auto mb-4 animate-spin" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Loading Fixtures...</h3>
-          <p className="text-gray-600">Loading fixtures for the selected criteria.</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            Loading Fixtures...
+          </h3>
+          <p className="text-gray-600">
+            Loading fixtures for the selected criteria.
+          </p>
         </div>
       </Card>
     );
@@ -168,13 +188,15 @@ export function ReusableFixtureDisplay({
   if (showEmptyState && fixtures.length === 0) {
     const defaultTitle = emptyStateTitle || getDefaultEmptyTitle(variant);
     const defaultMessage = emptyStateMessage || getDefaultEmptyMessage(variant);
-    
+
     return (
       <Card className="p-8">
         <div className="text-center max-w-md mx-auto space-y-6">
           <div className="space-y-3">
             <Calendar className="w-16 h-16 text-gray-400 mx-auto" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">{defaultTitle}</h3>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+              {defaultTitle}
+            </h3>
             <p className="text-gray-600 dark:text-gray-400">{defaultMessage}</p>
           </div>
 
@@ -230,7 +252,7 @@ export function ReusableFixtureDisplay({
           {...searchAndFilterOptions}
         />
       )}
-      
+
       {/* Filter Stats */}
       {showSearchAndFilter && hasFilters && (
         <div className="text-sm text-gray-600 dark:text-gray-400">
@@ -242,22 +264,28 @@ export function ReusableFixtureDisplay({
       {/* Fixture groups */}
       <div className="space-y-4">
         {groups.map((group) => {
-          const leagueGroups = showLeagueHeaders && showDateHeaders ? groupByLeague(group.fixtures) : [group];
-          
+          const leagueGroups =
+            showLeagueHeaders && showDateHeaders
+              ? groupByLeague(group.fixtures)
+              : [group];
+
           return (
             <div key={group.id} className="space-y-4">
               {/* Date header (if enabled and multiple dates) */}
               {showDateHeaders && groups.length > 1 && (
-                <div 
-                  className="flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                <div
+                  className="flex items-center justify-between px-3 mt-5 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   onClick={() => toggleDateCollapse(group.id)}
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      {formatSemanticDateUTC(group.fixtures[0]?.starting_at || group.id)}
+                      {formatSemanticDateUTC(
+                        group.fixtures[0]?.starting_at || group.id
+                      )}
                     </span>
                     <span className="text-xs text-gray-500">
-                      ({group.fixtures.length} fixture{group.fixtures.length !== 1 ? 's' : ''})
+                      ({group.fixtures.length} fixture
+                      {group.fixtures.length !== 1 ? "s" : ""})
                     </span>
                     {collapsedDates.has(group.id) && (
                       <span className="text-xs text-blue-600 dark:text-blue-400">
@@ -274,7 +302,7 @@ export function ReusableFixtureDisplay({
                   </div>
                 </div>
               )}
-              
+
               {/* Fixtures - only show if not collapsed or if no date headers */}
               {(!showDateHeaders || !collapsedDates.has(group.id)) && (
                 <div className="space-y-4">
@@ -284,12 +312,17 @@ export function ReusableFixtureDisplay({
                       <div className="space-y-2">
                         <div className="text-gray-400 text-4xl">📅</div>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                          No fixtures for {formatSemanticDateUTC(group.fixtures[0]?.starting_at || group.id)}
+                          No fixtures for{" "}
+                          {formatSemanticDateUTC(
+                            group.fixtures[0]?.starting_at || group.id
+                          )}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {variant === 'league' ? 'This league may have a break or off-season period.' : 
-                           variant === 'team' ? 'This team may not have matches scheduled.' :
-                           'No matches are scheduled for this date.'}
+                          {variant === "league"
+                            ? "This league may have a break or off-season period."
+                            : variant === "team"
+                            ? "This team may not have matches scheduled."
+                            : "No matches are scheduled for this date."}
                         </p>
                       </div>
                     </div>
@@ -299,23 +332,105 @@ export function ReusableFixtureDisplay({
                         key={leagueGroup.id}
                         groups={[leagueGroup]}
                         compact={compact}
-                        onRefresh={onRefresh}
-                        renderHeader={renderCustomHeader || (({ group, toggle, count }) => (
-                          showLeagueHeaders ? (
-                            <div
-                              className="flex items-center justify-between px-4 py-3 cursor-pointer select-none"
-                              onClick={toggle}
-                            >
-                              <div className="flex items-center gap-2">
-                                <span className="inline-block h-2 w-2 rounded-full bg-gray-300" />
-                                <div className="font-medium truncate">{group.title}</div>
+                        renderHeader={
+                          renderCustomHeader ||
+                          (({ group, toggle, count }) => {
+                            if (!showLeagueHeaders) return null;
+
+                            // Get league and country from group
+                            const leagueFromMeta = group.meta?.league ?? null;
+                            const leagueFromFixture = group.fixtures.find((fixture) => fixture.league)?.league ?? null;
+                            const league = leagueFromMeta ?? leagueFromFixture ?? null;
+                            
+                            const countryFromMeta = group.meta?.country ?? null;
+                            const countryFromLeague = league?.country ?? null;
+                            const country = countryFromMeta ?? countryFromLeague ?? null;
+
+                            // Generate URLs
+                            let countryHref: string | null = null;
+                            let leagueHref: string | null = null;
+
+                            if (country?.id) {
+                              try {
+                                countryHref = generateCountryUrl(country);
+                              } catch {
+                                countryHref = null;
+                              }
+                            }
+
+                            if (league?.id) {
+                              try {
+                                leagueHref = generateLeagueUrl(league);
+                              } catch {
+                                leagueHref = null;
+                              }
+                            }
+
+                            const leagueName = league?.name ?? group.title;
+                            const countryName = country?.name ?? null;
+
+                            return (
+                              <div
+                                className="flex items-center justify-between px-4 py-2 cursor-pointer select-none"
+                                onClick={toggle}
+                              >
+                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                  <span className="inline-block h-3 w-3 rounded-sm bg-gray-300 dark:bg-gray-600 flex-shrink-0" />
+                                  {/* Breadcrumb: Country / League */}
+                                  <nav className="flex items-center gap-2 min-w-0" aria-label="Breadcrumb">
+                                    {countryName && countryHref ? (
+                                      <>
+                                        <Link
+                                          href={countryHref}
+                                          className="truncate text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          {countryName}
+                                        </Link>
+                                        {leagueName && (
+                                          <>
+                                            <span className="text-gray-400 dark:text-gray-500 text-sm">/</span>
+                                            {leagueHref ? (
+                                              <Link
+                                                href={leagueHref}
+                                                className="truncate text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400"
+                                                onClick={(e) => e.stopPropagation()}
+                                              >
+                                                {leagueName}
+                                              </Link>
+                                            ) : (
+                                              <span className="truncate text-sm font-semibold text-foreground">{leagueName}</span>
+                                            )}
+                                          </>
+                                        )}
+                                      </>
+                                    ) : leagueName && leagueHref ? (
+                                      <Link
+                                        href={leagueHref}
+                                        className="truncate text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        {leagueName}
+                                      </Link>
+                                    ) : (
+                                      <span className="truncate text-sm font-semibold text-foreground">{leagueName || group.title}</span>
+                                    )}
+                                  </nav>
+                                </div>
+                                <button
+                                  type="button"
+                                  className="text-sm px-2 py-1 border rounded text-gray-700 dark:text-gray-300 flex-shrink-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggle();
+                                  }}
+                                >
+                                  ({count})
+                                </button>
                               </div>
-                              <button type="button" className="text-xs px-2 py-1 border rounded text-gray-700">
-                                {count}
-                              </button>
-                            </div>
-                          ) : null
-                        ))}
+                            );
+                          })
+                        }
                       />
                     ))
                   )}
@@ -325,18 +440,22 @@ export function ReusableFixtureDisplay({
           );
         })}
       </div>
-      
+
       {/* Infinite scroll sentinel */}
       {onLoadMore && <div ref={sentinelRef} className="h-8" />}
-      
+
       {/* Loading more indicator */}
       {isLoadingMore && (
-        <div className="text-center text-xs text-gray-500 py-2">Loading more…</div>
+        <div className="text-center text-xs text-gray-500 py-2">
+          Loading more…
+        </div>
       )}
-      
+
       {/* End of results indicator */}
       {!hasMore && fixtures.length > 0 && (
-        <div className="text-center text-xs text-gray-400 py-2">No more matches.</div>
+        <div className="text-center text-xs text-gray-400 py-2">
+          No more matches.
+        </div>
       )}
     </>
   );
@@ -345,26 +464,26 @@ export function ReusableFixtureDisplay({
 // Helper functions for default empty state content
 function getDefaultEmptyTitle(variant: string): string {
   switch (variant) {
-    case 'league':
-      return 'No Fixtures Found';
-    case 'team':
-      return 'No Team Fixtures';
-    case 'live':
-      return 'No Live Matches';
+    case "league":
+      return "No Fixtures Found";
+    case "team":
+      return "No Team Fixtures";
+    case "live":
+      return "No Live Matches";
     default:
-      return 'No Fixtures Found';
+      return "No Fixtures Found";
   }
 }
 
 function getDefaultEmptyMessage(variant: string): string {
   switch (variant) {
-    case 'league':
-      return 'No fixtures found for this league.';
-    case 'team':
-      return 'No fixtures found for this team.';
-    case 'live':
-      return 'No live matches available at the moment.';
+    case "league":
+      return "No fixtures found for this league.";
+    case "team":
+      return "No fixtures found for this team.";
+    case "live":
+      return "No live matches available at the moment.";
     default:
-      return 'No fixtures with predictions found for the selected criteria.';
+      return "No fixtures with predictions found for the selected criteria.";
   }
 }

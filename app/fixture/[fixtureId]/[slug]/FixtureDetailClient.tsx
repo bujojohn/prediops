@@ -112,7 +112,7 @@ export function FixtureDetailClient({
 
   const tabs: { id: TabType; label: string; icon: JSX.Element }[] = useMemo(() => {
     const list: { id: TabType; label: string; icon: JSX.Element }[] = [
-      { id: 'overview', label: 'Overview', icon: <BarChart3 className="h-4 w-4" /> },
+    { id: 'overview', label: 'Overview', icon: <BarChart3 className="h-4 w-4" /> },
     ];
 
     if (hasStatistics) {

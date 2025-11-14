@@ -226,16 +226,23 @@ export function FixturesDisplay({
                         }
 
                         return (
-                          <div
-                            className="flex items-center justify-between px-4 py-3 cursor-pointer select-none bg-gray-50 dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700"
-                            onClick={toggle}
-                          >
+                          <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
                             <div className="flex items-center gap-3 min-w-0">
-                              {collapsed ? (
-                                <ChevronRight className="h-4 w-4 text-gray-500" />
-                              ) : (
-                                <ChevronDown className="h-4 w-4 text-gray-500" />
-                              )}
+                              <button
+                                type="button"
+                                aria-label={collapsed ? 'Expand fixtures' : 'Collapse fixtures'}
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border/60 bg-white text-gray-600 transition hover:bg-gray-100 dark:border-border/40 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-700"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  toggle();
+                                }}
+                              >
+                                {collapsed ? (
+                                  <ChevronRight className="h-4 w-4" />
+                                ) : (
+                                  <ChevronDown className="h-4 w-4" />
+                                )}
+                              </button>
                               <nav
                                 aria-label="Fixture league breadcrumb"
                                 className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200 truncate"
@@ -262,18 +269,11 @@ export function FixturesDisplay({
                                   </span>
                                 ))}
                               </nav>
-                            </div>
-                            <button
-                              type="button"
-                              className="text-xs px-2 py-1 border rounded text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                toggle();
-                              }}
-                            >
-                              {count}
-                            </button>
                           </div>
+                            <span className="inline-flex items-center justify-center rounded-full border border-border/60 bg-white px-3 py-1 text-xs font-medium text-muted-foreground dark:border-border/40 dark:bg-gray-900">
+                              {count} fixture{count !== 1 ? 's' : ''}
+                            </span>
+                        </div>
                         );
                       }}
                     />
