@@ -3,7 +3,7 @@ import { sportmonks } from '@/lib/sportmonks';
 import { TeamDetailedSchema } from '@/schemas/team-detailed.schema';
 import { FixtureSchema } from '@/schemas/fixture.schema';
 import { TeamDetailClient } from './team-detail-client';
-import { generateTeamSlug } from '@/lib/utils/team-utils';
+import { generateTeamSlug } from '@/lib/utils/slug-utils';
 
 interface TeamDetailPageProps {
   params: Promise<{
@@ -18,7 +18,7 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
   try {
     // Fetch detailed team data with all includes
     const teamResponse = await sportmonks.getTeamWithDetails(teamId, { 
-      include: "country;coaches;rivals;players.player;latest;upcoming;seasons;activeSeasons;sidelined.player;sidelinedHistory;trophies;socials;rankings"
+      include: "country;coaches.coach;rivals;players.player;latest;upcoming;seasons;activeSeasons;sidelined.player;sidelinedHistory;trophies;socials;rankings"
     });
     
     if (!teamResponse.data) {
@@ -36,9 +36,12 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
     // Generate expected slug for SEO redirect
     const expectedSlug = generateTeamSlug(team);
     
+    // Normalize slugs for comparison (case-insensitive, handle trailing slashes)
+    const normalizeForComparison = (s: string) => s.toLowerCase().replace(/-+/g, '-').trim().replace(/\/$/, '');
+    
     // If URL doesn't include slug or slug is incorrect, redirect to correct URL
-    if (!urlSlug || expectedSlug !== urlSlug) {
-      redirect(`/team/${teamId}/${expectedSlug}/`);
+    if (!urlSlug || normalizeForComparison(expectedSlug) !== normalizeForComparison(urlSlug)) {
+      redirect(`/team/${teamId}/${expectedSlug}`);
     }
 
     // Fetch upcoming fixtures for the team (next 14 days)

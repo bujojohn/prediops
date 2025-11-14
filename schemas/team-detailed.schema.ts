@@ -3,7 +3,27 @@ import { CountrySchema } from "./country.schema";
 import { FixtureSchema } from "./fixture.schema";
 import { SeasonSchema } from "./season.schema";
 import { RankingSchema } from "./ranking.schema";
-// Team-coach relationship schema (not the coach entity itself)
+// Coach schema for nested coach data
+const CoachSchema = z.object({
+  id: z.number(),
+  player_id: z.number().nullable().optional(),
+  sport_id: z.number().nullable().optional(),
+  country_id: z.number().nullable().optional(),
+  nationality_id: z.number().nullable().optional(),
+  city_id: z.number().nullable().optional(),
+  common_name: z.string().nullable().optional(),
+  firstname: z.string().nullable().optional(),
+  lastname: z.string().nullable().optional(),
+  name: z.string().nullable().optional(),
+  display_name: z.string().nullable().optional(),
+  image_path: z.string().nullable().optional(),
+  height: z.number().nullable().optional(),
+  weight: z.number().nullable().optional(),
+  date_of_birth: z.string().nullable().optional(),
+  gender: z.string().nullable().optional(),
+});
+
+// Team-coach relationship schema (now includes nested coach data)
 const TeamCoachSchema = z.object({
   id: z.number(),
   team_id: z.number(),
@@ -13,27 +33,28 @@ const TeamCoachSchema = z.object({
   start: z.string().nullable(),
   end: z.string().nullable(),
   temporary: z.boolean(),
+  coach: CoachSchema.optional(),
 });
 // Player schema for nested player data
 const PlayerSchema = z.object({
   id: z.number(),
-  sport_id: z.number(),
-  country_id: z.number(),
-  nationality_id: z.number().nullable(),
-  city_id: z.number().nullable(),
-  position_id: z.number(),
-  detailed_position_id: z.number().nullable(),
-  type_id: z.number().nullable(),
-  common_name: z.string().nullable(),
-  firstname: z.string().nullable(),
-  lastname: z.string().nullable(),
-  name: z.string().nullable(),
-  display_name: z.string().nullable(),
-  image_path: z.string().nullable(),
-  height: z.number().nullable(),
-  weight: z.number().nullable(),
-  date_of_birth: z.string().nullable(),
-  gender: z.string().nullable(),
+  sport_id: z.number().nullable().optional(),
+  country_id: z.number().nullable().optional(),
+  nationality_id: z.number().nullable().optional(),
+  city_id: z.number().nullable().optional(),
+  position_id: z.number().nullable().optional(),
+  detailed_position_id: z.number().nullable().optional(),
+  type_id: z.number().nullable().optional(),
+  common_name: z.string().nullable().optional(),
+  firstname: z.string().nullable().optional(),
+  lastname: z.string().nullable().optional(),
+  name: z.string().nullable().optional(),
+  display_name: z.string().nullable().optional(),
+  image_path: z.string().nullable().optional(),
+  height: z.number().nullable().optional(),
+  weight: z.number().nullable().optional(),
+  date_of_birth: z.string().nullable().optional(),
+  gender: z.string().nullable().optional(),
 });
 
 // Team-player relationship schema (now includes nested player data)

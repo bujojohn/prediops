@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { sportmonks } from '@/lib/sportmonks';
-import { generateTeamSlug } from '@/lib/utils/team-utils';
+import { generateTeamSlug } from '@/lib/utils/slug-utils';
 
 interface TeamDetailPageProps {
   params: Promise<{
