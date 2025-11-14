@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react';
 import type { JSX } from 'react';
 import Link from 'next/link';
 import {
-  ArrowLeft,
   ArrowRight,
   Calendar,
   MapPin,
@@ -30,7 +29,7 @@ import { FixtureLineups } from './components/FixtureLineups';
 import { FixturePredictions } from './components/FixturePredictions';
 import { FixtureOdds } from './components/FixtureOdds';
 import { FixtureWeather } from './components/FixtureWeather';
-import { FixtureStandings, formatStandingsMeta, type ResolvedStandingGroup } from './components/FixtureStandings';
+import { StandingsTable, formatStandingsMeta, type StandingsGroup } from '@/app/components/standings/StandingsTable';
 import type { WeatherReport } from '@/schemas/weather-report.schema';
 import type { Standing } from '@/schemas/standing.schema';
 
@@ -113,7 +112,7 @@ export function FixtureDetailClient({
 
   const tabs: { id: TabType; label: string; icon: JSX.Element }[] = useMemo(() => {
     const list: { id: TabType; label: string; icon: JSX.Element }[] = [
-      { id: 'overview', label: 'Overview', icon: <BarChart3 className="h-4 w-4" /> },
+    { id: 'overview', label: 'Overview', icon: <BarChart3 className="h-4 w-4" /> },
     ];
 
     if (hasStatistics) {
@@ -149,19 +148,6 @@ export function FixtureDetailClient({
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header Navigation */}
-      <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Home
-          </Link>
-        </div>
-      </div>
-
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Match Header */}
@@ -312,12 +298,25 @@ export function FixtureDetailClient({
 
           {activeTab === 'standings' ? (
             hasStandings ? (
-              <FixtureStandings
-                groups={standingsGroups}
-                participantIds={
-                  timelineParticipants?.map((p) => p.id).filter((id): id is number => typeof id === 'number') ?? []
-                }
-              />
+              <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-800">
+                <h3 className="text-lg font-semibold text-foreground">Standings</h3>
+                <p className="text-sm text-muted-foreground">
+                  Current table positions heading into this fixture.
+                </p>
+                <StandingsTable
+                  groups={standingsGroups}
+                  highlightParticipantIds={
+                    timelineParticipants?.map((p) => p.id).filter((id): id is number => typeof id === 'number') ?? []
+                  }
+                  variant="compact"
+                  showGroupLabels={true}
+                  className="mt-6"
+                  emptyState={{
+                    title: 'Standings not available',
+                    description: 'Standings data is not available for this competition.',
+                  }}
+                />
+              </div>
             ) : null
           ) : null}
 
@@ -469,89 +468,93 @@ function extractWeatherReport(raw: unknown): WeatherReport | null {
   return raw as WeatherReport;
 }
 
-function extractStandingGroups(raw: unknown): ResolvedStandingGroup[] {
-  const candidates = normaliseCandidateArray(raw);
-  const groups: ResolvedStandingGroup[] = [];
+function extractStandingGroups(raw: unknown): StandingsGroup[] {
+  const groups: StandingsGroup[] = [];
+  const visited = new WeakSet<object>();
 
-  candidates.forEach((candidate) => {
-    const standings = toStandingArray(candidate);
-    if (!standings || standings.length === 0) {
+  function collect(candidate: unknown, inheritedName: string | null = null) {
+    if (candidate == null) return;
+
+    if (Array.isArray(candidate)) {
+      const standingEntries = candidate.filter(isStandingLike) as Standing[];
+      if (standingEntries.length > 0) {
+        groups.push({
+          name: inheritedName,
+          standings: standingEntries,
+        });
+        return;
+      }
+
+      candidate.forEach((item) => collect(item, inheritedName));
       return;
     }
 
+    if (typeof candidate !== 'object') {
+      return;
+    }
+
+    if (visited.has(candidate as object)) {
+      return;
+    }
+    visited.add(candidate as object);
+
+    const obj = candidate as Record<string, unknown>;
     const groupName =
-      candidate && typeof candidate === 'object' && 'name' in (candidate as Record<string, unknown>)
-        ? ((candidate as { name?: string | null }).name ?? null)
-        : null;
+      typeof obj.name === 'string' && obj.name.trim().length > 0
+        ? obj.name
+        : inheritedName;
 
-    groups.push({
-      name: groupName ?? null,
-      standings,
-    });
-  });
+    const standingsProp = obj.standings;
+    if (Array.isArray(standingsProp) && standingsProp.some(isStandingLike)) {
+      groups.push({
+        name: groupName ?? null,
+        standings: standingsProp.filter(isStandingLike) as Standing[],
+      });
+    } else if (standingsProp) {
+      collect(standingsProp, groupName ?? null);
+    }
 
-  if (groups.length > 0) {
-    return groups;
+    const dataProp = obj.data;
+    if (dataProp !== undefined) {
+      collect(dataProp, groupName ?? null);
+    }
+
+    const nestedCollections = [
+      obj.groups,
+      obj.group,
+      obj.response,
+      obj.results,
+      obj.table,
+      obj.league,
+      obj.round,
+    ];
+    nestedCollections.forEach((nested) => collect(nested, groupName ?? null));
   }
 
-  const directStandings = toStandingArray(raw);
-  if (directStandings && directStandings.length) {
-    return [{ name: null, standings: directStandings }];
-  }
+  collect(raw, null);
 
-  return [];
-}
-
-function normaliseCandidateArray(raw: unknown): unknown[] {
-  if (!raw) {
+  if (!groups.length) {
     return [];
   }
 
-  if (Array.isArray(raw)) {
-    return raw;
-  }
-
-  if (typeof raw === 'object') {
-    const obj = raw as { data?: unknown };
-    if (Array.isArray(obj.data)) {
-      return obj.data;
+  const seen = new Set<string>();
+  return groups.filter((group) => {
+    const keyParts = [
+      group.name ?? '',
+      group.standings.length.toString(),
+      group.standings
+        .map((standing) =>
+          standing.participant_id ?? standing.id ?? standing.participant?.id ?? ''
+        )
+        .join(','),
+    ];
+    const key = keyParts.join('|');
+    if (seen.has(key)) {
+      return false;
     }
-  }
-
-  return [];
-}
-
-function toStandingArray(candidate: unknown): Standing[] | null {
-  if (!candidate) {
-    return null;
-  }
-
-  if (Array.isArray(candidate) && candidate.every(isStandingLike)) {
-    return candidate as Standing[];
-  }
-
-  if (typeof candidate === 'object') {
-    const obj = candidate as Record<string, unknown>;
-
-    const directStandings = obj.standings;
-    if (Array.isArray(directStandings) && directStandings.every(isStandingLike)) {
-      return directStandings as Standing[];
-    }
-
-    if (directStandings && typeof directStandings === 'object') {
-      const nested = (directStandings as Record<string, unknown>).data;
-      if (Array.isArray(nested) && nested.every(isStandingLike)) {
-        return nested as Standing[];
-      }
-    }
-
-    const dataArray = obj.data;
-    if (Array.isArray(dataArray) && dataArray.every(isStandingLike)) {
-      return dataArray as Standing[];
-    }
-  }
-
-  return null;
+    seen.add(key);
+    return true;
+  });
 }
 
 function isStandingLike(value: unknown): value is Standing {
@@ -563,8 +566,26 @@ function isStandingLike(value: unknown): value is Standing {
   return (
     typeof standing.position === 'number' ||
     typeof standing.points === 'number' ||
-    Boolean(standing.participant?.name)
+    typeof standing.participant_id === 'number' ||
+    Boolean(standing.participant?.name) ||
+    hasNameDetail(standing)
   );
+}
+
+function hasNameDetail(standing: Standing): boolean {
+  if (!standing.details?.length) {
+    return false;
+  }
+
+  return standing.details.some((detail) => {
+    const rawType =
+      detail.standing_type ??
+      detail.type?.code ??
+      detail.type?.name ??
+      '';
+    const normalized = typeof rawType === 'string' ? rawType.toLowerCase().replace(/\s+/g, '_') : '';
+    return normalized.includes('name') && detail.value != null && String(detail.value).trim().length > 0;
+  });
 }
 
 
