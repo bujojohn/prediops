@@ -23,6 +23,7 @@ import type { TeamDetailed } from '@/schemas/team-detailed.schema';
 import type { Fixture } from '@/schemas/fixture.schema';
 import { formatFoundedYear, getTeamTypeDisplay } from '@/lib/utils/team-utils';
 import { generateFixtureSlug } from '@/lib/utils/slug-utils';
+import { generateCountryUrl } from '@/lib/utils/routing';
 import { TeamMatchesContent } from './team-matches-content';
 
 interface TeamDetailClientProps {
@@ -220,7 +221,12 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
               {team.country && (
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4" />
-                  <span>{team.country.name}</span>
+                  <Link 
+                    href={generateCountryUrl(team.country)}
+                    className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors"
+                  >
+                    {team.country.name}
+                  </Link>
                 </div>
               )}
               
@@ -309,13 +315,40 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                      <UserCheck className="w-6 h-6 text-gray-400" />
-                    </div>
-                    <div>
-                      <div className="font-semibold">Coach #{getActiveCoach()?.coach_id}</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                    {getActiveCoach()?.coach?.image_path ? (
+                      <div className="relative w-16 h-16 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0">
+                        <Image 
+                          src={getActiveCoach()!.coach!.image_path!} 
+                          alt={getActiveCoach()?.coach?.name || getActiveCoach()?.coach?.display_name || 'Coach'} 
+                          width={64}
+                          height={64}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+                        <UserCheck className="w-8 h-8 text-gray-400" />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold text-lg">
+                        {getActiveCoach()?.coach?.name || 
+                         getActiveCoach()?.coach?.display_name || 
+                         getActiveCoach()?.coach?.common_name ||
+                         `Coach #${getActiveCoach()?.coach_id}`}
+                      </div>
+                      {getActiveCoach()?.coach?.firstname && getActiveCoach()?.coach?.lastname && (
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          {getActiveCoach()?.coach?.firstname} {getActiveCoach()?.coach?.lastname}
+                        </div>
+                      )}
+                      <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                         {getActiveCoach()?.start && `Since ${formatYear(getActiveCoach()!.start)}`}
+                        {getActiveCoach()?.temporary && (
+                          <Badge variant="outline" className="ml-2 text-xs">
+                            Temporary
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </div>

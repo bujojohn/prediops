@@ -1,8 +1,6 @@
-import { notFound } from 'next/navigation';
-import { sportmonks } from '@/lib/sportmonks';
-import { CountryPageClient } from './country-page-client';
-import { Fixture } from '@/schemas/fixture.schema'; 
+import { redirect, notFound } from 'next/navigation';
 import { getCountryById } from '@/lib/data/countries';
+import { generateCountrySlug } from '@/lib/utils/slug-utils';
 
 interface CountryPageProps {
   params: Promise<{
@@ -10,6 +8,11 @@ interface CountryPageProps {
   }>;
 }
 
+/**
+ * Redirect from /country/[countryId] to /country/[countryId]/[slug]
+ * This maintains backward compatibility for existing links while using the semantically
+ * correct URL structure with slugs.
+ */
 export default async function CountryPage({ params }: CountryPageProps) {
   const { countryId: countryIdParam } = await params;
   const countryId = parseInt(countryIdParam);
@@ -26,36 +29,11 @@ export default async function CountryPage({ params }: CountryPageProps) {
       notFound();
     }
 
-    // Load today's fixtures for this country
-    const fixturesResponse = await sportmonks.getFixturesByDate(new Date().toISOString().split('T')[0], {
-      include: 'participants;scores;state;league;league.country',
-      per_page: 50,
-      page: 1,
-    });
-
-    const fixtures: Fixture[] = fixturesResponse?.data || [];
-
-    // Filter fixtures for this country
-    const countryFixtures = fixtures.filter((fixture) => {
-      const f = fixture as {
-        league?: {
-          country?: {
-            id?: number;
-          };
-        };
-      };
-      return f.league?.country?.id === countryId;
-    });
-
-    return (
-      <CountryPageClient 
-        country={country} 
-        initialFixtures={countryFixtures}
-        countryId={countryId}
-      />
-    );
+    // Generate canonical slug and redirect
+    const canonicalSlug = generateCountrySlug(country);
+    redirect(`/country/${countryId}/${canonicalSlug}`);
   } catch (error) {
-    console.error('Error loading country data:', error);
+    console.error('Error in country redirect:', error);
     notFound();
   }
 }
