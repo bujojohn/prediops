@@ -36,8 +36,8 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
     // Generate expected slug for SEO redirect
     const expectedSlug = generateTeamSlug(team);
     
-    // Normalize slugs for comparison (case-insensitive, handle trailing slashes)
-    const normalizeForComparison = (s: string) => s.toLowerCase().replace(/-+/g, '-').trim().replace(/\/$/, '');
+    // Normalize slugs for comparison (case-insensitive, handle multiple hyphens, remove leading/trailing hyphens)
+    const normalizeForComparison = (s: string) => s.toLowerCase().replace(/-+/g, '-').trim().replace(/^-+|-+$/g, '');
     
     // If URL doesn't include slug or slug is incorrect, redirect to correct URL
     if (!urlSlug || normalizeForComparison(expectedSlug) !== normalizeForComparison(urlSlug)) {
