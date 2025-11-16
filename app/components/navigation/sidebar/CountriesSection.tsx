@@ -5,7 +5,8 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { ChevronDown, ChevronRight, Globe, Star, StarOff, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { usePathname } from 'next/navigation';
-import { getCountryPredictionsUrl, generateLeagueSlug } from '@/lib/utils/country-utils';
+import { generateLeagueSlug } from '@/lib/utils/country-utils';
+import { generateCountryUrl } from '@/lib/utils/routing';
 import type { CountryWithLeagues } from './types';
 
 interface CountriesSectionProps {
@@ -180,7 +181,7 @@ export function CountriesSection({
                         {favorites.has(country.id) ? <Star className="h-3 w-3 fill-current" /> : <StarOff className="h-3 w-3" />}
                       </button>
                       <a
-                        href={getCountryPredictionsUrl(country)}
+                        href={generateCountryUrl(country)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="p-1.5 rounded-md text-muted-foreground hover:text-foreground transition-all duration-150 hover:scale-110 active:scale-95 hover:bg-blue-50/50 dark:hover:bg-blue-900/20"
