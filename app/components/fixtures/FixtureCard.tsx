@@ -945,7 +945,7 @@ export const FixtureCard = memo(function FixtureCard({
                     return (
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                        <span className="text-xs font-medium text-red-600 dark:text-red-400">
+                        <span className="text-xs font-medium text-red-600 dark:text-red-400" suppressHydrationWarning>
                           {(() => {
                             try {
                               const liveScoreData = liveScore
@@ -971,7 +971,7 @@ export const FixtureCard = memo(function FixtureCard({
                   if (phase === "scheduled" && fixture.starting_at) {
                     return (
                       <div className="flex items-center gap-1 text-xs">
-                        <span>{formatTimeLocal(fixture.starting_at || "")}</span>
+                        <span suppressHydrationWarning>{formatTimeLocal(fixture.starting_at || "")}</span>
                       </div>
                     );
                   }
