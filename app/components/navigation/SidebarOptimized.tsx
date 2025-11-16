@@ -266,8 +266,12 @@ export function SidebarOptimized({
           <div className="p-1">
             {/* Loading States */}
             {(isLoadingCountries || isLoadingLeagues) && (
-              <div className="flex items-center justify-center p-4 text-sm text-gray-500 dark:text-gray-400">
-                Loading countries...
+              <div className="p-3 space-y-2" aria-hidden="true">
+                <div className="h-6 rounded bg-gray-100 dark:bg-gray-800 animate-pulse"></div>
+                <div className="h-6 rounded bg-gray-100 dark:bg-gray-800 animate-pulse"></div>
+                <div className="h-6 rounded bg-gray-100 dark:bg-gray-800 animate-pulse"></div>
+                <div className="h-6 rounded bg-gray-100 dark:bg-gray-800 animate-pulse"></div>
+                <div className="h-6 rounded bg-gray-100 dark:bg-gray-800 animate-pulse"></div>
               </div>
             )}
             
