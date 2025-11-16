@@ -90,21 +90,21 @@ export default async function CountryPredictionsPage({
     // Get leagues for this country with better error handling
     let countryLeagues: unknown[] = [];
     try {
-      const leaguesResponse = await sportmonks.getLeagues({
-        include: 'country;sport;currentseason',
-        per_page: 50,
-        page: 1
+      // Align with sidebar: use optimized API that returns active leagues grouped by country
+      const base = process.env.NEXT_PUBLIC_BASE_URL || '';
+      const res = await fetch(`${base}/api/sportmonks/leagues/country-optimized/${countryId}?populate=true`, {
+        // Avoid serving stale during navigation to ensure consistency with sidebar counts
+        cache: 'no-store',
       });
 
-      const allLeagues = leaguesResponse?.data || [];
-      countryLeagues = allLeagues.filter((league) => {
-        const leagueData = league as { country_id?: number; country?: { id: number }; active?: boolean };
-        return (leagueData.country_id?.toString() === country.id.toString() || 
-                leagueData.country?.id?.toString() === country.id.toString()) &&
-               leagueData.active === true;
-      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`country-optimized leagues failed: ${res.status} ${text}`);
+      }
 
-      console.log(`Found ${countryLeagues.length} leagues for ${country.name}`);
+      const data = await res.json();
+      countryLeagues = Array.isArray(data?.data) ? data.data : [];
+      console.log(`Found ${countryLeagues.length} leagues for ${country.name} (optimized endpoint)`);
     } catch (leaguesError) {
       console.error(`Error loading leagues for ${country.name}:`, leaguesError);
       // Continue with empty leagues array instead of failing completely
