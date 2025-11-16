@@ -89,6 +89,11 @@ export function CountriesSection({
           className="h-[400px] overflow-y-auto scrollbar-thick"
           style={{ position: 'relative' }}
         >
+          {countries.length === 0 ? (
+            <div className="flex items-center justify-center h-full text-sm text-gray-500 dark:text-gray-400">
+              No countries available
+            </div>
+          ) : (
           <div
             style={{
               height: `${countriesVirtualizer.getTotalSize()}px`,
@@ -233,6 +238,7 @@ export function CountriesSection({
               );
             })}
           </div>
+          )}
         </div>
       )}
     </div>

@@ -264,16 +264,32 @@ export function SidebarOptimized({
         {/* Content */}
         <div className="flex-1 overflow-auto scrollbar-thick">
           <div className="p-1">
+            {/* Loading States */}
+            {(isLoadingCountries || isLoadingLeagues) && (
+              <div className="flex items-center justify-center p-4 text-sm text-gray-500 dark:text-gray-400">
+                Loading countries...
+              </div>
+            )}
+            
+            {/* Error States */}
+            {(isErrorCountries || isErrorLeagues) && (
+              <div className="flex items-center justify-center p-4 text-sm text-red-500">
+                Error loading countries data. Please refresh the page.
+              </div>
+            )}
+            
             {/* Countries Section */}
-            <CountriesSection
-              countries={filteredAndSortedCountries}
-              isCollapsed={collapsedSections.has('countries')}
-              onToggle={() => handleSectionToggle('countries')}
-              expandedCountries={expandedCountries}
-              onToggleCountry={handleCountryToggle}
-              favorites={favorites}
-              onToggleFavorite={toggleFavorite}
-            />
+            {!isLoadingCountries && !isLoadingLeagues && !isErrorCountries && !isErrorLeagues && (
+              <CountriesSection
+                countries={filteredAndSortedCountries}
+                isCollapsed={collapsedSections.has('countries')}
+                onToggle={() => handleSectionToggle('countries')}
+                expandedCountries={expandedCountries}
+                onToggleCountry={handleCountryToggle}
+                favorites={favorites}
+                onToggleFavorite={toggleFavorite}
+              />
+            )}
 
             {/* Top Leagues Section */}
             <TopLeaguesSection
