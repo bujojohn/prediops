@@ -17,7 +17,6 @@ import { LoadingIndicator } from "@/app/components/ui/loading-indicator";
 import { FixturesContext } from "@/app/contexts/FixturesContext";
 import { useQuery } from "@tanstack/react-query";
 import type { Odd } from "@/schemas/odds.schema";
-import { usePathname } from "next/navigation";
 // import { useHeadToHead } from "@/app/hooks/useHeadToHead";
 // import H2HModal from "@/app/components/h2h/H2HModal";
 import { useValueBet } from "@/app/hooks/useValueBet";
@@ -222,8 +221,6 @@ export const FixtureCard = memo(function FixtureCard({
   fixture: Fixture;
   compact?: boolean;
 }) {
-  const pathname = usePathname();
-  
   // Use context if available, otherwise fallback to prop
   const context = useContext(FixturesContext);
   const fixture =
@@ -438,7 +435,6 @@ export const FixtureCard = memo(function FixtureCard({
   }, [showMorePopover]);
 
   // React Query automatically handles odds fetching when showOdds is true
-
   const participantsArray = useMemo<Participant[]>(
     () => (Array.isArray(fixture.participants) ? (fixture.participants as Participant[]) : []),
     [fixture.participants]
@@ -467,7 +463,7 @@ export const FixtureCard = memo(function FixtureCard({
   // ValueBet React Query - only fetch on value-bets page
   const { data: valueBetData, isLoading: valueBetLoading, error: valueBetError } = useValueBet({
     fixtureId: fixture.id,
-    enabled: pathname === '/value-bets', // Only fetch on value-bets page
+    enabled: true, //pathname === '/value-bets',  Only fetch on value-bets page
   });
 
   // Determine ValueBet state and extract data
@@ -945,7 +941,7 @@ export const FixtureCard = memo(function FixtureCard({
                     return (
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                        <span className="text-xs font-medium text-red-600 dark:text-red-400">
+                        <span className="text-xs font-medium text-red-600 dark:text-red-400" suppressHydrationWarning>
                           {(() => {
                             try {
                               const liveScoreData = liveScore
@@ -971,7 +967,7 @@ export const FixtureCard = memo(function FixtureCard({
                   if (phase === "scheduled" && fixture.starting_at) {
                     return (
                       <div className="flex items-center gap-1 text-xs">
-                        <span>{formatTimeLocal(fixture.starting_at || "")}</span>
+                        <span suppressHydrationWarning>{formatTimeLocal(fixture.starting_at || "")}</span>
                       </div>
                     );
                   }

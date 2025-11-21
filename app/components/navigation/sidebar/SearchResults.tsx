@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Clock, Users, Trophy, Star, Globe } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { getCountryPredictionsUrl, generateLeagueSlug } from '@/lib/utils/country-utils';
+import { generateLeagueSlug } from '@/lib/utils/country-utils';
+import { generateCountryUrl } from '@/lib/utils/routing';
 import type { SearchResults as SearchResultsType, CountryWithLeagues, League, Team, Fixture, SearchDataCache } from './types';
 
 // Global cache for search data with expiry
@@ -366,7 +367,7 @@ export function SearchResults({ searchTerm }: SearchResultsProps) {
                 {searchResults.tournaments.slice(0, 3).map((tournament) => (
                   <a
                     key={tournament.id}
-                    href={getCountryPredictionsUrl(tournament)}
+                    href={generateCountryUrl(tournament)}
                     className="flex items-center gap-2 text-sm p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   >
                     <Star className="h-4 w-4 text-yellow-500" />
@@ -396,7 +397,7 @@ export function SearchResults({ searchTerm }: SearchResultsProps) {
                 {searchResults.countries.slice(0, 3).map((country) => (
                   <a
                     key={country.id}
-                    href={getCountryPredictionsUrl(country)}
+                    href={generateCountryUrl(country)}
                     className="flex items-center gap-2 text-sm p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   >
                     <Globe className="h-4 w-4 text-blue-500" />

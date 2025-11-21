@@ -74,17 +74,17 @@ const TeamPlayerSchema = z.object({
 // Rival team schema (team objects in rivals array)
 const RivalTeamSchema = z.object({
   id: z.number(),
-  sport_id: z.number(),
-  country_id: z.number(),
-  venue_id: z.number(),
-  gender: z.string(),
+  sport_id: z.number().nullable().optional(),
+  country_id: z.number().nullable().optional(),
+  venue_id: z.number().nullable().optional(),
+  gender: z.string().nullable().optional(),
   name: z.string(),
-  short_code: z.string(),
-  image_path: z.string(),
-  founded: z.number(),
-  type: z.string(),
-  placeholder: z.boolean(),
-  last_played_at: z.string(),
+  short_code: z.string().nullable().optional(),
+  image_path: z.string().nullable().optional(),
+  founded: z.number().nullable().optional(),
+  type: z.string().nullable().optional(),
+  placeholder: z.boolean().nullable().optional(),
+  last_played_at: z.string().nullable().optional(),
 });
 // Team-trophy relationship schema (not the trophy entity itself)
 const TeamTrophySchema = z.object({

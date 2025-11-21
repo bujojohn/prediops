@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Search, Grid, List, SortAsc, SortDesc } from 'lucide-react';
+import { Search, Grid, List, SortAsc, SortDesc, Star, StarOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Team } from '@/schemas/team.schema';
 import { formatFoundedYear, getTeamTypeDisplay, generateTeamSlug } from '@/lib/utils/team-utils';
+import { useEntityFavorites } from '@/app/hooks/useEntityFavorites';
 
 interface TeamsClientProps {
   initialTeams: Team[];
@@ -45,6 +46,10 @@ export function TeamsClient({
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState(initialSearchParams.sortBy || 'name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(initialSearchParams.sortOrder || 'asc');
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  
+  // Favorites hook
+  const { favorites, toggleFavorite, isFavorite } = useEntityFavorites('teams');
 
   // Update URL when search params change
   const updateUrl = useCallback((newParams: Record<string, string | undefined>) => {
@@ -88,6 +93,11 @@ export function TeamsClient({
   const filteredTeams = useMemo(() => {
     let filtered = [...initialTeams];
 
+    // Apply favorites filter
+    if (showFavoritesOnly) {
+      filtered = filtered.filter(team => favorites.has(team.id));
+    }
+
     // Apply search filter
     if (search) {
       const searchLower = search.toLowerCase();
@@ -100,6 +110,17 @@ export function TeamsClient({
 
     // Apply sorting
     filtered.sort((a, b) => {
+      // Handle favorites sorting first
+      if (sortBy === 'favorites') {
+        const aIsFav = favorites.has(a.id) ? 1 : 0;
+        const bIsFav = favorites.has(b.id) ? 1 : 0;
+        if (bIsFav !== aIsFav) {
+          return sortOrder === 'asc' ? aIsFav - bIsFav : bIsFav - aIsFav;
+        }
+        // If both have same favorite status, sort by name
+        return (a.name || '').localeCompare(b.name || '');
+      }
+
       let aValue: string | number = '';
       let bValue: string | number = '';
 
@@ -137,7 +158,7 @@ export function TeamsClient({
     });
 
     return filtered;
-  }, [initialTeams, search, sortBy, sortOrder]);
+  }, [initialTeams, search, sortBy, sortOrder, showFavoritesOnly, favorites]);
 
   // Pagination
   const itemsPerPage = initialPagination.per_page;
@@ -174,6 +195,7 @@ export function TeamsClient({
                 <SelectItem value="founded">Founded</SelectItem>
                 <SelectItem value="country">Country</SelectItem>
                 <SelectItem value="type">Type</SelectItem>
+                <SelectItem value="favorites">Favorites</SelectItem>
               </SelectContent>
             </Select>
             
@@ -191,8 +213,21 @@ export function TeamsClient({
             </Button>
           </div>
 
-          {/* View Mode Toggle */}
+          {/* View Mode Toggle and Favorites Filter */}
           <div className="flex items-center gap-2">
+            <Button
+              variant={showFavoritesOnly ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+              className={showFavoritesOnly ? 'bg-yellow-500 hover:bg-yellow-600' : ''}
+              title="Show favorites only"
+            >
+              {showFavoritesOnly ? (
+                <Star className="w-4 h-4 fill-current" />
+              ) : (
+                <StarOff className="w-4 h-4" />
+              )}
+            </Button>
             <Button
               variant={viewMode === 'grid' ? 'default' : 'outline'}
               size="sm"
@@ -215,6 +250,11 @@ export function TeamsClient({
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-600 dark:text-gray-400">
           Showing {paginatedTeams.length} of {filteredTeams.length} teams
+          {favorites.size > 0 && (
+            <span className="ml-2">
+              ({favorites.size} favorite{favorites.size !== 1 ? 's' : ''})
+            </span>
+          )}
         </p>
       </div>
 
@@ -222,13 +262,23 @@ export function TeamsClient({
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {paginatedTeams.map((team) => (
-            <TeamCard key={team.id} team={team} />
+            <TeamCard 
+              key={team.id} 
+              team={team} 
+              isFavorite={isFavorite}
+              toggleFavorite={toggleFavorite}
+            />
           ))}
         </div>
       ) : (
         <div className="space-y-2">
           {paginatedTeams.map((team) => (
-            <TeamListItem key={team.id} team={team} />
+            <TeamListItem 
+              key={team.id} 
+              team={team}
+              isFavorite={isFavorite}
+              toggleFavorite={toggleFavorite}
+            />
           ))}
         </div>
       )}
@@ -277,13 +327,41 @@ export function TeamsClient({
 }
 
 // Team Card Component
-function TeamCard({ team }: { team: Team }) {
+function TeamCard({ 
+  team, 
+  isFavorite, 
+  toggleFavorite 
+}: { 
+  team: Team;
+  isFavorite: (id: number) => boolean;
+  toggleFavorite: (id: number) => void;
+}) {
   const teamSlug = generateTeamSlug(team);
   
   return (
-    <Link href={`/team/${team.id}/${teamSlug}`} className="block">
-      <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
-        <CardContent className="p-4">
+    <Card className="hover:shadow-lg transition-shadow group relative">
+      <CardContent className="p-4">
+        {/* Favorite Button */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleFavorite(team.id);
+          }}
+          className={`absolute top-2 right-2 p-1.5 rounded-md transition-all duration-150 hover:scale-110 active:scale-95 z-10 ${
+            isFavorite(team.id)
+              ? 'text-yellow-500 hover:text-yellow-600 bg-yellow-50/50 dark:bg-yellow-900/20 hover:bg-yellow-100/50 dark:hover:bg-yellow-900/30'
+              : 'text-muted-foreground hover:text-yellow-500 hover:bg-yellow-50/50 dark:hover:bg-yellow-900/20'
+          }`}
+          title={isFavorite(team.id) ? 'Remove from favorites' : 'Add to favorites'}
+        >
+          {isFavorite(team.id) ? (
+            <Star className="h-4 w-4 fill-current" />
+          ) : (
+            <StarOff className="h-4 w-4" />
+          )}
+        </button>
+
+        <Link href={`/team/${team.id}/${teamSlug}`} className="block">
           <div className="flex flex-col items-center text-center space-y-3">
             {/* Team Logo */}
             <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
@@ -330,69 +408,95 @@ function TeamCard({ team }: { team: Team }) {
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
-    </Link>
+        </Link>
+      </CardContent>
+    </Card>
   );
 }
 
 // Team List Item Component
-function TeamListItem({ team }: { team: Team }) {
+function TeamListItem({ 
+  team, 
+  isFavorite, 
+  toggleFavorite 
+}: { 
+  team: Team;
+  isFavorite: (id: number) => boolean;
+  toggleFavorite: (id: number) => void;
+}) {
   const teamSlug = generateTeamSlug(team);
   
   return (
-    <Link href={`/team/${team.id}/${teamSlug}`} className="block">
-      <Card className="hover:shadow-md transition-shadow cursor-pointer group">
-        <CardContent className="p-4">
-          <div className="flex items-center space-x-4">
-            {/* Team Logo */}
-            <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden flex-shrink-0">
-              {team.image_path ? (
-                <Image
-                  src={team.image_path}
-                  alt={team.name || 'Team'}
-                  width={64}
-                  height={64}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                  }}
-                />
-              ) : (
-                <span className="text-lg font-bold text-gray-400">
-                  {team.name?.charAt(0) || 'T'}
-                </span>
+    <Card className="hover:shadow-md transition-shadow group">
+      <CardContent className="p-4">
+        <div className="flex items-center space-x-4">
+          {/* Team Logo */}
+          <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden flex-shrink-0">
+            {team.image_path ? (
+              <Image
+                src={team.image_path}
+                alt={team.name || 'Team'}
+                width={64}
+                height={64}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
+            ) : (
+              <span className="text-lg font-bold text-gray-400">
+                {team.name?.charAt(0) || 'T'}
+              </span>
+            )}
+          </div>
+
+          {/* Team Info */}
+          <Link href={`/team/${team.id}/${teamSlug}`} className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
+                {team.name || 'Unknown Team'}
+              </h3>
+              {team.short_code && (
+                <Badge variant="secondary" className="text-xs">
+                  {team.short_code}
+                </Badge>
               )}
             </div>
-
-            {/* Team Info */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
-                  {team.name || 'Unknown Team'}
-                </h3>
-                {team.short_code && (
-                  <Badge variant="secondary" className="text-xs">
-                    {team.short_code}
-                  </Badge>
-                )}
-              </div>
-              
-              <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-                {team.country && (
-                  <span>📍 {team.country.name}</span>
-                )}
-                {team.founded && (
-                  <span>🏛️ {formatFoundedYear(team.founded)}</span>
-                )}
-                {team.type && (
-                  <span>🏆 {getTeamTypeDisplay(team.type)}</span>
-                )}
-              </div>
+            
+            <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+              {team.country && (
+                <span>📍 {team.country.name}</span>
+              )}
+              {team.founded && (
+                <span>🏛️ {formatFoundedYear(team.founded)}</span>
+              )}
+              {team.type && (
+                <span>🏆 {getTeamTypeDisplay(team.type)}</span>
+              )}
             </div>
-          </div>
-        </CardContent>
-      </Card>
-    </Link>
+          </Link>
+
+          {/* Favorite Button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleFavorite(team.id);
+            }}
+            className={`p-1.5 rounded-md transition-all duration-150 hover:scale-110 active:scale-95 flex-shrink-0 ${
+              isFavorite(team.id)
+                ? 'text-yellow-500 hover:text-yellow-600 bg-yellow-50/50 dark:bg-yellow-900/20 hover:bg-yellow-100/50 dark:hover:bg-yellow-900/30'
+                : 'text-muted-foreground hover:text-yellow-500 hover:bg-yellow-50/50 dark:hover:bg-yellow-900/20'
+            }`}
+            title={isFavorite(team.id) ? 'Remove from favorites' : 'Add to favorites'}
+          >
+            {isFavorite(team.id) ? (
+              <Star className="h-4 w-4 fill-current" />
+            ) : (
+              <StarOff className="h-4 w-4" />
+            )}
+          </button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
