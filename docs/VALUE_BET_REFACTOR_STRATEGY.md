@@ -169,49 +169,121 @@ export function ValueBetEmptyState({ hasActiveFilters, onClearFilters }: ValueBe
 }
 ```
 
-### Phase 4: Enhance ValueBetCard
+### Phase 4: Use ReusableFixtureDisplay with Value Bet Filtering
 
-#### 4.1 Fetch Fixture Data
+#### 4.1 Fetch Fixtures with Value Bet Data
 **Update**: `app/value-bets/page.tsx`
 ```typescript
 // Fetch fixtures for value bets that have fixture_id
 const fixtureIds = valueBets.data.map(vb => vb.fixture_id);
 const fixturesData = await Promise.allSettled(
   fixtureIds.map(id => sportmonks.getFixturesById(id.toString(), {
-    include: 'participants;scores;state'
+    include: 'participants;scores;state;predictions.type'
   }))
 );
 
-// Map fixtures to value bets
-const valueBetsWithFixtures = valueBets.data.map(vb => ({
-  ...vb,
-  fixture: fixturesData.find(f => f.status === 'fulfilled' && f.value?.data?.id === vb.fixture_id)?.value?.data
-}));
+// Map fixtures to value bets and create fixtures array
+const fixturesWithValueBets = fixturesData
+  .filter(result => result.status === 'fulfilled' && result.value?.data)
+  .map(result => {
+    const fixture = result.value.data as Fixture;
+    const valueBet = valueBets.data.find(vb => vb.fixture_id === fixture.id);
+    return {
+      ...fixture,
+      valueBet, // Attach value bet data to fixture
+    };
+  })
+  .filter(f => f.valueBet); // Only include fixtures that have value bet data
 ```
 
-#### 4.2 Update ValueBetCard Props
-**Update**: `app/components/value-bets/ValueBetCard.tsx`
+#### 4.2 Use ReusableFixtureDisplay Component
+**Update**: `app/value-bets/value-bets-client.tsx`
 ```typescript
-interface ValueBetCardProps {
-  valueBet: ValueBet & { fixture?: Fixture | null };
+import { ReusableFixtureDisplay } from '@/app/components/fixtures/ReusableFixtureDisplay';
+
+export function ValueBetsClient({ fixturesWithValueBets }: ValueBetsClientProps) {
+  const { filters, filteredFixtures, updateFilter, clearFilters } = useValueBetFilters(
+    fixturesWithValueBets,
+    { enableUrlState: true }
+  );
+
+  return (
+    <div className="space-y-8">
+      <ValueBetFilters 
+        filters={filters}
+        onFilterChange={updateFilter}
+      />
+      
+      {/* Use ReusableFixtureDisplay to show fixtures with value bet data */}
+      <ReusableFixtureDisplay
+        fixtures={filteredFixtures}
+        variant="predictions"
+        showDateHeaders={true}
+        showLeagueHeaders={true}
+        showSearchAndFilter={true}
+        searchAndFilterOptions={{
+          showValueBetsFilter: true, // Enable value bet filter
+          showSearch: true,
+          showLeagueFilter: true,
+          showTeamFilter: true,
+        }}
+        emptyStateTitle="No Value Bets Found"
+        emptyStateMessage="No fixtures with value bet opportunities match your filters."
+      />
+    </div>
+  );
 }
 ```
 
+#### 4.3 Benefits of Using ReusableFixtureDisplay
+- **Consistent UI**: Same fixture display component used across predictions, leagues, teams
+- **Built-in Filtering**: Leverages existing search and filter infrastructure
+- **Date Grouping**: Automatic date-based grouping and collapsing
+- **League Grouping**: Automatic league-based grouping
+- **Performance**: Optimized rendering with virtualization support
+- **Maintainability**: Single component to maintain instead of custom implementation
+
 ### Phase 5: Server Component Refactoring
 
-#### 5.1 Separate Hero Section
+#### 5.1 Fetch Fixtures with Value Bet Data
 **Update**: `app/value-bets/page.tsx`
 ```typescript
 import { ValueBetHero } from './components/ValueBetHero';
+import { sportmonks } from '@/lib/sportmonks';
+import type { Fixture } from '@/schemas/fixture.schema';
+import type { ValueBet } from '@/schemas/valuebet.schema';
 
 export default async function ValueBetsPage() {
-  const valueBets = await sportmonks.getValueBets();
-  const stats = calculateValueBetStats(valueBets?.data || []);
+  const valueBetsResponse = await sportmonks.getValueBets();
+  const valueBets = valueBetsResponse?.data || [];
+  const stats = calculateValueBetStats(valueBets);
+  
+  // Fetch fixtures for value bets that have fixture_id
+  const fixtureIds = valueBets.map(vb => vb.fixture_id).filter(Boolean);
+  const fixturesData = await Promise.allSettled(
+    fixtureIds.map(id => sportmonks.getFixturesById(id.toString(), {
+      include: 'participants;scores;state;predictions.type'
+    }))
+  );
+
+  // Map fixtures to value bets and create fixtures array
+  // Only include fixtures that have value bet data
+  const fixturesWithValueBets: (Fixture & { valueBet: ValueBet })[] = fixturesData
+    .filter(result => result.status === 'fulfilled' && result.value?.data)
+    .map(result => {
+      const fixture = result.value.data as Fixture;
+      const valueBet = valueBets.find(vb => vb.fixture_id === fixture.id);
+      return {
+        ...fixture,
+        valueBet, // Attach value bet data to fixture
+      };
+    })
+    .filter((f): f is Fixture & { valueBet: ValueBet } => !!f.valueBet);
   
   return (
     <>
       <ValueBetHero stats={stats} />
-      <ValueBetsClient valueBets={valueBets?.data || []} />
+      <ValueBetsClient fixturesWithValueBets={fixturesWithValueBets} />
     </>
   );
 }
@@ -219,12 +291,22 @@ export default async function ValueBetsPage() {
 
 ### Phase 6: Client Component Refactoring
 
-#### 6.1 Simplify Client Component
+#### 6.1 Simplify Client Component Using ReusableFixtureDisplay
 **Update**: `app/value-bets/value-bets-client.tsx`
 ```typescript
-export function ValueBetsClient({ valueBets }: ValueBetsClientProps) {
-  const { filters, filteredValueBets, updateFilter, clearFilters, stats } = useValueBetFilters(
-    valueBets,
+import { ReusableFixtureDisplay } from '@/app/components/fixtures/ReusableFixtureDisplay';
+import { useValueBetFilters } from '@/app/hooks/useValueBetFilters';
+import { ValueBetFilters } from './components/ValueBetFilters';
+import type { Fixture } from '@/schemas/fixture.schema';
+import type { ValueBet } from '@/schemas/valuebet.schema';
+
+interface ValueBetsClientProps {
+  fixturesWithValueBets: (Fixture & { valueBet: ValueBet })[];
+}
+
+export function ValueBetsClient({ fixturesWithValueBets }: ValueBetsClientProps) {
+  const { filters, filteredFixtures, updateFilter, clearFilters, stats } = useValueBetFilters(
+    fixturesWithValueBets,
     { enableUrlState: true }
   );
 
@@ -235,16 +317,30 @@ export function ValueBetsClient({ valueBets }: ValueBetsClientProps) {
         onFilterChange={updateFilter}
         stats={stats}
       />
-      {/* Results */}
-      {filteredValueBets.length > 0 ? (
-        <ValueBetGrid valueBets={filteredValueBets} />
-      ) : (
-        <ValueBetEmptyState 
-          hasActiveFilters={hasActiveFilters(filters)}
-          onClearFilters={clearFilters}
-        />
-      )}
-      {filteredValueBets.length > 0 && (
+      
+      {/* Use ReusableFixtureDisplay to show fixtures with value bet data */}
+      <ReusableFixtureDisplay
+        fixtures={filteredFixtures}
+        variant="predictions"
+        showDateHeaders={true}
+        showLeagueHeaders={true}
+        showSearchAndFilter={true}
+        searchAndFilterOptions={{
+          showValueBetsFilter: true, // Enable value bet filter
+          showSearch: true,
+          showLeagueFilter: true,
+          showTeamFilter: true,
+        }}
+        emptyStateTitle="No Value Bets Found"
+        emptyStateMessage="No fixtures with value bet opportunities match your filters."
+        emptyStateActions={
+          <Button onClick={clearFilters} variant="outline">
+            Clear Filters
+          </Button>
+        }
+      />
+      
+      {filteredFixtures.length > 0 && (
         <ValueBetStatsCards stats={stats} variant="summary" />
       )}
     </div>
@@ -316,12 +412,27 @@ export function ValueBetError({ error }: { error: Error }) {
 1. **Phase 1**: Extract utilities (Foundation)
 2. **Phase 2**: Create custom hooks (Reusable logic)
 3. **Phase 3**: Extract components (UI organization)
-4. **Phase 4**: Enhance ValueBetCard (Data integration)
-5. **Phase 5**: Refactor server component (Structure)
-6. **Phase 6**: Refactor client component (Integration)
+4. **Phase 4**: Use ReusableFixtureDisplay with Value Bet filtering (Data integration)
+5. **Phase 5**: Refactor server component to fetch fixtures with value bet data (Structure)
+6. **Phase 6**: Refactor client component to use ReusableFixtureDisplay (Integration)
 7. **Phase 7**: Performance optimizations (Polish)
 8. **Phase 8**: Error handling (Reliability)
 9. **Phase 9**: Type safety (Quality)
+
+## Key Design Decision: Using ReusableFixtureDisplay
+
+Instead of creating a custom ValueBetCard grid, we leverage the existing `ReusableFixtureDisplay` component which:
+- Provides consistent UI across predictions, leagues, teams, and value bets pages
+- Includes built-in filtering, search, and grouping capabilities
+- Supports date and league grouping automatically
+- Has optimized rendering with virtualization support
+- Reduces code duplication and maintenance burden
+
+The value bet data is attached to fixtures as a property, allowing `FixtureCard` to display value bet indicators when the data is present. This approach ensures:
+- Only fixtures with value bet data are displayed
+- Consistent fixture card rendering across the application
+- Easy filtering and searching of value bet fixtures
+- Better performance through component reuse
 
 ## Benefits
 

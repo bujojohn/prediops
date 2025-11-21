@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useRef, useContext, memo, useCallback } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import type { Fixture } from "@/schemas/fixture.schema";
 import type { Prediction as FixturePrediction } from "@/schemas/predictions.schema";
@@ -225,6 +226,7 @@ export const FixtureCard = memo(function FixtureCard({
   const context = useContext(FixturesContext);
   const fixture =
     context?.fixtures?.find((f) => f.id === propFixture.id) || propFixture;
+  const pathname = usePathname();
   const [expanded, setExpanded] = useState(false);
   const [marketOpen, setMarketOpen] = useState(false);
   const [selectedMarketKey, setSelectedMarketKey] = useState<MarketKey | null>(
@@ -463,7 +465,7 @@ export const FixtureCard = memo(function FixtureCard({
   // ValueBet React Query - only fetch on value-bets page
   const { data: valueBetData, isLoading: valueBetLoading, error: valueBetError } = useValueBet({
     fixtureId: fixture.id,
-    enabled: true, //pathname === '/value-bets',  Only fetch on value-bets page
+    enabled: pathname === '/value-bets', // Only fetch on value-bets page
   });
 
   // Determine ValueBet state and extract data
