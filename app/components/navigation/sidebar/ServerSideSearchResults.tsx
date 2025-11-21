@@ -3,7 +3,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Search, Clock, Users, Trophy, Globe, Loader2, Play, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { getCountryPredictionsUrl, generateLeagueSlug } from '@/lib/utils/country-utils';
+import { generateLeagueSlug } from '@/lib/utils/country-utils';
+import { generateCountryUrl } from '@/lib/utils/routing';
 import { generateTeamSlug } from '@/lib/utils/team-utils';
 import { generateFixtureSlug } from '@/lib/utils/slug-utils';
 import { useSearch } from '@/app/hooks/useSearch';
@@ -298,7 +299,7 @@ export function ServerSideSearchResults({ searchTerm, searchScope }: ServerSideS
                 {(expandedSections.countries ? results.countries : results.countries.slice(0, 3)).map((country) => (
                   <a
                     key={country.id}
-                    href={getCountryPredictionsUrl(country)}
+                    href={generateCountryUrl(country)}
                     className="flex items-center gap-2 text-sm p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   >
                     <Globe className="h-4 w-4 text-blue-500" />

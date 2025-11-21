@@ -806,6 +806,7 @@ export function FixturePredictionMarkets({
         {Object.keys(marketsMap).length > 1 && (
           <div className="relative">
             <Button
+              ref={buttonRef}
               variant="outline"
               size="sm"
               className="h-6 px-2 text-[10px]"
@@ -815,31 +816,6 @@ export function FixturePredictionMarkets({
             >
               Market <ChevronDown className={cn('ml-1 h-3 w-3 text-gray-700 dark:text-gray-300 transition-transform', marketOpen && 'rotate-180')} />
             </Button>
-            {marketOpen && (
-              <div className="absolute right-0 mt-1 w-[calc(100vw-2rem)] sm:w-60 max-w-[calc(100vw-2rem)] max-h-60 rounded-md border bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 shadow-md z-10 overflow-y-auto">
-                <div className="p-2 border-b border-gray-100 dark:border-gray-700">
-                  <input
-                    type="text"
-                    value={marketFilter}
-                    onChange={e => setMarketFilter(e.target.value)}
-                    placeholder="Search markets..."
-                    className="w-full px-2 py-1 text-xs rounded bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 focus:outline-none"
-                  />
-                </div>
-                {Object.values(marketsMap)
-                  .filter(m => m.label.toLowerCase().includes(marketFilter.toLowerCase()))
-                  .map((m) => (
-                    <button
-                      type="button"
-                      key={m.key}
-                      className={cn('w-full text-left px-3 py-2 text-xs hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100', selectedMarketKey === m.key && 'bg-gray-50 dark:bg-gray-700')}
-                      onClick={() => { setSelectedMarketKey(m.key); setMarketOpen(false); }}
-                    >
-                      {m.label}
-                    </button>
-                  ))}
-              </div>
-            )}
           </div>
         )}
       </div>

@@ -270,11 +270,11 @@ export function ReusableFixtureDisplay({
               : [group];
 
           return (
-            <div key={group.id} className="space-y-4">
+            <div key={group.id} className="mb-4">
               {/* Date header (if enabled and multiple dates) */}
               {showDateHeaders && groups.length > 1 && (
                 <div
-                  className="flex items-center justify-between px-3 mt-5 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  className="flex items-center justify-between mt-5 dark:bg-gray-800 px-8 cursor-pointer dark:hover:bg-gray-900"
                   onClick={() => toggleDateCollapse(group.id)}
                 >
                   <div className="flex items-center gap-2">
@@ -310,7 +310,7 @@ export function ReusableFixtureDisplay({
                     // No fixtures notice for this date
                     <div className="text-center py-8 px-4">
                       <div className="space-y-2">
-                        <div className="text-gray-400 text-4xl">📅</div>
+                        <div className="text-gray-900 dark:text-gray-200 text-4xl">📅</div>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
                           No fixtures for{" "}
                           {formatSemanticDateUTC(
