@@ -32,6 +32,7 @@ interface FixtureListProps {
   groups: FixtureGroup[];
   onRefresh?: () => Promise<void> | void;
   compact?: boolean;
+  enableValueBet?: boolean;
   renderHeader?: (args: {
     group: FixtureGroup;
     collapsed: boolean;
@@ -40,7 +41,7 @@ interface FixtureListProps {
   }) => ReactNode;
 }
 
-export function FixtureList({ groups, onRefresh, compact = false, renderHeader }: FixtureListProps) {
+export function FixtureList({ groups, onRefresh, compact = false, enableValueBet = false, renderHeader }: FixtureListProps) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [refreshing, setRefreshing] = useState(false);
 
@@ -100,6 +101,7 @@ export function FixtureList({ groups, onRefresh, compact = false, renderHeader }
                     <FixtureCard
                       fixture={fixture}
                       compact={compact}
+                      enableValueBet={enableValueBet}
                     />
                   </ErrorBoundary>
                 ))}

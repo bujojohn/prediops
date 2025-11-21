@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Calendar, RefreshCw } from "lucide-react";
 import { FixtureList } from "./FixtureList";
@@ -103,6 +104,8 @@ export function ReusableFixtureDisplay({
   customGrouping,
   renderCustomHeader,
 }: ReusableFixtureDisplayProps) {
+  const pathname = usePathname();
+  const enableValueBet = pathname === '/value-bets';
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   // Search and filter functionality
@@ -332,6 +335,7 @@ export function ReusableFixtureDisplay({
                         key={leagueGroup.id}
                         groups={[leagueGroup]}
                         compact={compact}
+                        enableValueBet={enableValueBet}
                         renderHeader={
                           renderCustomHeader ||
                           (({ group, toggle, count }) => {

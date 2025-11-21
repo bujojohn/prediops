@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState, useRef, useContext, memo, useCallback } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import type { Fixture } from "@/schemas/fixture.schema";
 import type { Prediction as FixturePrediction } from "@/schemas/predictions.schema";
@@ -218,15 +217,16 @@ function getMinutesPlayed(fixture: Fixture): number | null {
 export const FixtureCard = memo(function FixtureCard({
   fixture: propFixture,
   compact = false,
+  enableValueBet = false,
 }: {
   fixture: Fixture;
   compact?: boolean;
+  enableValueBet?: boolean;
 }) {
   // Use context if available, otherwise fallback to prop
   const context = useContext(FixturesContext);
   const fixture =
     context?.fixtures?.find((f) => f.id === propFixture.id) || propFixture;
-  const pathname = usePathname();
   const [expanded, setExpanded] = useState(false);
   const [marketOpen, setMarketOpen] = useState(false);
   const [selectedMarketKey, setSelectedMarketKey] = useState<MarketKey | null>(
@@ -462,10 +462,10 @@ export const FixtureCard = memo(function FixtureCard({
   //   enabled: showH2H,
   // });
 
-  // ValueBet React Query - only fetch on value-bets page
+  // ValueBet React Query - only fetch when explicitly enabled (e.g., on value-bets page)
   const { data: valueBetData, isLoading: valueBetLoading, error: valueBetError } = useValueBet({
     fixtureId: fixture.id,
-    enabled: pathname === '/value-bets', // Only fetch on value-bets page
+    enabled: enableValueBet, // Only fetch when enabled prop is true
   });
 
   // Determine ValueBet state and extract data
