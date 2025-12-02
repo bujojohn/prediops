@@ -91,12 +91,19 @@ export function filterFixtures(fixtures: Fixture[], filters: FixtureFilters): Fi
       }
     }
 
-    // Value bets filter (this would need to be implemented based on your value bet logic)
+    // Value bets filter
+    // Note: Value bet data is determined client-side via useValueBet hook in FixtureCard
+    // This filter works in conjunction with the value bet indicator on each fixture card
+    // When hasValueBets filter is enabled, fixtures are shown and value bet status is checked per-fixture
     if (filters.hasValueBets !== null) {
-      // Placeholder - you'll need to implement this based on your value bet detection logic
-      const hasValueBets = false; // TODO: Implement value bet detection
-      if (hasValueBets !== filters.hasValueBets) {
-        return false;
+      // For now, show all fixtures when value bet filter is enabled
+      // The actual filtering happens at the component level where value bet data is available
+      // This allows fixtures to be displayed while value bet data loads asynchronously
+      if (filters.hasValueBets === true) {
+        // When filtering for value bets, we show all fixtures initially
+        // The ReusableFixtureDisplay component will handle further filtering based on actual value bet data
+        // This is a placeholder - actual filtering should be done where value bet data is available
+        return true; // Show all fixtures, let component-level filtering handle the rest
       }
     }
 

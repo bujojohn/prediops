@@ -233,9 +233,15 @@ export const FixtureCard = memo(function FixtureCard({
     null
   );
   // const [showH2H, setShowH2H] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const { settings } = useDisplaySettings();
   const isLive = isLiveMatch(fixture);
   const { getLiveScore, isUpdating } = useLiveScores([fixture], isLive);
+  
+  // Ensure we're on the client side to prevent hydration issues with time formatting
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
   // const { getLiveMatchData } = useLiveMatches([fixture]); // Temporarily disabled
   const [marketFilter, setMarketFilter] = useState("");
   const [showMorePopover, setShowMorePopover] = useState(false);
@@ -943,8 +949,8 @@ export const FixtureCard = memo(function FixtureCard({
                     return (
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                        <span className="text-xs font-medium text-red-600 dark:text-red-400" suppressHydrationWarning>
-                          {(() => {
+                        <span className="text-xs font-medium text-red-600 dark:text-red-400">
+                          {isClient ? (() => {
                             try {
                               const liveScoreData = liveScore
                                 ? { currentMinute: liveScore.currentMinute }
@@ -961,7 +967,7 @@ export const FixtureCard = memo(function FixtureCard({
                               );
                               return "Live";
                             }
-                          })()}
+                          })() : "Live"}
                         </span>
                       </div>
                     );
@@ -969,7 +975,7 @@ export const FixtureCard = memo(function FixtureCard({
                   if (phase === "scheduled" && fixture.starting_at) {
                     return (
                       <div className="flex items-center gap-1 text-xs">
-                        <span suppressHydrationWarning>{formatTimeLocal(fixture.starting_at || "")}</span>
+                        <span>{isClient ? formatTimeLocal(fixture.starting_at || "") : "--:--"}</span>
                       </div>
                     );
                   }
@@ -1133,7 +1139,7 @@ export const FixtureCard = memo(function FixtureCard({
   return (
     <>
       <Card className="w-full">
-        <CardContent className="py-2">
+        <CardContent className="p-4">
           {/* Header: state/time on left, date on right (mobile spec simplified) */}
           <div className="flex items-center justify-between text-[12px] text-gray-600">
             <div className="flex items-center gap-1.5">

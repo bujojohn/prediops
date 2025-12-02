@@ -86,7 +86,7 @@ export function FixtureList({ groups, onRefresh, compact = false, enableValueBet
             />
           )}
           {!collapsed[group.id] && (
-            <CardContent className="">
+            <CardContent className="px-4">
               <div className="grid grid-cols-1 gap-4">
                 {group.fixtures.map((fixture, index) => (
                   <ErrorBoundary
