@@ -1,7 +1,40 @@
-# Value Bet Page Refactoring Strategy
+# Value Bet Page Implementation Strategy
 
 ## Overview
-This document outlines a comprehensive refactoring strategy for the Value Bet page to improve code organization, maintainability, performance, and user experience.
+This document outlines the implementation strategy for the Value Bet page. The page uses the same fixture loading approach as the predictions page, with client-side filtering to show only fixtures with value bet opportunities.
+
+## Current Implementation
+
+### Data Fetching
+- **API**: Uses `sportmonks.getFixturesByDate()` - same as predictions page
+- **Include**: `participants;scores;state;predictions.type;league.country;events`
+- **Per Page**: 100 fixtures (more than predictions to capture more value bet opportunities)
+- **Date Selection**: Supports date parameter in URL, defaults to today
+
+### Value Bet Detection
+- **Method**: Client-side via `useValueBet` hook in `FixtureCard` component
+- **API Endpoint**: `/api/sportmonks/value-bets/fixture/[fixtureId]` (per-fixture endpoint)
+- **Note**: The bulk valuebet API (`getValueBets()`) is not used as it returns historical data
+- **Filtering**: Fixtures are filtered to only show those with value bet data (`is_value: true`)
+
+### Component Structure
+- **Server Component** (`page.tsx`): Fetches fixtures for selected date using same API as predictions page
+- **Client Component** (`value-bets-client.tsx`): Uses `ReusableFixtureDisplay` with value bet filtering enabled
+- **No Hero Section**: Removed as per requirements
+
+### Filtering Strategy
+- **Initial Load**: All fixtures for the selected date are displayed
+- **Value Bet Detection**: Each `FixtureCard` uses `useValueBet` hook to check for value bet opportunities
+- **Client-Side Filtering**: Fixtures without value bet data are filtered out as value bet data loads
+- **Filter Toggle**: Users can use the "Value Bets" filter to show only fixtures with value bet opportunities
+- **Note**: Since value bet data loads asynchronously per-fixture, filtering happens progressively as data becomes available
+
+## Key Differences from Predictions Page
+
+1. **No Hero Section**: Value bets page doesn't show statistics hero section
+2. **Value Bet Filtering**: Only fixtures with value bet opportunities are shown (filtered client-side)
+3. **Same Data Source**: Uses identical fixture fetching API as predictions page for consistency
+4. **Per-Fixture Value Bet Check**: Each fixture card checks for value bets individually via `useValueBet` hook
 
 ## Current Issues
 
