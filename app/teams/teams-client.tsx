@@ -162,8 +162,13 @@ export function TeamsClient({
 
   // Pagination
   const itemsPerPage = initialPagination.per_page;
-  // Get current page from URL params, defaulting to 1 if not present or if filters changed
-  const urlPage = searchParams.get('page') ? parseInt(searchParams.get('page')!, 10) : 1;
+  // Get current page from URL params, defaulting to 1 if not present or invalid
+  const urlPageParam = searchParams.get('page');
+  const urlPage = urlPageParam ? (() => {
+    const parsed = parseInt(urlPageParam, 10);
+    // Return 1 if parsing failed (NaN) or if result is not a positive integer
+    return isNaN(parsed) || parsed < 1 ? 1 : parsed;
+  })() : 1;
   // Reset to page 1 if current page exceeds total pages after filtering
   const totalPages = Math.ceil(filteredTeams.length / itemsPerPage);
   const currentPage = urlPage > totalPages && totalPages > 0 ? 1 : Math.max(1, urlPage);
