@@ -18,7 +18,7 @@
 
 'use client';
 
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { ChevronDown } from 'lucide-react';
@@ -100,6 +100,8 @@ export function FixturePredictionMarkets({
   variant = 'desktop',
   fixture
 }: FixturePredictionMarketsProps) {
+  // Unique ID for this component instance to prevent cross-instance popover issues
+  const instanceId = useId();
   const [selectedMarketKey, setSelectedMarketKey] = useState<string>('');
   const [marketOpen, setMarketOpen] = useState(false);
   const [marketFilter, setMarketFilter] = useState('');
@@ -107,8 +109,11 @@ export function FixturePredictionMarkets({
   const [showMorePopover, setShowMorePopover] = useState(false);
   const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isButtonReady, setIsButtonReady] = useState(false);
+  const [positionCalculated, setPositionCalculated] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const moreButtonRef = useRef<HTMLButtonElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
   
   // Performance monitoring
   const renderStartTime = useRef<number>(0);
@@ -319,68 +324,98 @@ export function FixturePredictionMarkets({
     }
   }, [marketsMap, selectedMarketKey]);
 
+  // Track when button is mounted and ready
+  useEffect(() => {
+    const checkButtonReady = () => {
+      setIsButtonReady(!!buttonRef.current);
+    };
+    
+    // Check immediately
+    checkButtonReady();
+    
+    // Also check after a microtask to catch async mounting
+    queueMicrotask(checkButtonReady);
+  }, []);
+
   // Calculate popover position with improved positioning logic
   useEffect(() => {
-    if (marketOpen && buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      const popoverWidth = 256; // w-64 = 16rem = 256px
-      const popoverHeight = 320; // max-h-80 = 20rem = 320px
-      
-      // Calculate if popover would go off-screen to the right
-      const wouldGoOffScreenRight = rect.left + popoverWidth > viewportWidth - 16;
-      
-      // Calculate if popover would go off-screen to the bottom
-      const wouldGoOffScreenBottom = rect.bottom + popoverHeight > viewportHeight - 16;
-      
-      let left = rect.left + window.scrollX;
-      let top = rect.bottom + window.scrollY + 4;
-      
-      // Adjust horizontal position - prefer right alignment if possible
-      if (wouldGoOffScreenRight) {
-        left = rect.right + window.scrollX - popoverWidth;
-      }
-      
-      // Adjust vertical position if it would go off-screen at the bottom
-      if (wouldGoOffScreenBottom) {
-        top = rect.top + window.scrollY - popoverHeight - 4;
-      }
-      
-      // Ensure popover doesn't go off-screen to the left
-      if (left < 16) {
-        left = 16;
-      }
-      
-      // Ensure popover doesn't go off-screen to the top
-      if (top < 16) {
-        top = 16;
-      }
-      
-      // Ensure popover doesn't go off-screen to the right
-      if (left + popoverWidth > viewportWidth - 16) {
-        left = viewportWidth - popoverWidth - 16;
-      }
-      
-      // Ensure popover doesn't go off-screen to the right
-      if (left + popoverWidth > viewportWidth - 16) {
-        left = viewportWidth - popoverWidth - 16;
-      }
-      
-      setPopoverPosition({ top, left });
+    if (marketOpen && buttonRef.current && isButtonReady) {
+      // Use requestAnimationFrame to ensure DOM is fully updated
+      requestAnimationFrame(() => {
+        if (!buttonRef.current) return;
+        
+        const rect = buttonRef.current.getBoundingClientRect();
+        
+        // Safety check: ensure we have valid dimensions
+        if (rect.width === 0 && rect.height === 0) return;
+        
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const popoverWidth = 256; // w-64 = 16rem = 256px
+        const popoverHeight = 320; // max-h-80 = 20rem = 320px
+        
+        // Calculate if popover would go off-screen to the right
+        const wouldGoOffScreenRight = rect.left + popoverWidth > viewportWidth - 16;
+        
+        // Calculate if popover would go off-screen to the bottom
+        const wouldGoOffScreenBottom = rect.bottom + popoverHeight > viewportHeight - 16;
+        
+        let left = rect.left + window.scrollX;
+        let top = rect.bottom + window.scrollY + 4;
+        
+        // Adjust horizontal position - prefer right alignment if possible
+        if (wouldGoOffScreenRight) {
+          left = rect.right + window.scrollX - popoverWidth;
+        }
+        
+        // Adjust vertical position if it would go off-screen at the bottom
+        if (wouldGoOffScreenBottom) {
+          top = rect.top + window.scrollY - popoverHeight - 4;
+        }
+        
+        // Ensure popover doesn't go off-screen to the left
+        if (left < 16) {
+          left = 16;
+        }
+        
+        // Ensure popover doesn't go off-screen to the top
+        if (top < 16) {
+          top = 16;
+        }
+        
+        // Ensure popover doesn't go off-screen to the right
+        if (left + popoverWidth > viewportWidth - 16) {
+          left = viewportWidth - popoverWidth - 16;
+        }
+        
+        // Only set position if it's valid (not 0,0)
+        if (top > 0 && left > 0) {
+          setPopoverPosition({ top, left });
+          setPositionCalculated(true);
+        }
+      });
+    } else if (!marketOpen) {
+      // Reset position when closed
+      setPopoverPosition({ top: 0, left: 0 });
+      setPositionCalculated(false);
     }
-  }, [marketOpen]);
+  }, [marketOpen, isButtonReady]);
 
   // Close popover when clicking outside or pressing ESC
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      const isOutsideButton = buttonRef.current && !buttonRef.current.contains(target);
+      const isOutsidePopover = popoverRef.current && !popoverRef.current.contains(target);
+      
+      if (marketOpen && isOutsideButton && isOutsidePopover) {
         setIsTransitioning(true);
         setMarketOpen(false);
         setMarketFilter(''); // Clear search when closing
         setTimeout(() => setIsTransitioning(false), 200); // Match animation duration
       }
-      if (moreButtonRef.current && !moreButtonRef.current.contains(event.target as Node)) {
+      
+      if (moreButtonRef.current && !moreButtonRef.current.contains(target)) {
         setIsTransitioning(true);
         setShowMorePopover(false);
         setOptionFilter(''); // Clear search when closing
@@ -469,12 +504,23 @@ export function FixturePredictionMarkets({
    * Renders a searchable list of available prediction markets
    */
   const MarketPopover = () => {
-    if (!marketOpen) return null;
+    // Don't render until button is ready, position is calculated, and position is valid (not 0,0)
+    if (!marketOpen || !buttonRef.current || !isButtonReady || !positionCalculated) {
+      return null;
+    }
+    
+    // Don't render if position hasn't been calculated yet (still at default 0,0)
+    // This prevents the flash at the wrong location
+    if (popoverPosition.top === 0 && popoverPosition.left === 0) {
+      return null;
+    }
 
     const filteredMarkets = getCachedSearchResults(marketFilter, Object.values(marketsMap));
 
     return createPortal(
       <div 
+        ref={popoverRef}
+        data-popover-instance={instanceId}
         className={cn(
           "fixed z-[9999] w-64 max-w-[calc(100vw-2rem)] max-h-80 rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg transition-all duration-200",
           isTransitioning ? "opacity-0 scale-95" : "opacity-100 scale-100"
@@ -483,6 +529,8 @@ export function FixturePredictionMarkets({
           top: popoverPosition.top,
           left: popoverPosition.left,
         }}
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Search header - always visible */}
         <div className="p-1.5 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-t-md">
@@ -653,7 +701,10 @@ export function FixturePredictionMarkets({
                 variant="outline" 
                 size="sm" 
                 className="h-6 px-2 text-xs" 
-                onClick={() => setMarketOpen((v) => !v)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMarketOpen((v) => !v);
+                }}
               >
                 Market
                 <ChevronDown className={cn('ml-1 h-3 w-3 text-gray-600 dark:text-gray-400 transition-transform', marketOpen && 'rotate-180')} />
@@ -806,40 +857,19 @@ export function FixturePredictionMarkets({
         {Object.keys(marketsMap).length > 1 && (
           <div className="relative">
             <Button
+              ref={buttonRef}
               variant="outline"
               size="sm"
               className="h-6 px-2 text-[10px]"
-              onClick={() => setMarketOpen((v) => !v)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setMarketOpen((v) => !v);
+              }}
               aria-label="Select prediction market"
               aria-expanded={marketOpen}
             >
               Market <ChevronDown className={cn('ml-1 h-3 w-3 text-gray-700 dark:text-gray-300 transition-transform', marketOpen && 'rotate-180')} />
             </Button>
-            {marketOpen && (
-              <div className="absolute right-0 mt-1 w-[calc(100vw-2rem)] sm:w-60 max-w-[calc(100vw-2rem)] max-h-60 rounded-md border bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 shadow-md z-10 overflow-y-auto">
-                <div className="p-2 border-b border-gray-100 dark:border-gray-700">
-                  <input
-                    type="text"
-                    value={marketFilter}
-                    onChange={e => setMarketFilter(e.target.value)}
-                    placeholder="Search markets..."
-                    className="w-full px-2 py-1 text-xs rounded bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 focus:outline-none"
-                  />
-                </div>
-                {Object.values(marketsMap)
-                  .filter(m => m.label.toLowerCase().includes(marketFilter.toLowerCase()))
-                  .map((m) => (
-                    <button
-                      type="button"
-                      key={m.key}
-                      className={cn('w-full text-left px-3 py-2 text-xs hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100', selectedMarketKey === m.key && 'bg-gray-50 dark:bg-gray-700')}
-                      onClick={() => { setSelectedMarketKey(m.key); setMarketOpen(false); }}
-                    >
-                      {m.label}
-                    </button>
-                  ))}
-              </div>
-            )}
           </div>
         )}
       </div>
