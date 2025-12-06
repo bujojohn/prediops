@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ValueBetCard } from '../components/value-bets/ValueBetCard';
 import { ValueBet } from '@/schemas/valuebet.schema';
+import type { Fixture } from '@/schemas/fixture.schema';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,14 +15,140 @@ import {
   TrendingUp, 
   SortAsc,
   SortDesc,
-  RefreshCw
+  RefreshCw,
+  Calendar,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
+import { usePredictionsWithQuery } from '../predictions/hooks/usePredictionsWithQuery';
 
 interface ValueBetsClientProps {
-  valueBets: ValueBet[];
+  initialFixtures: Fixture[];
+  initialDate: string;
 }
 
-export function ValueBetsClient({ valueBets }: ValueBetsClientProps) {
+export function ValueBetsClient({ initialFixtures, initialDate }: ValueBetsClientProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  const {
+    fixtures,
+    isLoadingDateFixtures,
+    isLoadingMore,
+    hasMore,
+    error,
+    loadFixturesForDate,
+    loadNextPage,
+  } = usePredictionsWithQuery({ 
+    initialFixtures
+  });
+
+  const [valueBets, setValueBets] = useState<ValueBet[]>([]);
+  const [isLoadingValueBets, setIsLoadingValueBets] = useState(false);
+  const [valueBetFixtures, setValueBetFixtures] = useState<Map<string, Fixture>>(new Map());
+
+  // Fetch value bets for all fixtures
+  useEffect(() => {
+    const fetchValueBets = async () => {
+      if (fixtures.length === 0) {
+        setValueBets([]);
+        setValueBetFixtures(new Map());
+        return;
+      }
+
+      setIsLoadingValueBets(true);
+      const allValueBets: ValueBet[] = [];
+      const fixtureMap = new Map<string, Fixture>();
+
+      try {
+        // Fetch value bets for each fixture in parallel
+        const valueBetPromises = fixtures.map(async (fixture) => {
+          try {
+            const response = await fetch(`/api/sportmonks/value-bets/fixture/${fixture.id}`);
+            if (!response.ok) {
+              console.warn(`Failed to fetch value bets for fixture ${fixture.id}`);
+              return null;
+            }
+            const data = await response.json();
+            if (data.success && data.data?.data) {
+              const fixtureValueBets: ValueBet[] = data.data.data;
+              fixtureValueBets.forEach(vb => {
+                allValueBets.push(vb);
+                fixtureMap.set(vb.fixture_id.toString(), fixture);
+              });
+            }
+          } catch (err) {
+            console.error(`Error fetching value bets for fixture ${fixture.id}:`, err);
+          }
+        });
+
+        await Promise.all(valueBetPromises);
+        setValueBets(allValueBets);
+        setValueBetFixtures(fixtureMap);
+      } catch (err) {
+        console.error('Error fetching value bets:', err);
+      } finally {
+        setIsLoadingValueBets(false);
+      }
+    };
+
+    fetchValueBets();
+  }, [fixtures]);
+
+  // Get current selected date
+  const selectedDate = searchParams.get('date') || initialDate;
+
+  // Date navigation helpers
+  const getDateLimits = useCallback(() => {
+    const today = new Date();
+    const maxFuture = new Date(today);
+    maxFuture.setDate(today.getDate() + 21); // 3 weeks
+    const minPast = new Date(today);
+    minPast.setDate(today.getDate() - 5); // 5 days
+    
+    return {
+      today: today.toISOString().split('T')[0],
+      maxFuture: maxFuture.toISOString().split('T')[0],
+      minPast: minPast.toISOString().split('T')[0],
+    };
+  }, []);
+
+  const handleDateChange = useCallback((date: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('date', date);
+    router.push(`/value-bets?${params.toString()}`);
+    loadFixturesForDate(date);
+  }, [router, searchParams, loadFixturesForDate]);
+
+  const handlePreviousDay = useCallback(() => {
+    const currentDate = new Date(selectedDate);
+    currentDate.setDate(currentDate.getDate() - 1);
+    const newDate = currentDate.toISOString().split('T')[0];
+    const limits = getDateLimits();
+    if (newDate >= limits.minPast) {
+      handleDateChange(newDate);
+    }
+  }, [selectedDate, getDateLimits, handleDateChange]);
+
+  const handleNextDay = useCallback(() => {
+    const currentDate = new Date(selectedDate);
+    currentDate.setDate(currentDate.getDate() + 1);
+    const newDate = currentDate.toISOString().split('T')[0];
+    const limits = getDateLimits();
+    if (newDate <= limits.maxFuture) {
+      handleDateChange(newDate);
+    }
+  }, [selectedDate, getDateLimits, handleDateChange]);
+
+  const handleToday = useCallback(() => {
+    const limits = getDateLimits();
+    handleDateChange(limits.today);
+  }, [getDateLimits, handleDateChange]);
+
+  const handleRefresh = useCallback(() => {
+    loadFixturesForDate(selectedDate);
+  }, [loadFixturesForDate, selectedDate]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [filterValue, setFilterValue] = useState<'all' | 'value' | 'high-value'>('all');
   const [sortBy, setSortBy] = useState<'value' | 'odds' | 'stake'>('value');
@@ -89,8 +217,63 @@ export function ValueBetsClient({ valueBets }: ValueBetsClientProps) {
     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
   };
 
+  const limits = getDateLimits();
+  const canGoPrevious = selectedDate > limits.minPast;
+  const canGoNext = selectedDate < limits.maxFuture;
+
   return (
     <div className="space-y-8">
+      {/* Date Navigation */}
+      <Card className="border-0 shadow-lg">
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-between gap-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePreviousDay}
+              disabled={!canGoPrevious || isLoadingDateFixtures}
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Previous
+            </Button>
+            
+            <div className="flex items-center gap-3 flex-1 justify-center">
+              <Calendar className="h-5 w-5 text-gray-500" />
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => handleDateChange(e.target.value)}
+                min={limits.minPast}
+                max={limits.maxFuture}
+                className="px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                disabled={isLoadingDateFixtures}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleToday}
+                disabled={isLoadingDateFixtures}
+              >
+                Today
+              </Button>
+            </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleNextDay}
+              disabled={!canGoNext || isLoadingDateFixtures}
+            >
+              Next
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+          <p className="text-xs text-gray-500 text-center mt-2">
+            View value bets from {limits.minPast} to {limits.maxFuture}
+          </p>
+        </CardContent>
+      </Card>
+
       {/* Filters and Search */}
       <Card className="border-0 shadow-lg">
         <CardHeader>
@@ -177,22 +360,51 @@ export function ValueBetsClient({ valueBets }: ValueBetsClientProps) {
           <Badge variant="secondary" className="text-sm">
             {filteredAndSortedBets.length} results
           </Badge>
+          {(isLoadingDateFixtures || isLoadingValueBets) && (
+            <Badge variant="outline" className="text-sm">
+              Loading...
+            </Badge>
+          )}
         </div>
-        <Button variant="outline" size="sm" className="flex items-center gap-2">
-          <RefreshCw className="h-4 w-4" />
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="flex items-center gap-2"
+          onClick={handleRefresh}
+          disabled={isLoadingDateFixtures || isLoadingValueBets}
+        >
+          <RefreshCw className={`h-4 w-4 ${(isLoadingDateFixtures || isLoadingValueBets) ? 'animate-spin' : ''}`} />
           Refresh
         </Button>
       </div>
 
       {/* Value Bets Grid */}
-      {filteredAndSortedBets.length > 0 ? (
+      {isLoadingDateFixtures || isLoadingValueBets ? (
+        <Card className="border-0 shadow-lg">
+          <CardContent className="text-center py-16">
+            <div className="text-6xl mb-4">💰</div>
+            <h3 className="text-xl font-semibold text-slate-700 dark:text-slate-300 mb-2">
+              Loading value bets...
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400">
+              Fetching fixtures and value bet data for {selectedDate}
+            </p>
+          </CardContent>
+        </Card>
+      ) : filteredAndSortedBets.length > 0 ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredAndSortedBets.map((valueBet: ValueBet) => (
-            <ValueBetCard 
-              key={valueBet.fixture_id} 
-              valueBet={valueBet} 
-            />
-          ))}
+          {filteredAndSortedBets.map((valueBet: ValueBet) => {
+            const fixture = valueBetFixtures.get(valueBet.fixture_id.toString());
+            return (
+              <ValueBetCard 
+                key={`${valueBet.fixture_id}-${valueBet.predictions.bet}-${valueBet.predictions.bookmaker}`}
+                valueBet={valueBet}
+                name={fixture?.name}
+                starting_at={fixture?.starting_at}
+                participants={fixture?.participants}
+              />
+            );
+          })}
         </div>
       ) : (
         <Card className="border-0 shadow-lg">
@@ -207,7 +419,7 @@ export function ValueBetsClient({ valueBets }: ValueBetsClientProps) {
             <p className="text-slate-600 dark:text-slate-400 mb-6">
               {searchQuery || filterValue !== 'all'
                 ? 'Try adjusting your search criteria or filters'
-                : 'Check back later for updated value betting opportunities'
+                : `No value betting opportunities found for ${selectedDate}. Try selecting a different date.`
               }
             </p>
             {(searchQuery || filterValue !== 'all') && (

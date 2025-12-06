@@ -1,7 +1,8 @@
+import { Suspense } from 'react';
 import { Metadata } from 'next';
 import { sportmonks } from '@/lib/sportmonks';
-import { ValueBet } from '@/schemas/valuebet.schema';
 import { ValueBetsClient } from './value-bets-client';
+import { PredictionsSkeleton } from '../predictions/components/PredictionsSkeleton';
 
 export const metadata: Metadata = {
   title: 'Value Bets - Prediops | AI-Powered Betting Opportunities',
@@ -14,21 +15,32 @@ export const metadata: Metadata = {
   },
 };
 
-type ValueBets = {
-  data: ValueBet[];
-};
-
-export default async function ValueBetsPage() {
-  // Server-side data fetching with App Router
-  const valueBets: ValueBets = await sportmonks.getValueBets();
+export default async function ValueBetsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ date?: string }>;
+}) {
+  // Get date from URL or default to today
+  const resolvedSearchParams = await searchParams;
+  const selectedDate = resolvedSearchParams.date || new Date().toISOString().split('T')[0];
   
-  // Calculate statistics
-  const totalBets = valueBets?.data?.length || 0;
-  const valueBetsCount = valueBets?.data?.filter(bet => bet.predictions.is_value)?.length || 0;
-  const averageValue = valueBets?.data?.length > 0 
-    ? valueBets.data.reduce((sum, bet) => sum + bet.predictions.stake, 0) / valueBets.data.length 
-    : 0;
-  const highValueBets = valueBets?.data?.filter(bet => bet.predictions.stake > 0.1)?.length || 0;
+  // Validate date format
+  const isValidDate = /^\d{4}-\d{2}-\d{2}$/.test(selectedDate);
+  const dateToLoad = isValidDate ? selectedDate : new Date().toISOString().split('T')[0];
+
+  // SSR: Load fixtures for the selected date with limited include (only participants)
+  let initialFixtures = [];
+  try {
+    const fixturesResponse = await sportmonks.getFixturesByDate(dateToLoad, {
+      include: 'participants',
+      per_page: 50,
+      page: 1,
+    });
+    initialFixtures = fixturesResponse?.data || [];
+  } catch (error) {
+    console.error('Error loading initial fixtures for value bets:', error);
+    // Continue without initial fixtures - client will handle loading
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50 to-emerald-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
@@ -50,26 +62,6 @@ export default async function ValueBetsPage() {
             <p className="text-xl lg:text-2xl text-green-100 mb-8 max-w-3xl mx-auto leading-relaxed">
               AI-powered betting opportunities with real-time odds comparison and expected value analysis
             </p>
-            
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
-              <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                <div className="text-2xl font-bold text-white">{totalBets}</div>
-                <div className="text-sm text-green-100">Total Bets</div>
-              </div>
-              <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                <div className="text-2xl font-bold text-white">{valueBetsCount}</div>
-                <div className="text-sm text-green-100">Value Bets</div>
-              </div>
-              <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                <div className="text-2xl font-bold text-white">{averageValue.toFixed(2)}</div>
-                <div className="text-sm text-green-100">Avg Value</div>
-              </div>
-              <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                <div className="text-2xl font-bold text-white">{highValueBets}</div>
-                <div className="text-sm text-green-100">High Value</div>
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -77,7 +69,12 @@ export default async function ValueBetsPage() {
       {/* Main Content */}
       <section className="py-12">
         <div className="container mx-auto px-6">
-          <ValueBetsClient valueBets={valueBets?.data || []} />
+          <Suspense fallback={<PredictionsSkeleton />}>
+            <ValueBetsClient 
+              initialFixtures={initialFixtures}
+              initialDate={dateToLoad}
+            />
+          </Suspense>
         </div>
       </section>
     </div>

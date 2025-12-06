@@ -904,7 +904,7 @@ export const sportmonks = {
    * @param config 
    * @returns ApiListResponse<ValueBet>
    */
-    async s(config?: ApiConfig): Promise<ApiListResponse<ValueBet>> {
+    async getValueBets(config?: ApiConfig): Promise<ApiListResponse<ValueBet>> {
       const url = `/predictions/value-bets`;
       const response = await api.get(url, { params: makeParams(config) });
       return response.data;
