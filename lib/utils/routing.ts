@@ -24,6 +24,7 @@ export const ROUTES = {
   // Team routes
   TEAM_BASE: '/team',
   TEAM_DETAIL: (teamId: string, slug: string) => `/team/${teamId}/${slug}`,
+  TEAM_OVERVIEW: (teamId: string, slug: string) => `/team/${teamId}/${slug}#overview`,
   TEAM_PREDICTIONS: (teamId: string, slug: string) => `/team/${teamId}/${slug}#predictions`,
   TEAM_FIXTURES: (teamId: string, slug: string) => `/team/${teamId}/${slug}#fixtures`,
   
@@ -43,27 +44,52 @@ export const ROUTES = {
 } as const;
 
 /**
- * Generate URL for a team
+ * Generate URL for a team (overview page)
  */
 export function generateTeamUrl(team: Team | Participant): string {
   const teamId = team.id.toString();
   const slug = generateTeamSlug(team);
-  return ROUTES.TEAM_DETAIL(teamId, slug);
+  return ROUTES.TEAM_OVERVIEW(teamId, slug);
 }
 
 /**
  * Generate URL for a team with fixture context
  */
 export function generateTeamFixtureUrl(team: Team | Participant, fixtureId?: string): string {
+  // Debug logging - always log in development (both server and client)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[generateTeamFixtureUrl] Input:', {
+      teamId: team?.id,
+      teamName: team?.name,
+      fixtureId,
+      hasTeam: !!team,
+      isClient: typeof window !== 'undefined'
+    });
+  }
+
   const teamId = team.id.toString();
   const slug = generateTeamSlug(team);
   
+  let url: string;
   if (fixtureId) {
     // Link to team page with fixtures tab and scroll to specific fixture
-    return `${ROUTES.TEAM_FIXTURES(teamId, slug)}&fixture=${fixtureId}`;
+    url = `${ROUTES.TEAM_FIXTURES(teamId, slug)}&fixture=${fixtureId}`;
+  } else {
+    url = ROUTES.TEAM_FIXTURES(teamId, slug);
   }
-  
-  return ROUTES.TEAM_FIXTURES(teamId, slug);
+
+  // Debug logging - always log in development
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[generateTeamFixtureUrl] Output:', {
+      url,
+      teamId,
+      slug,
+      fixtureId,
+      isClient: typeof window !== 'undefined'
+    });
+  }
+
+  return url;
 }
 
 /**

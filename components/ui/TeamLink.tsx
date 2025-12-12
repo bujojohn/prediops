@@ -25,32 +25,79 @@ export function TeamLink({
   openInNewTab = true,
   onClick
 }: TeamLinkProps) {
-  const url = variant === 'fixture-context' 
-    ? generateTeamFixtureUrl(team, fixtureId)
-    : generateTeamUrl(team);
-    
-  const target = getLinkTarget(url, openInNewTab);
-  const rel = getLinkRel(url, openInNewTab);
+  // Debug logging - ALWAYS LOG
+  console.log('[TeamLink] ⚡ CALLED with:', {
+    teamId: team?.id,
+    teamName: team?.name,
+    variant,
+    fixtureId,
+    hasTeam: !!team,
+    teamType: team ? (('sport_id' in team && typeof team.sport_id === 'number') ? 'Team' : 'Participant') : 'undefined',
+    isClient: typeof window !== 'undefined',
+    stackTrace: new Error().stack?.split('\n').slice(0, 5).join('\n')
+  });
 
-  return (
-    <Link 
-      href={url} 
-      target={target}
-      rel={rel}
-      className={cn(
-        "hover:text-primary transition-colors duration-200",
-        "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-sm",
-        className
-      )}
-      onClick={onClick}
-    >
-      {children}
-    </Link>
-  );
+  try {
+    const url = variant === 'fixture-context' 
+      ? generateTeamFixtureUrl(team, fixtureId)
+      : generateTeamUrl(team);
+    
+    // Debug URL generation - always log in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[TeamLink] Generated URL:', {
+        url,
+        variant,
+        teamId: team?.id,
+        teamName: team?.name,
+        fixtureId,
+        isClient: typeof window !== 'undefined'
+      });
+    }
+      
+    const target = getLinkTarget(url, openInNewTab);
+    const rel = getLinkRel(url, openInNewTab);
+
+    // Debug final props - always log
+    console.log('[TeamLink] Rendering Link with:', {
+      href: url,
+      target,
+      rel,
+      hasChildren: !!children,
+      isClient: typeof window !== 'undefined',
+      env: process.env.NODE_ENV
+    });
+
+    return (
+      <Link 
+        href={url} 
+        target={target}
+        rel={rel}
+        prefetch={false}
+        legacyBehavior={false}
+        className={cn(
+          "hover:text-primary transition-colors duration-200",
+          "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-sm",
+          className
+        )}
+        onClick={onClick}
+      >
+        {children}
+      </Link>
+    );
+  } catch (error) {
+    console.error('TeamLink - Error generating team URL:', error, { team, variant, fixtureId });
+    // Fallback: render as span if URL generation fails
+    return (
+      <span className={className}>
+        {children}
+      </span>
+    );
+  }
 }
 
 /**
  * TeamLink variant for fixture cards
+ * Links to team overview page instead of fixtures page
  */
 export function FixtureTeamLink({ 
   team, 
@@ -65,11 +112,24 @@ export function FixtureTeamLink({
   className?: string;
   onClick?: () => void;
 }) {
+  // Debug logging for FixtureTeamLink - ALWAYS LOG
+  console.log('[FixtureTeamLink] ⚡ CALLED with:', {
+    teamId: team?.id,
+    teamName: team?.name,
+    fixtureId,
+    hasTeam: !!team,
+    teamKeys: team ? Object.keys(team) : [],
+    teamType: team ? (('sport_id' in team && typeof team.sport_id === 'number') ? 'Team' : 'Participant') : 'undefined',
+    isClient: typeof window !== 'undefined',
+    stackTrace: new Error().stack?.split('\n').slice(0, 5).join('\n')
+  });
+
+  // Use default variant (team overview) instead of fixture-context
+  // This will generate URLs like /team/1128/ado-den-haag/#overview
   return (
     <TeamLink
       team={team}
-      variant="fixture-context"
-      fixtureId={fixtureId}
+      variant="default"
       className={className}
       onClick={onClick}
     >

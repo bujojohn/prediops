@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 import type { ValueBet } from '../../../schemas/valuebet.schema';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import type { Team } from '@/schemas/team.schema';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { FixtureTeamLink } from '@/components/ui/TeamLink';
 import { 
   TrendingUp, 
   DollarSign, 
@@ -26,15 +28,29 @@ interface ValueBetCardProps {
       location: 'home' | 'away';
     };
   }>;
+  // Team objects for team linking (converted from Participant)
+  homeTeam?: Team;
+  awayTeam?: Team;
 }
 
-export function ValueBetCard({ valueBet, name, starting_at, participants }: ValueBetCardProps) {
+export function ValueBetCard({ valueBet, name, starting_at, participants, homeTeam: homeTeamProp, awayTeam: awayTeamProp }: ValueBetCardProps) {
+  // ALWAYS LOG - Component render
+  console.log('[ValueBetCard] ⚡ COMPONENT RENDERED:', {
+    valueBetId: valueBet.fixture_id,
+    hasName: !!name,
+    hasHomeTeamProp: !!homeTeamProp,
+    hasAwayTeamProp: !!awayTeamProp,
+    homeTeamProp: homeTeamProp ? { id: homeTeamProp.id, name: homeTeamProp.name } : null,
+    awayTeamProp: awayTeamProp ? { id: awayTeamProp.id, name: awayTeamProp.name } : null,
+    isClient: typeof window !== 'undefined'
+  });
+
   const [isExpanded, setIsExpanded] = useState(false);
   
   // These props (name, starting_at, participants) are for mock/demo data compatibility
   // In real API, you may want to join fixture/team info by fixture_id
-  const homeTeam = participants?.find(p => p.meta.location === 'home')?.name || 'Home';
-  const awayTeam = participants?.find(p => p.meta.location === 'away')?.name || 'Away';
+  const homeTeamName = participants?.find(p => p.meta.location === 'home')?.name || homeTeamProp?.name || 'Home';
+  const awayTeamName = participants?.find(p => p.meta.location === 'away')?.name || awayTeamProp?.name || 'Away';
   
   const getValueColor = (value: number) => {
     if (value > 0.1) return 'text-emerald-600 bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800';
@@ -42,16 +58,22 @@ export function ValueBetCard({ valueBet, name, starting_at, participants }: Valu
     return 'text-slate-600 bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700';
   };
 
-  const getValueBadgeVariant = (value: number) => {
-    if (value > 0.1) return 'default';
-    if (value > 0.05) return 'secondary';
+  const getValueBadgeVariant = (isValue: boolean, stake: number) => {
+    if (!isValue) return 'outline';
+    if (stake > 0.1) return 'default';
+    if (stake > 0.05) return 'secondary';
     return 'outline';
   };
 
-  const getValueBadgeColor = (value: number) => {
-    if (value > 0.1) return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-100';
-    if (value > 0.05) return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100';
-    return 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-100';
+  const getValueBadgeColor = (isValue: boolean, stake: number) => {
+    // Not Value bets should always be neutral/gray
+    if (!isValue) {
+      return 'bg-slate-100 text-slate-600 border-slate-300 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-600';
+    }
+    // Value bets get green/emerald based on stake
+    if (stake > 0.1) return 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-100 dark:border-emerald-700';
+    if (stake > 0.05) return 'bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-100 dark:border-green-700';
+    return 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800';
   };
 
   return (
@@ -59,9 +81,38 @@ export function ValueBetCard({ valueBet, name, starting_at, participants }: Valu
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <CardTitle className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-              {name || `${homeTeam} vs ${awayTeam}`}
-            </CardTitle>
+            <div className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+              {/* Always render team links if we have team props, otherwise fall back to name */}
+              {(homeTeamProp || awayTeamProp) ? (
+                <div className="flex items-center gap-2 flex-wrap">
+                  {homeTeamProp ? (
+                    <FixtureTeamLink 
+                      team={homeTeamProp}
+                      fixtureId={valueBet.fixture_id?.toString()}
+                      className="text-slate-900 dark:text-white hover:text-green-600 dark:hover:text-green-400 transition-colors hover:underline cursor-pointer font-semibold"
+                    >
+                      {homeTeamName}
+                    </FixtureTeamLink>
+                  ) : (
+                    <span className="text-slate-900 dark:text-white">{homeTeamName}</span>
+                  )}
+                  <span className="text-slate-500 dark:text-slate-400">vs</span>
+                  {awayTeamProp ? (
+                    <FixtureTeamLink 
+                      team={awayTeamProp}
+                      fixtureId={valueBet.fixture_id?.toString()}
+                      className="text-slate-900 dark:text-white hover:text-green-600 dark:hover:text-green-400 transition-colors hover:underline cursor-pointer font-semibold"
+                    >
+                      {awayTeamName}
+                    </FixtureTeamLink>
+                  ) : (
+                    <span className="text-slate-900 dark:text-white">{awayTeamName}</span>
+                  )}
+                </div>
+              ) : (
+                name || `${homeTeamName} vs ${awayTeamName}`
+              )}
+            </div>
             {starting_at && (
               <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                 <Calendar className="h-4 w-4" />
@@ -77,8 +128,8 @@ export function ValueBetCard({ valueBet, name, starting_at, participants }: Valu
             )}
           </div>
           <Badge 
-            variant={getValueBadgeVariant(valueBet.predictions.stake)}
-            className={`${getValueBadgeColor(valueBet.predictions.stake)} font-medium`}
+            variant={getValueBadgeVariant(valueBet.predictions.is_value, valueBet.predictions.stake)}
+            className={`${getValueBadgeColor(valueBet.predictions.is_value, valueBet.predictions.stake)} font-medium border`}
           >
             {valueBet.predictions.is_value ? 'Value Bet' : 'Not Value'}
           </Badge>
