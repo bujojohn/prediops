@@ -18,7 +18,7 @@
 
 'use client';
 
-import { useState, useMemo, useRef, useEffect, useId } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { ChevronDown } from 'lucide-react';
@@ -100,8 +100,6 @@ export function FixturePredictionMarkets({
   variant = 'desktop',
   fixture
 }: FixturePredictionMarketsProps) {
-  // Unique ID for this component instance to prevent cross-instance popover issues
-  const instanceId = useId();
   const [selectedMarketKey, setSelectedMarketKey] = useState<string>('');
   const [marketOpen, setMarketOpen] = useState(false);
   const [marketFilter, setMarketFilter] = useState('');
@@ -115,7 +113,6 @@ export function FixturePredictionMarkets({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const marketPopoverRef = useRef<HTMLDivElement>(null);
   const moreButtonRef = useRef<HTMLButtonElement>(null);
-  const popoverRef = useRef<HTMLDivElement>(null);
   
   // Performance monitoring
   const renderStartTime = useRef<number>(0);

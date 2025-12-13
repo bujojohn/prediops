@@ -68,7 +68,7 @@ export function TeamLink({
 export function FixtureTeamLink({ 
   team, 
   children, 
-  fixtureId, 
+  fixtureId: _fixtureId, // eslint-disable-line @typescript-eslint/no-unused-vars
   className,
   onClick
 }: {
@@ -80,6 +80,7 @@ export function FixtureTeamLink({
 }) {
   // Use default variant (team overview) instead of fixture-context
   // This will generate URLs like /team/1128/ado-den-haag/#overview
+  // Note: fixtureId is kept in props for API compatibility but not used
   return (
     <TeamLink
       team={team}
