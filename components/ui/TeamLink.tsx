@@ -25,32 +25,45 @@ export function TeamLink({
   openInNewTab = true,
   onClick
 }: TeamLinkProps) {
-  const url = variant === 'fixture-context' 
-    ? generateTeamFixtureUrl(team, fixtureId)
-    : generateTeamUrl(team);
-    
-  const target = getLinkTarget(url, openInNewTab);
-  const rel = getLinkRel(url, openInNewTab);
+  try {
+    const url = variant === 'fixture-context' 
+      ? generateTeamFixtureUrl(team, fixtureId)
+      : generateTeamUrl(team);
+      
+    const target = getLinkTarget(url, openInNewTab);
+    const rel = getLinkRel(url, openInNewTab);
 
-  return (
-    <Link 
-      href={url} 
-      target={target}
-      rel={rel}
-      className={cn(
-        "hover:text-primary transition-colors duration-200",
-        "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-sm",
-        className
-      )}
-      onClick={onClick}
-    >
-      {children}
-    </Link>
-  );
+    return (
+      <Link 
+        href={url} 
+        target={target}
+        rel={rel}
+        prefetch={false}
+        legacyBehavior={false}
+        className={cn(
+          "hover:text-primary transition-colors duration-200",
+          "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-sm",
+          className
+        )}
+        onClick={onClick}
+      >
+        {children}
+      </Link>
+    );
+  } catch (error) {
+    console.error('TeamLink - Error generating team URL:', error, { team, variant, fixtureId });
+    // Fallback: render as span if URL generation fails
+    return (
+      <span className={className}>
+        {children}
+      </span>
+    );
+  }
 }
 
 /**
  * TeamLink variant for fixture cards
+ * Links to team overview page instead of fixtures page
  */
 export function FixtureTeamLink({ 
   team, 
@@ -65,11 +78,12 @@ export function FixtureTeamLink({
   className?: string;
   onClick?: () => void;
 }) {
+  // Use default variant (team overview) instead of fixture-context
+  // This will generate URLs like /team/1128/ado-den-haag/#overview
   return (
     <TeamLink
       team={team}
-      variant="fixture-context"
-      fixtureId={fixtureId}
+      variant="default"
       className={className}
       onClick={onClick}
     >

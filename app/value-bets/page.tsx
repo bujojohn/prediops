@@ -1,8 +1,12 @@
+import { Suspense } from 'react';
 import { Metadata } from 'next';
 import { Suspense } from 'react';
 import { sportmonks } from '@/lib/sportmonks';
 import type { Fixture } from '@/schemas/fixture.schema';
 import { ValueBetsClient } from './value-bets-client';
+import { PredictionsSkeleton } from '../predictions/components/PredictionsSkeleton';
+import type { Fixture } from '@/schemas/fixture.schema';
+import type { ValueBet } from '@/schemas/valuebet.schema';
 
 export const metadata: Metadata = {
   title: 'Value Bets - Prediops | AI-Powered Betting Opportunities',
