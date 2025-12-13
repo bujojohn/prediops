@@ -387,7 +387,10 @@ export function FixturePredictionMarkets({
         setMarketFilter(''); // Clear search when closing
         setTimeout(() => setIsTransitioning(false), 200); // Match animation duration
       }
-      if (moreButtonRef.current && !moreButtonRef.current.contains(event.target as Node)) {
+      
+      // Check if click is outside more button popover
+      const isOutsideMoreButton = !moreButtonRef.current || !moreButtonRef.current.contains(event.target as Node);
+      if (showMorePopover && isOutsideMoreButton) {
         setIsTransitioning(true);
         setShowMorePopover(false);
         setOptionFilter(''); // Clear search when closing
