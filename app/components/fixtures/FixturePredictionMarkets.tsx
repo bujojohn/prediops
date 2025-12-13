@@ -418,7 +418,8 @@ export function FixturePredictionMarkets({
         setTimeout(() => setIsTransitioning(false), 200); // Match animation duration
       }
       
-      const isOutsideMoreButton = moreButtonRef.current && !moreButtonRef.current.contains(target);
+      // Check if click is outside more button popover
+      const isOutsideMoreButton = !moreButtonRef.current || !moreButtonRef.current.contains(event.target as Node);
       if (showMorePopover && isOutsideMoreButton) {
         setIsTransitioning(true);
         setShowMorePopover(false);
