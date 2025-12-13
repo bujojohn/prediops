@@ -112,6 +112,8 @@ export function FixturePredictionMarkets({
   const [isButtonReady, setIsButtonReady] = useState(false);
   const [positionCalculated, setPositionCalculated] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const marketPopoverRef = useRef<HTMLDivElement>(null);
   const moreButtonRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   
@@ -404,11 +406,12 @@ export function FixturePredictionMarkets({
   // Close popover when clicking outside or pressing ESC
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node;
-      const isOutsideButton = buttonRef.current && !buttonRef.current.contains(target);
-      const isOutsidePopover = popoverRef.current && !popoverRef.current.contains(target);
-      
-      if (marketOpen && isOutsideButton && isOutsidePopover) {
+      // Check if click is outside button, inline dropdown (desktop), and portal popover (mobile) for market selector
+      const isOutsideButton = !buttonRef.current || !buttonRef.current.contains(event.target as Node);
+      const isOutsideDropdown = !dropdownRef.current || !dropdownRef.current.contains(event.target as Node);
+      const isOutsidePopover = !marketPopoverRef.current || !marketPopoverRef.current.contains(event.target as Node);
+      // Close if click is outside all relevant elements (button, and whichever dropdown/popover is active)
+      if (marketOpen && isOutsideButton && isOutsideDropdown && isOutsidePopover) {
         setIsTransitioning(true);
         setMarketOpen(false);
         setMarketFilter(''); // Clear search when closing
@@ -519,8 +522,7 @@ export function FixturePredictionMarkets({
 
     return createPortal(
       <div 
-        ref={popoverRef}
-        data-popover-instance={instanceId}
+        ref={marketPopoverRef}
         className={cn(
           "fixed z-[9999] w-64 max-w-[calc(100vw-2rem)] max-h-80 rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg transition-all duration-200",
           isTransitioning ? "opacity-0 scale-95" : "opacity-100 scale-100"
@@ -541,6 +543,9 @@ export function FixturePredictionMarkets({
             placeholder="Search markets..."
             className="w-full px-2 py-1 text-xs rounded bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500"
             autoFocus
+            onClick={(e) => e.stopPropagation()}
+            onFocus={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
           />
         </div>
         
@@ -870,12 +875,42 @@ export function FixturePredictionMarkets({
             >
               Market <ChevronDown className={cn('ml-1 h-3 w-3 text-gray-700 dark:text-gray-300 transition-transform', marketOpen && 'rotate-180')} />
             </Button>
+            {marketOpen && (
+              <div 
+                ref={dropdownRef}
+                className="absolute right-0 mt-1 w-[calc(100vw-2rem)] sm:w-60 max-w-[calc(100vw-2rem)] max-h-60 rounded-md border bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 shadow-md z-10 overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="p-2 border-b border-gray-100 dark:border-gray-700">
+                  <input
+                    type="text"
+                    value={marketFilter}
+                    onChange={e => setMarketFilter(e.target.value)}
+                    placeholder="Search markets..."
+                    className="w-full px-2 py-1 text-xs rounded bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 focus:outline-none"
+                    onClick={(e) => e.stopPropagation()}
+                    onFocus={(e) => e.stopPropagation()}
+                  />
+                </div>
+                {Object.values(marketsMap)
+                  .filter(m => m.label.toLowerCase().includes(marketFilter.toLowerCase()))
+                  .map((m) => (
+                    <button
+                      type="button"
+                      key={m.key}
+                      className={cn('w-full text-left px-3 py-2 text-xs hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100', selectedMarketKey === m.key && 'bg-gray-50 dark:bg-gray-700')}
+                      onClick={() => { setSelectedMarketKey(m.key); setMarketOpen(false); }}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Render popovers */}
-      <MarketPopover />
+      {/* Render popovers - only MoreOptionsPopover for desktop, MarketPopover is mobile-only */}
       <MoreOptionsPopover />
     </div>
   );

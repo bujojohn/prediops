@@ -61,12 +61,16 @@ export function SidebarOptimized({
   // Load local countries data from the optimized API endpoint
   // This endpoint reads from data/countries.json with 30-day caching
   const { 
-    data: allCountries = []
+    data: allCountries = [],
+    isLoading: isLoadingCountries,
+    isError: isErrorCountries
   } = useCountriesQuery();
 
   // Load all leagues server-side with 24-hour caching
   const { 
-    data: leaguesByCountry = {}
+    data: leaguesByCountry = {},
+    isLoading: isLoadingLeagues,
+    isError: isErrorLeagues
   } = useServerSideLeagues();
 
 
@@ -91,7 +95,12 @@ export function SidebarOptimized({
 
     // Separate tournaments (continents) from regular countries
     const tournaments = enhancedCountries.filter(country => KNOWN_TOURNAMENTS.has(country.id));
-    const regularCountries = enhancedCountries.filter(country => !KNOWN_TOURNAMENTS.has(country.id) && country.leaguesCount > 0);
+    // Only filter out countries without leagues if leagues have finished loading successfully
+    // If leagues are still loading or failed, show all countries to avoid empty list
+    const regularCountries = enhancedCountries.filter(country => 
+      !KNOWN_TOURNAMENTS.has(country.id) && 
+      (isLoadingLeagues || isErrorLeagues || country.leaguesCount > 0)
+    );
 
     // Apply search filter
     let filteredCountries = regularCountries;
@@ -123,7 +132,7 @@ export function SidebarOptimized({
       filteredAndSortedCountries: sortedCountries,
       tournaments: sortedTournaments
     };
-  }, [searchTerm, allCountries, leaguesByCountry, KNOWN_TOURNAMENTS, showFavoritesOnly, favorites, sortCountries]);
+  }, [searchTerm, allCountries, leaguesByCountry, KNOWN_TOURNAMENTS, showFavoritesOnly, favorites, sortCountries, isLoadingLeagues, isErrorLeagues]);
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
@@ -255,16 +264,36 @@ export function SidebarOptimized({
         {/* Content */}
         <div className="flex-1 overflow-auto scrollbar-thick">
           <div className="p-1">
+            {/* Loading States */}
+            {(isLoadingCountries || isLoadingLeagues) && (
+              <div className="p-3 space-y-2" aria-hidden="true">
+                <div className="h-6 rounded bg-gray-100 dark:bg-gray-800 animate-pulse"></div>
+                <div className="h-6 rounded bg-gray-100 dark:bg-gray-800 animate-pulse"></div>
+                <div className="h-6 rounded bg-gray-100 dark:bg-gray-800 animate-pulse"></div>
+                <div className="h-6 rounded bg-gray-100 dark:bg-gray-800 animate-pulse"></div>
+                <div className="h-6 rounded bg-gray-100 dark:bg-gray-800 animate-pulse"></div>
+              </div>
+            )}
+            
+            {/* Error States */}
+            {(isErrorCountries || isErrorLeagues) && (
+              <div className="flex items-center justify-center p-4 text-sm text-red-500">
+                Error loading countries data. Please refresh the page.
+              </div>
+            )}
+            
             {/* Countries Section */}
-            <CountriesSection
-              countries={filteredAndSortedCountries}
-              isCollapsed={collapsedSections.has('countries')}
-              onToggle={() => handleSectionToggle('countries')}
-              expandedCountries={expandedCountries}
-              onToggleCountry={handleCountryToggle}
-              favorites={favorites}
-              onToggleFavorite={toggleFavorite}
-            />
+            {!isLoadingCountries && !isLoadingLeagues && !isErrorCountries && !isErrorLeagues && (
+              <CountriesSection
+                countries={filteredAndSortedCountries}
+                isCollapsed={collapsedSections.has('countries')}
+                onToggle={() => handleSectionToggle('countries')}
+                expandedCountries={expandedCountries}
+                onToggleCountry={handleCountryToggle}
+                favorites={favorites}
+                onToggleFavorite={toggleFavorite}
+              />
+            )}
 
             {/* Top Leagues Section */}
             <TopLeaguesSection

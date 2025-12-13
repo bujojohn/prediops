@@ -76,11 +76,11 @@ export default async function FixturePage({ params }: FixturePageProps) {
     const standingsPromise =
       fixture.season_id != null
         ? sportmonks.getLeagueStandings(String(fixture.season_id), {
-            include: 'participant;details',
+            include: 'participant;league;stage.type;group;round.season;rule.type;details.type;form',
           })
         : fixture.league_id != null
           ? sportmonks.getLiveStandingsByLeagueId(String(fixture.league_id), {
-              include: 'participant;details',
+              include: 'participant;league;stage.type;group;round.season;rule.type;details.type;form',
             })
           : Promise.resolve(null);
 
