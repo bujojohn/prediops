@@ -422,26 +422,32 @@ export function ValueBetsClient({
             const homeParticipant = fixture?.participants?.find(p => p.meta?.location === 'home');
             const awayParticipant = fixture?.participants?.find(p => p.meta?.location === 'away');
             
-            // ALWAYS LOG - Participant extraction
-            console.log(`[ValueBetsClient] ⚡ Extracting participants for fixture ${fixture?.id}:`, {
-              hasFixture: !!fixture,
-              totalParticipants: fixture?.participants?.length ?? 0,
-              homeParticipant: homeParticipant ? { id: homeParticipant.id, name: homeParticipant.name, location: homeParticipant.meta?.location } : null,
-              awayParticipant: awayParticipant ? { id: awayParticipant.id, name: awayParticipant.name, location: awayParticipant.meta?.location } : null,
-              allParticipants: fixture?.participants?.map(p => ({ id: p.id, name: p.name, location: p.meta?.location }))
-            });
+            // Debug logging - development only
+            if (process.env.NODE_ENV === 'development') {
+              console.log(`[ValueBetsClient] ⚡ Extracting participants for fixture ${fixture?.id}:`, {
+                hasFixture: !!fixture,
+                totalParticipants: fixture?.participants?.length ?? 0,
+                homeParticipant: homeParticipant ? { id: homeParticipant.id, name: homeParticipant.name, location: homeParticipant.meta?.location } : null,
+                awayParticipant: awayParticipant ? { id: awayParticipant.id, name: awayParticipant.name, location: awayParticipant.meta?.location } : null,
+                allParticipants: fixture?.participants?.map(p => ({ id: p.id, name: p.name, location: p.meta?.location }))
+              });
+            }
             
             // Convert Participant to Team for team linking
             // Team requires: id, sport_id, country_id, venue_id, name
             // Participant has these as optional, so we provide defaults
             const convertParticipantToTeam = (participant: Participant | undefined): Team | undefined => {
-              console.log('[ValueBetsClient] convertParticipantToTeam called:', {
-                hasParticipant: !!participant,
-                participant: participant ? { id: participant.id, name: participant.name } : null
-              });
+              if (process.env.NODE_ENV === 'development') {
+                console.log('[ValueBetsClient] convertParticipantToTeam called:', {
+                  hasParticipant: !!participant,
+                  participant: participant ? { id: participant.id, name: participant.name } : null
+                });
+              }
               
               if (!participant) {
-                console.log('[ValueBetsClient] convertParticipantToTeam returning undefined (no participant)');
+                if (process.env.NODE_ENV === 'development') {
+                  console.log('[ValueBetsClient] convertParticipantToTeam returning undefined (no participant)');
+                }
                 return undefined;
               }
               
@@ -460,11 +466,13 @@ export function ValueBetsClient({
                 last_played_at: participant.last_played_at ?? null,
               } as Team;
               
-              console.log('[ValueBetsClient] convertParticipantToTeam returning team:', {
-                id: team.id,
-                name: team.name,
-                sport_id: team.sport_id
-              });
+              if (process.env.NODE_ENV === 'development') {
+                console.log('[ValueBetsClient] convertParticipantToTeam returning team:', {
+                  id: team.id,
+                  name: team.name,
+                  sport_id: team.sport_id
+                });
+              }
               
               return team;
             };
@@ -472,36 +480,36 @@ export function ValueBetsClient({
             const homeTeam = convertParticipantToTeam(homeParticipant);
             const awayTeam = convertParticipantToTeam(awayParticipant);
             
-            // ALWAYS LOG - Team conversion result (IMMEDIATELY after assignment)
-            console.log(`[ValueBetsClient] ⚡⚡⚡ Team conversion result for fixture ${fixture?.id}:`, {
-              homeTeam: homeTeam ? { id: homeTeam.id, name: homeTeam.name } : null,
-              awayTeam: awayTeam ? { id: awayTeam.id, name: awayTeam.name } : null,
-              hasHomeTeam: !!homeTeam,
-              hasAwayTeam: !!awayTeam,
-              homeTeamType: typeof homeTeam,
-              awayTeamType: typeof awayTeam,
-              homeTeamKeys: homeTeam ? Object.keys(homeTeam) : [],
-              awayTeamKeys: awayTeam ? Object.keys(awayTeam) : []
-            });
-            
-            // ALWAYS LOG - Before rendering ValueBetCard
-            console.log(`[ValueBetsClient] ⚡ Rendering ValueBetCard for fixture ${fixture?.id}:`, {
-              valueBetId: valueBet.fixture_id,
-              hasHomeTeam: !!homeTeam,
-              hasAwayTeam: !!awayTeam,
-              homeTeam: homeTeam ? { id: homeTeam.id, name: homeTeam.name } : null,
-              awayTeam: awayTeam ? { id: awayTeam.id, name: awayTeam.name } : null
-            });
-            
-            // CRITICAL LOG - Right before return
-            console.log(`[ValueBetsClient] 🔥🔥🔥 FINAL CHECK before return for fixture ${fixture?.id}:`, {
-              homeTeam: homeTeam,
-              awayTeam: awayTeam,
-              homeTeamStringified: JSON.stringify(homeTeam),
-              awayTeamStringified: JSON.stringify(awayTeam),
-              willPassHomeTeam: !!homeTeam,
-              willPassAwayTeam: !!awayTeam
-            });
+            // Debug logging - development only
+            if (process.env.NODE_ENV === 'development') {
+              console.log(`[ValueBetsClient] ⚡⚡⚡ Team conversion result for fixture ${fixture?.id}:`, {
+                homeTeam: homeTeam ? { id: homeTeam.id, name: homeTeam.name } : null,
+                awayTeam: awayTeam ? { id: awayTeam.id, name: awayTeam.name } : null,
+                hasHomeTeam: !!homeTeam,
+                hasAwayTeam: !!awayTeam,
+                homeTeamType: typeof homeTeam,
+                awayTeamType: typeof awayTeam,
+                homeTeamKeys: homeTeam ? Object.keys(homeTeam) : [],
+                awayTeamKeys: awayTeam ? Object.keys(awayTeam) : []
+              });
+              
+              console.log(`[ValueBetsClient] ⚡ Rendering ValueBetCard for fixture ${fixture?.id}:`, {
+                valueBetId: valueBet.fixture_id,
+                hasHomeTeam: !!homeTeam,
+                hasAwayTeam: !!awayTeam,
+                homeTeam: homeTeam ? { id: homeTeam.id, name: homeTeam.name } : null,
+                awayTeam: awayTeam ? { id: awayTeam.id, name: awayTeam.name } : null
+              });
+              
+              console.log(`[ValueBetsClient] 🔥🔥🔥 FINAL CHECK before return for fixture ${fixture?.id}:`, {
+                homeTeam: homeTeam,
+                awayTeam: awayTeam,
+                homeTeamStringified: JSON.stringify(homeTeam),
+                awayTeamStringified: JSON.stringify(awayTeam),
+                willPassHomeTeam: !!homeTeam,
+                willPassAwayTeam: !!awayTeam
+              });
+            }
             
             return (
               <ValueBetCard 

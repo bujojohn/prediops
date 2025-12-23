@@ -405,8 +405,10 @@ export function FixturePredictionMarkets({
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
-      const isOutsideButton = buttonRef.current && !buttonRef.current.contains(target);
-      const isOutsidePopover = popoverRef.current && !popoverRef.current.contains(target);
+      // If ref doesn't exist, consider it "outside" (true)
+      // If ref exists, check if target is NOT contained within it
+      const isOutsideButton = !buttonRef.current || !buttonRef.current.contains(target);
+      const isOutsidePopover = !popoverRef.current || !popoverRef.current.contains(target);
       
       if (marketOpen && isOutsideButton && isOutsidePopover) {
         setIsTransitioning(true);

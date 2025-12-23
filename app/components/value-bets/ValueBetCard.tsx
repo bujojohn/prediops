@@ -34,16 +34,18 @@ interface ValueBetCardProps {
 }
 
 export function ValueBetCard({ valueBet, name, starting_at, participants, homeTeam: homeTeamProp, awayTeam: awayTeamProp }: ValueBetCardProps) {
-  // ALWAYS LOG - Component render
-  console.log('[ValueBetCard] ⚡ COMPONENT RENDERED:', {
-    valueBetId: valueBet.fixture_id,
-    hasName: !!name,
-    hasHomeTeamProp: !!homeTeamProp,
-    hasAwayTeamProp: !!awayTeamProp,
-    homeTeamProp: homeTeamProp ? { id: homeTeamProp.id, name: homeTeamProp.name } : null,
-    awayTeamProp: awayTeamProp ? { id: awayTeamProp.id, name: awayTeamProp.name } : null,
-    isClient: typeof window !== 'undefined'
-  });
+  // Debug logging - development only
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[ValueBetCard] ⚡ COMPONENT RENDERED:', {
+      valueBetId: valueBet.fixture_id,
+      hasName: !!name,
+      hasHomeTeamProp: !!homeTeamProp,
+      hasAwayTeamProp: !!awayTeamProp,
+      homeTeamProp: homeTeamProp ? { id: homeTeamProp.id, name: homeTeamProp.name } : null,
+      awayTeamProp: awayTeamProp ? { id: awayTeamProp.id, name: awayTeamProp.name } : null,
+      isClient: typeof window !== 'undefined'
+    });
+  }
 
   const [isExpanded, setIsExpanded] = useState(false);
   
