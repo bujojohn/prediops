@@ -1,16 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState, useRef, useContext, memo, useCallback } from "react";
+import Link from "next/link";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import type { Fixture } from "@/schemas/fixture.schema";
 import type { Prediction as FixturePrediction } from "@/schemas/predictions.schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, Clock, Trophy } from "lucide-react";
-import { Info } from "lucide-react";
+import { ChevronDown, ChevronUp, Clock, Trophy, Info } from "lucide-react";
 import { TeamLogo } from "@/app/components/ui/optimized-image";
 import { cn, formatDateLocal, formatTimeLocal } from "@/lib/utils";
-import { FixtureTeamLink } from "@/components/ui/TeamLink";
 import { useDisplaySettings } from "@/app/contexts/DisplaySettingsContext";
 import { useLiveScores } from "@/app/hooks/useLiveScores";
 // import { useLiveMatches } from '@/lib/hooks/use-live-matches'; // Temporarily disabled
@@ -18,12 +17,13 @@ import { LoadingIndicator } from "@/app/components/ui/loading-indicator";
 import { FixturesContext } from "@/app/contexts/FixturesContext";
 import { useQuery } from "@tanstack/react-query";
 import type { Odd } from "@/schemas/odds.schema";
-import { usePathname } from "next/navigation";
 // import { useHeadToHead } from "@/app/hooks/useHeadToHead";
 // import H2HModal from "@/app/components/h2h/H2HModal";
 import { useValueBet } from "@/app/hooks/useValueBet";
 import ValueBetIcon, { type ValueBetState } from "@/app/components/valuebet/ValueBetIcon";
 import { FixturePredictionMarkets } from "@/app/components/fixtures/FixturePredictionMarkets";
+import type { Participant } from "@/schemas/participant.schema";
+import { generateFixtureUrl } from "@/lib/utils/routing";
 
 type MarketKey = string;
 
@@ -217,12 +217,12 @@ function getMinutesPlayed(fixture: Fixture): number | null {
 export const FixtureCard = memo(function FixtureCard({
   fixture: propFixture,
   compact = false,
+  enableValueBet = false,
 }: {
   fixture: Fixture;
   compact?: boolean;
+  enableValueBet?: boolean;
 }) {
-  const pathname = usePathname();
-  
   // Use context if available, otherwise fallback to prop
   const context = useContext(FixturesContext);
   const fixture =
@@ -233,9 +233,15 @@ export const FixtureCard = memo(function FixtureCard({
     null
   );
   // const [showH2H, setShowH2H] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const { settings } = useDisplaySettings();
   const isLive = isLiveMatch(fixture);
   const { getLiveScore, isUpdating } = useLiveScores([fixture], isLive);
+  
+  // Ensure we're on the client side to prevent hydration issues with time formatting
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
   // const { getLiveMatchData } = useLiveMatches([fixture]); // Temporarily disabled
   const [marketFilter, setMarketFilter] = useState("");
   const [showMorePopover, setShowMorePopover] = useState(false);
@@ -385,6 +391,14 @@ export const FixtureCard = memo(function FixtureCard({
     );
   };
 
+  const fixtureUrl = useMemo(() => {
+    try {
+      return fixture?.id ? generateFixtureUrl(fixture) : null;
+    } catch {
+      return null;
+    }
+  }, [fixture]);
+
   // Use React Query for odds fetching
   const {
     data: odds,
@@ -429,9 +443,8 @@ export const FixtureCard = memo(function FixtureCard({
   }, [showMorePopover]);
 
   // React Query automatically handles odds fetching when showOdds is true
-
-  const participantsArray = useMemo(
-    () => (Array.isArray(fixture.participants) ? fixture.participants : []),
+  const participantsArray = useMemo<Participant[]>(
+    () => (Array.isArray(fixture.participants) ? (fixture.participants as Participant[]) : []),
     [fixture.participants]
   );
   const scoresArray = useMemo(
@@ -439,11 +452,11 @@ export const FixtureCard = memo(function FixtureCard({
     [fixture.scores]
   );
 
-  const home = useMemo(
+  const home = useMemo<Participant | undefined>(
     () => participantsArray.find((p) => p.meta?.location === "home"),
     [participantsArray]
   );
-  const away = useMemo(
+  const away = useMemo<Participant | undefined>(
     () => participantsArray.find((p) => p.meta?.location === "away"),
     [participantsArray]
   );
@@ -455,10 +468,10 @@ export const FixtureCard = memo(function FixtureCard({
   //   enabled: showH2H,
   // });
 
-  // ValueBet React Query - only fetch on value-bets page
+  // ValueBet React Query - only fetch when explicitly enabled (e.g., on value-bets page)
   const { data: valueBetData, isLoading: valueBetLoading, error: valueBetError } = useValueBet({
     fixtureId: fixture.id,
-    enabled: pathname === '/value-bets', // Only fetch on value-bets page
+    enabled: enableValueBet, // Only fetch when enabled prop is true
   });
 
   // Determine ValueBet state and extract data
@@ -937,7 +950,7 @@ export const FixtureCard = memo(function FixtureCard({
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
                         <span className="text-xs font-medium text-red-600 dark:text-red-400">
-                          {(() => {
+                          {isClient ? (() => {
                             try {
                               const liveScoreData = liveScore
                                 ? { currentMinute: liveScore.currentMinute }
@@ -954,7 +967,7 @@ export const FixtureCard = memo(function FixtureCard({
                               );
                               return "Live";
                             }
-                          })()}
+                          })() : "Live"}
                         </span>
                       </div>
                     );
@@ -962,7 +975,7 @@ export const FixtureCard = memo(function FixtureCard({
                   if (phase === "scheduled" && fixture.starting_at) {
                     return (
                       <div className="flex items-center gap-1 text-xs">
-                        <span>{formatTimeLocal(fixture.starting_at || "")}</span>
+                        <span>{isClient ? formatTimeLocal(fixture.starting_at || "") : "--:--"}</span>
                       </div>
                     );
                   }
@@ -984,46 +997,66 @@ export const FixtureCard = memo(function FixtureCard({
 
               {/* Column 2: Teams */}
               <div className="col-span-2 flex flex-col justify-center gap-1">
-                <div className="flex items-center gap-2">
+                {home ? (
+                  <Link
+                    href={fixtureUrl || "#"}
+                    className={cn(
+                      "flex items-center gap-2 text-[12px] font-medium text-gray-800 dark:text-gray-200 truncate",
+                      !fixtureUrl && "pointer-events-none cursor-default text-gray-500 dark:text-gray-400"
+                    )}
+                    aria-disabled={!fixtureUrl}
+                  >
                   {settings.showTeamImages && (
                     <TeamLogo
-                      src={home?.image_path ?? undefined}
-                      alt={home?.name || "Home"}
+                        src={home.image_path ?? undefined}
+                        alt={home.name || "Home"}
                       className="rounded h-4 w-4"
                     />
                   )}
-                  {home ? (
-                    <FixtureTeamLink team={home} fixtureId={fixture.id?.toString()}>
-                      <span className="text-[12px] font-medium text-gray-800 dark:text-gray-200 truncate">
-                        {home.name || "Home"}
-                      </span>
-                    </FixtureTeamLink>
+                    <span className="truncate">{home.name || "Home"}</span>
+                  </Link>
                   ) : (
-                    <span className="text-[12px] font-medium text-gray-800 dark:text-gray-200 truncate">
+                  <span className="flex items-center gap-2 text-[12px] font-medium text-gray-800 dark:text-gray-200 truncate">
+                    {settings.showTeamImages && (
+                      <TeamLogo
+                        src={undefined}
+                        alt="Home"
+                        className="rounded h-4 w-4"
+                      />
+                    )}
                       Home
                     </span>
                   )}
-                </div>
-                <div className="flex items-center gap-2">
+                {away ? (
+                  <Link
+                    href={fixtureUrl || "#"}
+                    className={cn(
+                      "flex items-center gap-2 text-[12px] font-medium text-gray-800 dark:text-gray-200 truncate",
+                      !fixtureUrl && "pointer-events-none cursor-default text-gray-500 dark:text-gray-400"
+                    )}
+                    aria-disabled={!fixtureUrl}
+                  >
                   {settings.showTeamImages && (
                     <TeamLogo
-                      src={away?.image_path ?? undefined}
-                      alt={away?.name || "Away"}
+                        src={away.image_path ?? undefined}
+                        alt={away.name || "Away"}
                       className="rounded h-4 w-4"
                     />
                   )}
-                  {away ? (
-                    <FixtureTeamLink team={away} fixtureId={fixture.id?.toString()}>
-                      <span className="text-[12px] font-medium text-gray-800 dark:text-gray-200 truncate">
-                        {away.name || "Away"}
-                      </span>
-                    </FixtureTeamLink>
+                    <span className="truncate">{away.name || "Away"}</span>
+                  </Link>
                   ) : (
-                    <span className="text-[12px] font-medium text-gray-800 dark:text-gray-200 truncate">
+                  <span className="flex items-center gap-2 text-[12px] font-medium text-gray-800 dark:text-gray-200 truncate">
+                    {settings.showTeamImages && (
+                      <TeamLogo
+                        src={undefined}
+                        alt="Away"
+                        className="rounded h-4 w-4"
+                      />
+                    )}
                       Away
                     </span>
                   )}
-                </div>
               </div>
 
               {/* Column 3: Scores */}
@@ -1069,6 +1102,7 @@ export const FixtureCard = memo(function FixtureCard({
                   fixture={fixture}
                 />
               </div>
+              <div className="col-span-1" />
             </div>
           </CardContent>
         </Card>
@@ -1105,7 +1139,7 @@ export const FixtureCard = memo(function FixtureCard({
   return (
     <>
       <Card className="w-full">
-        <CardContent className="py-2">
+        <CardContent className="p-4">
           {/* Header: state/time on left, date on right (mobile spec simplified) */}
           <div className="flex items-center justify-between text-[12px] text-gray-600">
             <div className="flex items-center gap-1.5">
@@ -1115,9 +1149,11 @@ export const FixtureCard = memo(function FixtureCard({
               </span>
             </div>
             {fixture.starting_at && (
+              <div className="flex items-center">
               <span className="hidden sm:inline">
                 {formatDateLocal(fixture.starting_at || "")}
               </span>
+              </div>
             )}
           </div>
 
@@ -1126,26 +1162,32 @@ export const FixtureCard = memo(function FixtureCard({
             className="mt-2 grid grid-cols-3 items-center gap-2"
             style={{ minHeight: compact ? 0 : undefined }}
           >
-            <div className="flex items-center gap-2 min-w-0">
+            {home ? (
+              <Link
+                href={fixtureUrl || "#"}
+                className={cn(
+                  "flex items-center gap-2 min-w-0 font-medium truncate text-[12px] sm:text-[13px] text-gray-800",
+                  !fixtureUrl && "pointer-events-none cursor-default text-gray-500"
+                )}
+                aria-disabled={!fixtureUrl}
+              >
               {settings.showTeamImages && (
                 <TeamLogo
-                  src={home?.image_path ?? undefined}
-                  alt={home?.name || "Home"}
+                    src={home.image_path ?? undefined}
+                    alt={home.name || "Home"}
                   className="rounded h-5 w-5"
                 />
               )}
-              {home ? (
-                <FixtureTeamLink team={home} fixtureId={fixture.id?.toString()}>
-                  <span className="font-medium truncate text-[12px] sm:text-[13px] text-gray-800">
-                    {home.name || "Home"}
-                  </span>
-                </FixtureTeamLink>
+                <span className="truncate">{home.name || "Home"}</span>
+              </Link>
               ) : (
-                <span className="font-medium truncate text-[12px] sm:text-[13px] text-gray-800">
+              <span className="flex items-center gap-2 min-w-0 font-medium truncate text-[12px] sm:text-[13px] text-gray-800">
+                {settings.showTeamImages && (
+                  <TeamLogo src={undefined} alt="Home" className="rounded h-5 w-5" />
+                )}
                   Home
                 </span>
               )}
-            </div>
             <div className="flex items-center justify-center gap-2">
               {scoreHome !== null && scoreHome !== undefined && scoreAway !== null && scoreAway !== undefined ? (
                 <>
@@ -1169,26 +1211,32 @@ export const FixtureCard = memo(function FixtureCard({
                 valueBetData={valueBetInfo}
               />
             </div>
-            <div className="flex items-center gap-2 min-w-0 justify-end">
               {away ? (
-                <FixtureTeamLink team={away} fixtureId={fixture.id?.toString()}>
-                  <span className="font-medium truncate text-[12px] sm:text-[13px] text-right text-gray-800">
-                    {away.name || "Away"}
-                  </span>
-                </FixtureTeamLink>
-              ) : (
-                <span className="font-medium truncate text-[12px] sm:text-[13px] text-right text-gray-800">
-                  Away
-                </span>
-              )}
+              <Link
+                href={fixtureUrl || "#"}
+                className={cn(
+                  "flex items-center gap-2 min-w-0 justify-end font-medium truncate text-[12px] sm:text-[13px] text-right text-gray-800",
+                  !fixtureUrl && "pointer-events-none cursor-default text-gray-500"
+                )}
+                aria-disabled={!fixtureUrl}
+              >
+                <span className="truncate">{away.name || "Away"}</span>
               {settings.showTeamImages && (
                 <TeamLogo
-                  src={away?.image_path ?? undefined}
-                  alt={away?.name || "Away"}
+                    src={away.image_path ?? undefined}
+                    alt={away.name || "Away"}
                   className="rounded h-5 w-5"
                 />
               )}
-            </div>
+              </Link>
+            ) : (
+              <span className="flex items-center gap-2 min-w-0 justify-end font-medium truncate text-[12px] sm:text-[13px] text-right text-gray-800">
+                Away
+                {settings.showTeamImages && (
+                  <TeamLogo src={undefined} alt="Away" className="rounded h-5 w-5" />
+                )}
+              </span>
+            )}
           </div>
 
           {/* League */}

@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, Globe, Trophy } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Search, Globe, Trophy, Star, StarOff } from 'lucide-react';
 import { FlagImage } from '@/app/components/ui/optimized-image';
+import { useEntityFavorites } from '@/app/hooks/useEntityFavorites';
 
 interface Country {
   id: number;
@@ -40,20 +42,42 @@ export function CountriesListClient({
 }: CountriesListClientProps) {
   const [countries] = useState<Country[]>(initialCountries);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredCountries, setFilteredCountries] = useState<Country[]>(countries);
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  
+  // Favorites hook
+  const { favorites, toggleFavorite, isFavorite } = useEntityFavorites('countries');
 
-  useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setFilteredCountries(countries);
-    } else {
-      const filtered = countries.filter(country =>
-        country.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        country.official_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        country.iso2.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredCountries(filtered);
+  // Filter countries
+  const filteredCountries = useMemo(() => {
+    let filtered = [...countries];
+
+    // Apply favorites filter
+    if (showFavoritesOnly) {
+      filtered = filtered.filter(country => favorites.has(country.id));
     }
-  }, [searchQuery, countries]);
+
+    // Apply search filter
+    if (searchQuery.trim() !== '') {
+      const searchLower = searchQuery.toLowerCase();
+      filtered = filtered.filter(country =>
+        country.name.toLowerCase().includes(searchLower) ||
+        country.official_name.toLowerCase().includes(searchLower) ||
+        country.iso2.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Sort: favorites first, then by name
+    filtered.sort((a, b) => {
+      const aIsFav = favorites.has(a.id) ? 1 : 0;
+      const bIsFav = favorites.has(b.id) ? 1 : 0;
+      if (bIsFav !== aIsFav) {
+        return bIsFav - aIsFav;
+      }
+      return a.name.localeCompare(b.name);
+    });
+
+    return filtered;
+  }, [countries, searchQuery, showFavoritesOnly, favorites]);
 
   const handleCountryClick = (country: Country) => {
     onCountrySelect?.(country);
@@ -62,10 +86,25 @@ export function CountriesListClient({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Globe className="h-5 w-5" />
-          Countries
-        </CardTitle>
+        <div className="flex items-center justify-between mb-4">
+          <CardTitle className="flex items-center gap-2">
+            <Globe className="h-5 w-5" />
+            Countries
+          </CardTitle>
+          <Button
+            variant={showFavoritesOnly ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+            className={showFavoritesOnly ? 'bg-yellow-500 hover:bg-yellow-600' : ''}
+            title="Show favorites only"
+          >
+            {showFavoritesOnly ? (
+              <Star className="w-4 h-4 fill-current" />
+            ) : (
+              <StarOff className="w-4 h-4" />
+            )}
+          </Button>
+        </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
@@ -80,7 +119,7 @@ export function CountriesListClient({
         <div className="space-y-2 max-h-96 overflow-y-auto">
           {filteredCountries.length === 0 ? (
             <div className="text-center text-gray-500 py-4">
-              {searchQuery ? 'No countries found' : 'No countries available'}
+              {searchQuery || showFavoritesOnly ? 'No countries found' : 'No countries available'}
             </div>
           ) : (
             filteredCountries.map((country) => (
@@ -111,6 +150,24 @@ export function CountriesListClient({
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavorite(country.id);
+                      }}
+                      className={`p-1.5 rounded-md transition-all duration-150 hover:scale-110 active:scale-95 ${
+                        isFavorite(country.id)
+                          ? 'text-yellow-500 hover:text-yellow-600 bg-yellow-50/50 dark:bg-yellow-900/20 hover:bg-yellow-100/50 dark:hover:bg-yellow-900/30'
+                          : 'text-muted-foreground hover:text-yellow-500 hover:bg-yellow-50/50 dark:hover:bg-yellow-900/20'
+                      }`}
+                      title={isFavorite(country.id) ? 'Remove from favorites' : 'Add to favorites'}
+                    >
+                      {isFavorite(country.id) ? (
+                        <Star className="h-4 w-4 fill-current" />
+                      ) : (
+                        <StarOff className="h-4 w-4" />
+                      )}
+                    </button>
                     {country.leagues && country.leagues.length > 0 && (
                       <Badge variant="secondary" className="text-xs">
                         <Trophy className="h-3 w-3 mr-1" />
@@ -131,6 +188,11 @@ export function CountriesListClient({
             ))
           )}
         </div>
+        {favorites.size > 0 && (
+          <div className="mt-4 text-sm text-gray-600 dark:text-gray-400 text-center">
+            {favorites.size} favorite{favorites.size !== 1 ? 's' : ''} saved
+          </div>
+        )}
       </CardContent>
     </Card>
   );

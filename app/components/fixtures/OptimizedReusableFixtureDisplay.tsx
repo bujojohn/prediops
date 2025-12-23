@@ -1,8 +1,9 @@
 'use client';
 
 import React, { memo, useMemo, useCallback } from 'react';
+import Link from 'next/link';
 import { Card } from '@/components/ui/card';
-import { Calendar, RefreshCw } from 'lucide-react';
+import { Calendar, RefreshCw, ChevronDown, ChevronRight } from 'lucide-react';
 import type { Fixture } from '@/schemas/fixture.schema';
 import { groupByDate, groupByLeague, type FixtureGroup } from '@/app/predictions/utils/grouping-utils';
 import { useCollapsedDates } from '@/app/predictions/hooks/useCollapsedDates';
@@ -13,6 +14,7 @@ import { VirtualFixtureList } from './VirtualFixtureList';
 import { OptimizedFixtureCard } from './OptimizedFixtureCard';
 import { InfiniteScrollTrigger } from './InfiniteScrollTrigger';
 import { useInfiniteScroll } from '@/app/hooks/useInfiniteScroll';
+import { generateLeagueUrl } from '@/lib/utils/routing';
 
 export interface OptimizedReusableFixtureDisplayProps {
   fixtures: Fixture[];
@@ -313,24 +315,49 @@ export const OptimizedReusableFixtureDisplay = memo<OptimizedReusableFixtureDisp
                   return (
                     <div key={leagueGroup.id} className="space-y-3">
                       {/* Group Header */}
-                      <div
-                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                        onClick={() => toggleDateCollapse(leagueGroup.id)}
-                      >
-                        <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${isCollapsed ? 'bg-gray-400' : 'bg-blue-500'}`} />
-                          <h3 className="font-medium text-sm text-gray-900 dark:text-gray-100">
-                            {leagueGroup.title}
-                          </h3>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-500">
-                            {leagueGroup.fixtures.length} fixture{leagueGroup.fixtures.length !== 1 ? 's' : ''}
-                          </span>
-                          <div className={`w-4 h-4 transition-transform ${isCollapsed ? 'rotate-0' : 'rotate-90'}`}>
-                            ▶
+                      <div className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-gray-50 px-3 py-2 dark:border-border/40 dark:bg-gray-900">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <button
+                            type="button"
+                            aria-label={isCollapsed ? 'Expand fixtures' : 'Collapse fixtures'}
+                            className="inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-border/60 bg-white text-gray-600 transition hover:bg-gray-100 dark:border-border/40 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                            onClick={() => toggleDateCollapse(leagueGroup.id)}
+                          >
+                            {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                          </button>
+                          <div className={`w-2 h-2 flex-shrink-0 rounded-full ${isCollapsed ? 'bg-gray-400' : 'bg-blue-500'}`} />
+                          <div className="min-w-0">
+                            {(() => {
+                              const league =
+                                leagueGroup.meta?.league ??
+                                leagueGroup.fixtures.find((fixture) => fixture.league)?.league ??
+                                null;
+                              const title = league?.name ?? leagueGroup.title;
+                              let leagueHref: string | null = null;
+                              if (league?.id) {
+                                try {
+                                  leagueHref = generateLeagueUrl(league);
+                                } catch {
+                                  leagueHref = null;
+                                }
+                              }
+
+                              return leagueHref ? (
+                                <Link
+                                  href={leagueHref}
+                                  className="truncate text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400"
+                                >
+                                  {title}
+                                </Link>
+                              ) : (
+                                <span className="truncate text-sm font-semibold text-foreground">{title}</span>
+                              );
+                            })()}
                           </div>
                         </div>
+                        <span className="inline-flex flex-shrink-0 items-center justify-center rounded-full border border-border/60 bg-white px-3 py-1 text-xs font-medium text-muted-foreground dark:border-border/40 dark:bg-gray-800">
+                          {leagueGroup.fixtures.length} fixture{leagueGroup.fixtures.length !== 1 ? 's' : ''}
+                        </span>
                       </div>
                       
                       {/* Fixtures */}

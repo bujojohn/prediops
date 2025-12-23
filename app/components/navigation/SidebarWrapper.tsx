@@ -3,6 +3,7 @@
 import { Suspense } from 'react';
 import { usePathname } from 'next/navigation';
 import { Navbar } from './Navbar';
+import { Breadcrumb } from './Breadcrumb';
 import { SidebarOptimized } from './SidebarOptimized';
 import { useIsMobile } from '@/app/hooks/useMediaQuery';
 
@@ -40,6 +41,7 @@ export function SidebarWrapper({ children }: SidebarWrapperProps) {
       
       <div className="flex-1 flex flex-col">
         <Navbar />
+        <Breadcrumb />
         <main className="flex-1 overflow-auto">
           {children}
         </main>

@@ -42,43 +42,55 @@ export function PredictionsSkeleton() {
         {Array.from({ length: 3 }).map((_, groupIndex) => (
           <div key={groupIndex} className="space-y-4">
             {/* Date Group Header Skeleton */}
-            <div className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
               <div className="flex items-center gap-2">
-                <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
-                <div className="h-3 w-16 bg-gray-200 rounded animate-pulse" />
+                <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                <div className="h-3 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
               </div>
-              <div className="h-4 w-4 bg-gray-200 rounded animate-pulse" />
+              <div className="h-4 w-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
             </div>
             
             {/* League Groups Skeleton */}
             {Array.from({ length: 2 }).map((_, leagueIndex) => (
-              <div key={leagueIndex} className="space-y-2">
-                <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded">
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 bg-gray-200 rounded-full animate-pulse" />
-                    <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
+              <Card key={leagueIndex}>
+                {/* League Header Skeleton */}
+                <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-900/50 border-b">
+                  <div className="flex items-center gap-3">
+                    <div className="h-7 w-7 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse" />
+                    <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
                   </div>
-                  <div className="h-6 w-8 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-6 w-12 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse" />
                 </div>
                 
-                {/* Fixture Cards Skeleton */}
-                <div className="space-y-2 pl-4">
-                  {Array.from({ length: 3 }).map((_, fixtureIndex) => (
-                    <div key={fixtureIndex} className="p-4 border rounded-lg">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 bg-gray-200 rounded-full animate-pulse" />
-                          <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
-                          <div className="h-4 w-4 bg-gray-200 rounded animate-pulse" />
-                          <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
-                          <div className="h-8 w-8 bg-gray-200 rounded-full animate-pulse" />
+                {/* Fixture Cards Skeleton - matches CardContent with grid structure */}
+                <CardContent className="p-4">
+                  <div className="grid grid-cols-1 gap-4">
+                    {Array.from({ length: 3 }).map((_, fixtureIndex) => (
+                      <Card key={fixtureIndex} className="p-4">
+                        <div className="space-y-3">
+                          {/* Team names and logos */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3 flex-1">
+                              <div className="h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse" />
+                              <div className="h-5 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                            </div>
+                            <div className="h-6 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                            <div className="flex items-center gap-3 flex-1 justify-end">
+                              <div className="h-5 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                              <div className="h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse" />
+                            </div>
+                          </div>
+                          {/* Match time and league */}
+                          <div className="flex items-center justify-between">
+                            <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                            <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                          </div>
                         </div>
-                        <div className="h-6 w-16 bg-gray-200 rounded animate-pulse" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+                      </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         ))}

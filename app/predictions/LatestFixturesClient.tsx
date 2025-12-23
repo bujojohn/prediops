@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { Fixture } from '@/schemas/fixture.schema';
 import { FixtureList, type FixtureGroup } from '@/app/components/fixtures/FixtureList';
@@ -13,6 +14,7 @@ import {
   useDatePickerWithFixtures 
 } from '@/app/components/date-picker';
 import { createLeagueGroupTitle } from '@/lib/utils/league-utils';
+import { generateCountryUrl, generateLeagueUrl } from '@/lib/utils/routing';
 
 function groupByDate(fixtures: Fixture[]): FixtureGroup[] {
   const map = new Map<string, { title: string; fixtures: Fixture[] }>();
@@ -26,15 +28,43 @@ function groupByDate(fixtures: Fixture[]): FixtureGroup[] {
   return Array.from(map.entries()).map(([id, { title, fixtures }]) => ({ id, title, fixtures }));
 }
 
-function groupByLeague(fixtures: Fixture[]): Array<{ id: string; title: string; fixtures: Fixture[] }>{
-  const map = new Map<string, { title: string; fixtures: Fixture[] }>();
+function groupByLeague(fixtures: Fixture[]): FixtureGroup[]{
+  const map = new Map<
+    string,
+    { title: string; fixtures: Fixture[]; meta?: FixtureGroup['meta'] }
+  >();
   for (const f of fixtures) {
     const key = createLeagueGroupTitle(f.league || undefined);
-    const entry = map.get(key) || { title: key, fixtures: [] };
-    entry.fixtures.push(f);
-    map.set(key, entry);
+    const league = f.league ?? null;
+    const country = league?.country ?? null;
+    const continent = country?.continent ?? null;
+
+    const existing = map.get(key);
+    if (existing) {
+      existing.fixtures.push(f);
+      existing.meta = {
+        league: existing.meta?.league ?? league ?? null,
+        country: existing.meta?.country ?? (country ?? null),
+        continent: existing.meta?.continent ?? (continent ?? null),
+      };
+    } else {
+      map.set(key, {
+        title: key,
+        fixtures: [f],
+        meta: {
+          league: league ?? null,
+          country: country ?? null,
+          continent: continent ?? null,
+        },
+      });
+    }
   }
-  return Array.from(map.entries()).map(([id, { title, fixtures }]) => ({ id, title, fixtures }));
+  return Array.from(map.entries()).map(([id, { title, fixtures, meta }]) => ({
+    id,
+    title,
+    fixtures,
+    meta,
+  }));
 }
 
 
@@ -272,20 +302,88 @@ function PredictionsContent({ initialFixtures }: { initialFixtures: Fixture[] })
                            key={lg.id}
                            groups={[lg]}
                            compact={false}
-                           renderHeader={({ group, toggle, count }) => (
-                             <div
-                               className="flex items-center justify-between px-4 py-3 cursor-pointer select-none"
-                               onClick={toggle}
-                             >
-                               <div className="flex items-center gap-2">
-                                 <span className="inline-block h-2 w-2 rounded-full bg-gray-300" />
-                                 <div className="font-medium truncate">{group.title}</div>
-                               </div>
-                               <button type="button" className="text-xs px-2 py-1 border rounded text-gray-700">
-                                 {count}
-                               </button>
-                             </div>
-                             )}
+                          renderHeader={({ group, toggle, count, collapsed }) => {
+                            const crumbs: Array<{ label: string; href?: string }> = [];
+                            const country = group.meta?.country;
+                            const continent = group.meta?.continent;
+                            const league = group.meta?.league;
+
+                            if (country?.name && country?.id) {
+                              try {
+                                crumbs.push({
+                                  label: country.name,
+                                  href: generateCountryUrl(country),
+                                });
+                              } catch {
+                                crumbs.push({ label: country.name });
+                              }
+                            } else if (continent?.name) {
+                              crumbs.push({ label: continent.name });
+                            }
+
+                            if (league?.name && league?.id) {
+                              try {
+                                crumbs.push({
+                                  label: league.name,
+                                  href: generateLeagueUrl(league),
+                                });
+                              } catch {
+                                crumbs.push({ label: league.name });
+                              }
+                            }
+
+                            if (crumbs.length === 0) {
+                              crumbs.push({ label: group.title });
+                            }
+
+                            return (
+                              <div
+                                className="flex items-center justify-between px-4 py-3 cursor-pointer select-none bg-gray-50 dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700"
+                                onClick={toggle}
+                              >
+                                <div className="flex items-center gap-3 min-w-0">
+                                  {collapsed ? (
+                                    <ChevronRight className="h-4 w-4 text-gray-500" />
+                                  ) : (
+                                    <ChevronDown className="h-4 w-4 text-gray-500" />
+                                  )}
+                                  <nav
+                                    aria-label="Fixture league breadcrumb"
+                                    className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200 truncate"
+                                  >
+                                    {crumbs.map((crumb, index) => (
+                                      <span key={`${crumb.label}-${index}`} className="flex items-center gap-2 truncate">
+                                        {crumb.href ? (
+                                          <Link
+                                            href={crumb.href}
+                                            className="hover:text-blue-600 dark:hover:text-blue-400 truncate"
+                                            onClick={(event) => event.stopPropagation()}
+                                          >
+                                            {crumb.label}
+                                          </Link>
+                                        ) : (
+                                          <span className="truncate">{crumb.label}</span>
+                                        )}
+                                        {index < crumbs.length - 1 && (
+                                          <ChevronRight className="h-3 w-3 text-gray-400 shrink-0" />
+                                        )}
+                                      </span>
+                                    ))}
+                                  </nav>
+                                </div>
+                                <button
+                                  type="button"
+                                  className="text-xs px-2 py-1 border rounded text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    toggle();
+                                  }}
+                                >
+                                  {count}
+                                </button>
+                              </div>
+                            );
+                          }}
                            />
                          ))}
                      </div>

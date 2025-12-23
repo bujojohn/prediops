@@ -143,8 +143,9 @@ export function FixtureWeather({ weatherReport }: FixtureWeatherProps) {
             alt="Weather icon"
             width={64}
             height={64}
+            unoptimized
             className="h-16 w-16 self-start rounded-lg bg-muted p-2 dark:bg-gray-700"
-            loading="lazy"
+            priority={false}
           />
         ) : null}
       </div>

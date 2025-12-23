@@ -23,6 +23,7 @@ import type { TeamDetailed } from '@/schemas/team-detailed.schema';
 import type { Fixture } from '@/schemas/fixture.schema';
 import { formatFoundedYear, getTeamTypeDisplay } from '@/lib/utils/team-utils';
 import { generateFixtureSlug } from '@/lib/utils/slug-utils';
+import { generateCountryUrl } from '@/lib/utils/routing';
 import { TeamMatchesContent } from './team-matches-content';
 
 interface TeamDetailClientProps {
@@ -90,6 +91,70 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
       return date.getFullYear().toString();
     } catch {
       return 'Unknown';
+    }
+  };
+
+  // Group fixtures by month
+  const groupFixturesByMonth = (fixtures: Fixture[]) => {
+    const grouped: Record<string, Fixture[]> = {};
+    
+    fixtures.forEach((fixture) => {
+      if (!fixture.starting_at) return;
+      
+      try {
+        const date = new Date(fixture.starting_at);
+        if (isNaN(date.getTime())) return;
+        
+        const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
+        if (!grouped[monthKey]) {
+          grouped[monthKey] = [];
+        }
+        grouped[monthKey].push(fixture);
+      } catch {
+        // Skip invalid dates
+      }
+    });
+    
+    // Sort fixtures within each month by date
+    Object.keys(grouped).forEach((key) => {
+      grouped[key].sort((a, b) => {
+        if (!a.starting_at || !b.starting_at) return 0;
+        return new Date(a.starting_at).getTime() - new Date(b.starting_at).getTime();
+      });
+    });
+    
+    // Sort months chronologically
+    const sortedKeys = Object.keys(grouped).sort((a, b) => {
+      const [yearA, monthA] = a.split('-').map(Number);
+      const [yearB, monthB] = b.split('-').map(Number);
+      if (yearA !== yearB) return yearA - yearB;
+      return monthA - monthB;
+    });
+    
+    return sortedKeys.map((key) => ({
+      monthKey: key,
+      fixtures: grouped[key],
+    }));
+  };
+
+  // Format month header: "April, 2025"
+  const formatMonthHeader = (monthKey: string): string => {
+    const [year, month] = monthKey.split('-').map(Number);
+    const date = new Date(year, month, 1);
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
+
+  // Format day and date: "Mon 23,"
+  const formatDayAndDate = (dateString: string | null | undefined): string => {
+    if (!dateString) return '';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '';
+      const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+      const dayNumber = date.getDate();
+      return `${dayName} ${dayNumber},`;
+    } catch {
+      return '';
     }
   };
 
@@ -165,11 +230,33 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
   };
 
   const getUpcomingFixtures = () => {
-    return team.upcoming?.slice(0, 5) || [];
+    const now = new Date();
+    return (team.upcoming || [])
+      .filter((fixture) => {
+        if (!fixture.starting_at) return false;
+        try {
+          const fixtureDate = new Date(fixture.starting_at);
+          return !isNaN(fixtureDate.getTime()) && fixtureDate > now;
+        } catch {
+          return false;
+        }
+      })
+      .slice(0, 5);
   };
 
   const getRecentFixtures = () => {
-    return team.latest?.slice(0, 5) || [];
+    const now = new Date();
+    return (team.latest || [])
+      .filter((fixture) => {
+        if (!fixture.starting_at) return false;
+        try {
+          const fixtureDate = new Date(fixture.starting_at);
+          return !isNaN(fixtureDate.getTime()) && fixtureDate <= now;
+        } catch {
+          return false;
+        }
+      })
+      .slice(0, 5);
   };
 
   const getTrophies = () => {
@@ -220,7 +307,12 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
               {team.country && (
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4" />
-                  <span>{team.country.name}</span>
+                  <Link 
+                    href={generateCountryUrl(team.country)}
+                    className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors"
+                  >
+                    {team.country.name}
+                  </Link>
                 </div>
               )}
               
@@ -309,13 +401,40 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                      <UserCheck className="w-6 h-6 text-gray-400" />
-                    </div>
-                    <div>
-                      <div className="font-semibold">Coach #{getActiveCoach()?.coach_id}</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                    {getActiveCoach()?.coach?.image_path ? (
+                      <div className="relative w-16 h-16 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0">
+                        <Image 
+                          src={getActiveCoach()!.coach!.image_path!} 
+                          alt={getActiveCoach()?.coach?.name || getActiveCoach()?.coach?.display_name || 'Coach'} 
+                          width={64}
+                          height={64}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+                        <UserCheck className="w-8 h-8 text-gray-400" />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold text-lg">
+                        {getActiveCoach()?.coach?.name || 
+                         getActiveCoach()?.coach?.display_name || 
+                         getActiveCoach()?.coach?.common_name ||
+                         `Coach #${getActiveCoach()?.coach_id}`}
+                      </div>
+                      {getActiveCoach()?.coach?.firstname && getActiveCoach()?.coach?.lastname && (
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          {getActiveCoach()?.coach?.firstname} {getActiveCoach()?.coach?.lastname}
+                        </div>
+                      )}
+                      <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                         {getActiveCoach()?.start && `Since ${formatYear(getActiveCoach()!.start)}`}
+                        {getActiveCoach()?.temporary && (
+                          <Badge variant="outline" className="ml-2 text-xs">
+                            Temporary
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -395,28 +514,38 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {getRecentFixtures().map((fixture) => (
-                    <Link
-                      key={fixture.id}
-                      href={`/fixture/${fixture.id}/${generateFixtureSlug(fixture)}`}
-                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      <div className="flex-1">
-                        <div className="font-medium text-sm">{fixture.name}</div>
-                        <div className="text-xs text-gray-600 dark:text-gray-400">
-                          {formatDate(fixture.starting_at)}
-                        </div>
+                {getRecentFixtures().length === 0 ? (
+                  <p className="text-center text-gray-500 text-sm">No recent matches</p>
+                ) : (
+                  <div className="space-y-6">
+                    {groupFixturesByMonth(getRecentFixtures()).map(({ monthKey, fixtures }) => (
+                      <div key={monthKey} className="space-y-3">
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                          {formatMonthHeader(monthKey)}
+                        </h3>
+                        {fixtures.map((fixture) => (
+                          <Link
+                            key={fixture.id}
+                            href={`/fixture/${fixture.id}/${generateFixtureSlug(fixture)}`}
+                            className="block p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1">
+                                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                                  {formatDayAndDate(fixture.starting_at)}
+                                </div>
+                                <div className="font-medium text-sm">{fixture.name}</div>
+                              </div>
+                              <div className="text-xs text-gray-500 shrink-0">
+                                {fixture.result_info || 'No result'}
+                              </div>
+                            </div>
+                          </Link>
+                        ))}
                       </div>
-                      <div className="text-xs text-gray-500">
-                        {fixture.result_info || 'No result'}
-                      </div>
-                    </Link>
-                  ))}
-                  {getRecentFixtures().length === 0 && (
-                    <p className="text-center text-gray-500 text-sm">No recent matches</p>
-                  )}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -429,29 +558,39 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {getUpcomingFixtures().map((fixture) => (
-                    <Link
-                      key={fixture.id}
-                      href={`/fixture/${fixture.id}/${generateFixtureSlug(fixture)}`}
-                      className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
-                    >
-                      <div className="flex-1">
-                        <div className="font-medium text-sm">{fixture.name}</div>
-                        <div className="text-xs text-gray-600 dark:text-gray-400">
-                          {formatDate(fixture.starting_at)}
-                        </div>
+                {getUpcomingFixtures().length === 0 ? (
+                  <p className="text-center text-gray-500 text-sm">No upcoming matches</p>
+                ) : (
+                  <div className="space-y-6">
+                    {groupFixturesByMonth(getUpcomingFixtures()).map(({ monthKey, fixtures }) => (
+                      <div key={monthKey} className="space-y-3">
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                          {formatMonthHeader(monthKey)}
+                        </h3>
+                        {fixtures.map((fixture) => (
+                          <Link
+                            key={fixture.id}
+                            href={`/fixture/${fixture.id}/${generateFixtureSlug(fixture)}`}
+                            className="block p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1">
+                                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                                  {formatDayAndDate(fixture.starting_at)}
+                                </div>
+                                <div className="font-medium text-sm">{fixture.name}</div>
+                              </div>
+                              <div className="text-xs text-blue-600 dark:text-blue-400 shrink-0">
+                                <Clock className="w-3 h-3 inline mr-1" />
+                                {formatTime(fixture.starting_at)}
+                              </div>
+                            </div>
+                          </Link>
+                        ))}
                       </div>
-                      <div className="text-xs text-blue-600 dark:text-blue-400">
-                        <Clock className="w-3 h-3 inline mr-1" />
-                        {formatTime(fixture.starting_at)}
-                      </div>
-                    </Link>
-                  ))}
-                  {getUpcomingFixtures().length === 0 && (
-                    <p className="text-center text-gray-500 text-sm">No upcoming matches</p>
-                  )}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -825,7 +964,8 @@ export function TeamDetailClient({ team, initialFixtures = [] }: TeamDetailClien
                     <div className="flex-1">
                       <div className="font-medium text-sm">{rival.name}</div>
                       <div className="text-xs text-gray-600 dark:text-gray-400">
-                        {rival.short_code} • Founded {rival.founded}
+                        {rival.short_code || 'N/A'}
+                        {rival.founded && ` • Founded ${rival.founded}`}
                       </div>
                     </div>
                   </div>

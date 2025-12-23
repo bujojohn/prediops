@@ -43,33 +43,10 @@ export function generateSlug(text: string, maxLength: number = 60): string {
  * → "manchester-united"
  */
 export function generateTeamSlug(team: { id: number; name?: string | null }): string {
-  // Debug logging - always log in development (both server and client)
-  // Using console.log directly to ensure it always shows
-  console.log('[generateTeamSlug] Input:', {
-    teamId: team?.id,
-    teamName: team?.name,
-    hasName: !!team?.name,
-    isClient: typeof window !== 'undefined',
-    env: process.env.NODE_ENV
-  });
-
-  let slug: string;
   if (team.name) {
-    slug = generateSlug(team.name);
-  } else {
-    slug = `team-${team.id}`;
+    return generateSlug(team.name);
   }
-
-  // Debug logging - always log
-  console.log('[generateTeamSlug] Output:', {
-    slug,
-    teamId: team?.id,
-    teamName: team?.name,
-    isClient: typeof window !== 'undefined',
-    env: process.env.NODE_ENV
-  });
-
-  return slug;
+  return `team-${team.id}`;
 }
 
 /**

@@ -1,10 +1,12 @@
 'use client';
 
 import { useMemo, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import { Card } from '@/components/ui/card';
-import { Calendar, RefreshCw } from 'lucide-react';
+import { Calendar, RefreshCw, ChevronDown, ChevronRight } from 'lucide-react';
 import { FixtureList } from '@/app/components/fixtures/FixtureList';
 import { formatSemanticDateUTC } from '@/lib/utils';
+import { generateCountryUrl, generateLeagueUrl } from '@/lib/utils/routing';
 import type { Fixture } from '@/schemas/fixture.schema';
 import { groupByDate, groupByLeague } from '../utils/grouping-utils';
 import { useCollapsedDates } from '../hooks/useCollapsedDates';
@@ -189,20 +191,91 @@ export function FixturesDisplay({
                       key={leagueGroup.id}
                       groups={[leagueGroup]}
                       compact={false}
-                      renderHeader={({ group, toggle, count }) => (
-                        <div
-                          className="flex items-center justify-between px-4 py-3 cursor-pointer select-none"
-                          onClick={toggle}
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="inline-block h-2 w-2 rounded-full bg-gray-300" />
-                            <div className="font-medium truncate">{group.title}</div>
+                      renderHeader={({ group, toggle, count, collapsed }) => {
+                        const breadcrumbs: Array<{ label: string; href?: string }> = [];
+                        const country = group.meta?.country;
+                        const continent = group.meta?.continent;
+                        const league = group.meta?.league;
+
+                        if (country?.name && country?.id) {
+                          try {
+                            breadcrumbs.push({
+                              label: country.name,
+                              href: generateCountryUrl(country),
+                            });
+                          } catch {
+                            breadcrumbs.push({ label: country.name });
+                          }
+                        } else if (continent?.name) {
+                          breadcrumbs.push({ label: continent.name });
+                        }
+
+                        if (league?.name && league?.id) {
+                          try {
+                            breadcrumbs.push({
+                              label: league.name,
+                              href: generateLeagueUrl(league),
+                            });
+                          } catch {
+                            breadcrumbs.push({ label: league.name });
+                          }
+                        }
+
+                        if (breadcrumbs.length === 0) {
+                          breadcrumbs.push({ label: group.title });
+                        }
+
+                        return (
+                          <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <button
+                                type="button"
+                                aria-label={collapsed ? 'Expand fixtures' : 'Collapse fixtures'}
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border/60 bg-white text-gray-600 transition hover:bg-gray-100 dark:border-border/40 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-700"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  toggle();
+                                }}
+                              >
+                                {collapsed ? (
+                                  <ChevronRight className="h-4 w-4" />
+                                ) : (
+                                  <ChevronDown className="h-4 w-4" />
+                                )}
+                              </button>
+                              <nav
+                                aria-label="Fixture league breadcrumb"
+                                className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200 truncate"
+                              >
+                                {breadcrumbs.map((crumb, index) => (
+                                  <span
+                                    key={`${crumb.label}-${index}`}
+                                    className="flex items-center gap-2 truncate"
+                                  >
+                                    {crumb.href ? (
+                                      <Link
+                                        href={crumb.href}
+                                        className="hover:text-blue-600 dark:hover:text-blue-400 truncate"
+                                        onClick={(event) => event.stopPropagation()}
+                                      >
+                                        {crumb.label}
+                                      </Link>
+                                    ) : (
+                                      <span className="truncate">{crumb.label}</span>
+                                    )}
+                                    {index < breadcrumbs.length - 1 && (
+                                      <ChevronRight className="h-3 w-3 text-gray-400 shrink-0" />
+                                    )}
+                                  </span>
+                                ))}
+                              </nav>
                           </div>
-                          <button type="button" className="text-xs px-2 py-1 border rounded text-gray-700">
-                            {count}
-                          </button>
+                            <span className="inline-flex items-center justify-center rounded-full border border-border/60 bg-white px-3 py-1 text-xs font-medium text-muted-foreground dark:border-border/40 dark:bg-gray-900">
+                              {count} fixture{count !== 1 ? 's' : ''}
+                            </span>
                         </div>
-                      )}
+                        );
+                      }}
                     />
                   ))}
                 </div>
