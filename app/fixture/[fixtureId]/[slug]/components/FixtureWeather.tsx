@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import type { WeatherReport } from '@/schemas/weather-report.schema';
 
 interface FixtureWeatherProps {
@@ -137,12 +138,13 @@ export function FixtureWeather({ weatherReport }: FixtureWeatherProps) {
           ) : null}
         </div>
         {iconUrl ? (
-          <img
+          <Image
             src={iconUrl}
             alt="Weather icon"
+            width={64}
+            height={64}
             className="h-16 w-16 self-start rounded-lg bg-muted p-2 dark:bg-gray-700"
             loading="lazy"
-            decoding="async"
           />
         ) : null}
       </div>
