@@ -182,8 +182,10 @@ export function ValueBetsClient({
   const hasActiveFilters = searchQuery || filterValue !== 'all';
 
   // Format date for display
+  // Parse date string as local date (not UTC) to match HTML date input behavior
   const formatDisplayDate = useCallback((dateString: string) => {
-    const date = new Date(dateString);
+    // Append 'T00:00:00' to parse as local midnight instead of UTC
+    const date = new Date(dateString + 'T00:00:00');
     return date.toLocaleDateString('en-US', { 
       weekday: 'short', 
       month: 'short', 
