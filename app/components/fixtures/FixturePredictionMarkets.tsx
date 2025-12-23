@@ -116,6 +116,7 @@ export function FixturePredictionMarkets({
   const desktopButtonRef = useRef<HTMLButtonElement>(null);
   const moreButtonRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
+  const morePopoverRef = useRef<HTMLDivElement>(null);
   
   // Use the appropriate ref based on variant
   const buttonRef = variant === 'mobile' ? mobileButtonRef : desktopButtonRef;
@@ -429,11 +430,17 @@ export function FixturePredictionMarkets({
         setTimeout(() => setIsTransitioning(false), 200); // Match animation duration
       }
       
-      if (moreButtonRef.current && !moreButtonRef.current.contains(target)) {
-        setIsTransitioning(true);
-        setShowMorePopover(false);
-        setOptionFilter(''); // Clear search when closing
-        setTimeout(() => setIsTransitioning(false), 200); // Match animation duration
+      // Only handle more popover if it's actually open
+      if (showMorePopover) {
+        const isOutsideMoreButton = !moreButtonRef.current || !moreButtonRef.current.contains(target);
+        const isOutsideMorePopover = !morePopoverRef.current || !morePopoverRef.current.contains(target);
+        
+        if (isOutsideMoreButton && isOutsideMorePopover) {
+          setIsTransitioning(true);
+          setShowMorePopover(false);
+          setOptionFilter(''); // Clear search when closing
+          setTimeout(() => setIsTransitioning(false), 200); // Match animation duration
+        }
       }
     };
 
@@ -650,6 +657,7 @@ export function FixturePredictionMarkets({
 
     return createPortal(
       <div 
+        ref={morePopoverRef}
         className={cn(
           "fixed z-[9999] w-64 max-w-[calc(100vw-2rem)] max-h-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg transition-all duration-200",
           isTransitioning ? "opacity-0 scale-95" : "opacity-100 scale-100"
@@ -658,6 +666,8 @@ export function FixturePredictionMarkets({
           top,
           left
         }}
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Search header - always visible */}
         <div className="p-1.5 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-t-md">
