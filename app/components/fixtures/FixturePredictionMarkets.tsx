@@ -111,9 +111,14 @@ export function FixturePredictionMarkets({
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isButtonReady, setIsButtonReady] = useState(false);
   const [positionCalculated, setPositionCalculated] = useState(false);
-  const buttonRef = useRef<HTMLButtonElement>(null);
+  // Separate refs for mobile and desktop buttons to prevent conflicts
+  const mobileButtonRef = useRef<HTMLButtonElement>(null);
+  const desktopButtonRef = useRef<HTMLButtonElement>(null);
   const moreButtonRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
+  
+  // Use the appropriate ref based on variant
+  const buttonRef = variant === 'mobile' ? mobileButtonRef : desktopButtonRef;
   
   // Performance monitoring
   const renderStartTime = useRef<number>(0);
@@ -327,7 +332,9 @@ export function FixturePredictionMarkets({
   // Track when button is mounted and ready
   useEffect(() => {
     const checkButtonReady = () => {
-      setIsButtonReady(!!buttonRef.current);
+      // Check the appropriate ref based on variant
+      const currentRef = variant === 'mobile' ? mobileButtonRef : desktopButtonRef;
+      setIsButtonReady(!!currentRef.current);
     };
     
     // Check immediately
@@ -335,16 +342,19 @@ export function FixturePredictionMarkets({
     
     // Also check after a microtask to catch async mounting
     queueMicrotask(checkButtonReady);
-  }, []);
+  }, [variant]);
 
   // Calculate popover position with improved positioning logic
   useEffect(() => {
-    if (marketOpen && buttonRef.current && isButtonReady) {
+    // Use the appropriate ref based on variant
+    const currentButtonRef = variant === 'mobile' ? mobileButtonRef : desktopButtonRef;
+    
+    if (marketOpen && currentButtonRef.current && isButtonReady) {
       // Use requestAnimationFrame to ensure DOM is fully updated
       requestAnimationFrame(() => {
-        if (!buttonRef.current) return;
+        if (!currentButtonRef.current) return;
         
-        const rect = buttonRef.current.getBoundingClientRect();
+        const rect = currentButtonRef.current.getBoundingClientRect();
         
         // Safety check: ensure we have valid dimensions
         if (rect.width === 0 && rect.height === 0) return;
@@ -399,15 +409,17 @@ export function FixturePredictionMarkets({
       setPopoverPosition({ top: 0, left: 0 });
       setPositionCalculated(false);
     }
-  }, [marketOpen, isButtonReady]);
+  }, [marketOpen, isButtonReady, variant]);
 
   // Close popover when clicking outside or pressing ESC
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
+      // Use the appropriate ref based on variant
+      const currentButtonRef = variant === 'mobile' ? mobileButtonRef : desktopButtonRef;
       // If ref doesn't exist, consider it "outside" (true)
       // If ref exists, check if target is NOT contained within it
-      const isOutsideButton = !buttonRef.current || !buttonRef.current.contains(target);
+      const isOutsideButton = !currentButtonRef.current || !currentButtonRef.current.contains(target);
       const isOutsidePopover = !popoverRef.current || !popoverRef.current.contains(target);
       
       if (marketOpen && isOutsideButton && isOutsidePopover) {
@@ -427,12 +439,18 @@ export function FixturePredictionMarkets({
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setIsTransitioning(true);
-        setMarketOpen(false);
-        setShowMorePopover(false);
-        setMarketFilter('');
-        setOptionFilter('');
-        setTimeout(() => setIsTransitioning(false), 200); // Match animation duration
+        if (marketOpen) {
+          setIsTransitioning(true);
+          setMarketOpen(false);
+          setMarketFilter('');
+          setTimeout(() => setIsTransitioning(false), 200);
+        }
+        if (showMorePopover) {
+          setIsTransitioning(true);
+          setShowMorePopover(false);
+          setOptionFilter('');
+          setTimeout(() => setIsTransitioning(false), 200);
+        }
       }
     };
 
@@ -444,7 +462,7 @@ export function FixturePredictionMarkets({
         document.removeEventListener('keydown', handleKeyDown);
       };
     }
-  }, [marketOpen, showMorePopover]);
+  }, [marketOpen, showMorePopover, variant]);
 
   // Clear search filters when popovers close
   useEffect(() => {
@@ -506,8 +524,11 @@ export function FixturePredictionMarkets({
    * Renders a searchable list of available prediction markets
    */
   const MarketPopover = () => {
+    // Use the appropriate ref based on variant
+    const currentButtonRef = variant === 'mobile' ? mobileButtonRef : desktopButtonRef;
+    
     // Don't render until button is ready, position is calculated, and position is valid (not 0,0)
-    if (!marketOpen || !buttonRef.current || !isButtonReady || !positionCalculated) {
+    if (!marketOpen || !currentButtonRef.current || !isButtonReady || !positionCalculated) {
       return null;
     }
     

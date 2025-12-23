@@ -73,7 +73,11 @@ export function generateTeamFixtureUrl(team: Team | Participant, fixtureId?: str
   let url: string;
   if (fixtureId) {
     // Link to team page with fixtures tab and scroll to specific fixture
-    url = `${ROUTES.TEAM_FIXTURES(teamId, slug)}&fixture=${fixtureId}`;
+    // Query parameters must come before fragments in URLs
+    // ROUTES.TEAM_FIXTURES returns /team/{teamId}/{slug}#fixtures
+    // We need: /team/{teamId}/{slug}?fixture={fixtureId}#fixtures
+    const baseUrl = ROUTES.TEAM_DETAIL(teamId, slug);
+    url = `${baseUrl}?fixture=${fixtureId}#fixtures`;
   } else {
     url = ROUTES.TEAM_FIXTURES(teamId, slug);
   }

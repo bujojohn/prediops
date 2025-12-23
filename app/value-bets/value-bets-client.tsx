@@ -76,7 +76,8 @@ export function ValueBetsClient({
   }, [router, searchParams]);
 
   const handlePreviousDay = useCallback(() => {
-    const currentDate = new Date(selectedDate);
+    // Parse date string as local date (not UTC) to match HTML date input behavior
+    const currentDate = new Date(selectedDate + 'T00:00:00');
     currentDate.setDate(currentDate.getDate() - 1);
     const newDate = currentDate.toISOString().split('T')[0];
     const limits = getDateLimits();
@@ -86,7 +87,8 @@ export function ValueBetsClient({
   }, [selectedDate, getDateLimits, handleDateChange]);
 
   const handleNextDay = useCallback(() => {
-    const currentDate = new Date(selectedDate);
+    // Parse date string as local date (not UTC) to match HTML date input behavior
+    const currentDate = new Date(selectedDate + 'T00:00:00');
     currentDate.setDate(currentDate.getDate() + 1);
     const newDate = currentDate.toISOString().split('T')[0];
     const limits = getDateLimits();
